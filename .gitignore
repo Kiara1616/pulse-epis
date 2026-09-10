@@ -1,0 +1,8 @@
+node_modules/
+.next/
+__pycache__/
+*.pdf
+specs/
+docs/PLAN-DESARROLLO-COMPLETO.md
+PLAN-DESARROLLO-COMPLETO.md
+.env

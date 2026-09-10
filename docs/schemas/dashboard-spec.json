@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PulseEpisDashboardData",
+  "type": "object",
+  "required": ["asOf", "filters", "kpis", "vendorMarketShare", "certificationsEvolution", "skillGaps", "dataQuality"],
+  "properties": {
+    "asOf": { "type": "string", "format": "date-time" },
+    "filters": {
+      "type": "object",
+      "properties": {
+        "academicPeriod": { "type": ["string", "null"] },
+        "semester": { "type": ["integer", "null"], "minimum": 1, "maximum": 10 },
+        "cohort": { "type": ["integer", "null"] },
+        "vendor": { "type": ["string", "null"] },
+        "level": { "type": ["string", "null"] }
+      }
+    },
+    "kpis": {
+      "type": "object",
+      "required": ["activeStudents", "certifiedStudents", "coveragePercent", "validCertifications"],
+      "properties": {
+        "activeStudents": { "type": "integer", "minimum": 0 },
+        "certifiedStudents": { "type": "integer", "minimum": 0 },
+        "coveragePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "validCertifications": { "type": "integer", "minimum": 0 },
+        "expiringSoon": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "vendorMarketShare": { "$ref": "#/definitions/series" },
+    "certificationsEvolution": { "$ref": "#/definitions/series" },
+    "skillGaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["skill", "certifiedStudents", "marketDemand", "sourceDate"],
+        "properties": {
+          "skill": { "type": "string" },
+          "certifiedStudents": { "type": "integer", "minimum": 0 },
+          "marketDemand": { "type": "integer", "minimum": 0 },
+          "sourceDate": { "type": "string", "format": "date" }
+        }
+      }
+    },
+    "dataQuality": {
+      "type": "object",
+      "required": ["completenessPercent", "duplicateCount", "rejectedCount"],
+      "properties": {
+        "completenessPercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "duplicateCount": { "type": "integer", "minimum": 0 },
+        "rejectedCount": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "definitions": {
+    "series": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": { "type": "string" },
+          "value": { "type": "number", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

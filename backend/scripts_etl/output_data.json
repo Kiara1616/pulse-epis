@@ -1,0 +1,38 @@
+{
+    "last_updated": "2026-09-03T16:48:00.083165",
+    "total_records_processed": 3,
+    "vendorMarketShare": [
+        {
+            "name": "AWS",
+            "value": 1
+        },
+        {
+            "name": "Cisco",
+            "value": 1
+        },
+        {
+            "name": "Microsoft",
+            "value": 1
+        }
+    ],
+    "raw_transformed": [
+        {
+            "vendor": "AWS",
+            "level": "Fundamentals",
+            "entry_year": "2023",
+            "badge": "AWS Certified Cloud Practitioner"
+        },
+        {
+            "vendor": "Cisco",
+            "level": "Associate",
+            "entry_year": "2023",
+            "badge": "Cisco Certified Network Associate (CCNA)"
+        },
+        {
+            "vendor": "Microsoft",
+            "level": "Fundamentals",
+            "entry_year": "2022",
+            "badge": "Microsoft Certified: Azure Fundamentals"
+        }
+    ]
+}

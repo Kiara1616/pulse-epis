@@ -1,0 +1,84 @@
+{
+  "kpis": {
+    "totalCertifications": {
+      "value": 342,
+      "trend": "+24%",
+      "trendUp": true
+    },
+    "certifiedStudentsRatio": {
+      "value": 68,
+      "trend": "+5%",
+      "trendUp": true
+    },
+    "topVendor": {
+      "value": "AWS",
+      "trend": "120 Certs",
+      "trendUp": true
+    }
+  },
+  "certificationsEvolution": [
+    { "semester": "2023-I", "certifications": 45 },
+    { "semester": "2023-II", "certifications": 85 },
+    { "semester": "2024-I", "certifications": 150 },
+    { "semester": "2024-II", "certifications": 220 },
+    { "semester": "2025-I", "certifications": 342 }
+  ],
+  "vendorMarketShare": [
+    { "name": "AWS", "value": 40 },
+    { "name": "Cisco", "value": 30 },
+    { "name": "Microsoft", "value": 15 },
+    { "name": "Huawei", "value": 10 },
+    { "name": "Otros", "value": 5 }
+  ],
+  "certificationLevels": [
+    { "vendor": "AWS", "Fundamentals": 80, "Associate": 35, "Professional": 5 },
+    { "vendor": "Cisco", "Fundamentals": 60, "Associate": 40, "Professional": 2 },
+    { "vendor": "Microsoft", "Fundamentals": 40, "Associate": 10, "Professional": 1 },
+    { "vendor": "Huawei", "Fundamentals": 20, "Associate": 12, "Professional": 2 }
+  ],
+  "topStudents": [
+    { "name": "Luis A. Mamani", "semester": "8vo", "certs": 7, "topVendor": "AWS" },
+    { "name": "Carla S. Rojas", "semester": "9no", "certs": 6, "topVendor": "Cisco" },
+    { "name": "Renzo Q. Flores", "semester": "10mo", "certs": 5, "topVendor": "Microsoft" },
+    { "name": "Ana M. Velasquez", "semester": "7mo", "certs": 4, "topVendor": "AWS" },
+    { "name": "José T. Choque", "semester": "10mo", "certs": 4, "topVendor": "Huawei" }
+  ],
+  "certificationsBySemester": [
+    { "name": "1ro-4to", "certifications": 15 },
+    { "name": "5to-6to", "certifications": 45 },
+    { "name": "7mo-8vo", "certifications": 120 },
+    { "name": "9no-10mo", "certifications": 162 }
+  ],
+  "skillGaps": [
+    { "subject": "Cloud Computing", "students": 120, "marketDemand": 150 },
+    { "subject": "Redes & Telecom", "students": 110, "marketDemand": 90 },
+    { "subject": "Ciberseguridad", "students": 30, "marketDemand": 120 },
+    { "subject": "Data & IA", "students": 45, "marketDemand": 140 },
+    { "subject": "Desarrollo Web", "students": 95, "marketDemand": 100 }
+  ],
+  "availablePeriods": [
+    "2026-II",
+    "2026-I",
+    "2025-II",
+    "2025-I",
+    "2024-II",
+    "2024-I"
+  ],
+  "populationStats": {
+    "studentsBySemester": [
+      { "semester": "2024-I", "enrolled": 309 },
+      { "semester": "2024-II", "enrolled": 331 },
+      { "semester": "2025-I", "enrolled": 340 },
+      { "semester": "2025-II", "enrolled": 342 },
+      { "semester": "2026-I", "enrolled": 350 },
+      { "semester": "2026-II", "enrolled": 365 }
+    ],
+    "graduatesByYear": [
+      { "year": "2021", "graduates": 27 },
+      { "year": "2022", "graduates": 29 },
+      { "year": "2023", "graduates": 35 },
+      { "year": "2024", "graduates": 30 },
+      { "year": "2025", "graduates": 32 }
+    ]
+  }
+}
