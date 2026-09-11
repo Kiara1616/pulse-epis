@@ -9,6 +9,8 @@
 
 > Este documento adopta las definiciones y la línea base de [Problema, población y línea base](00-Problema-y-linea-base.md). Las cifras de `mock-data.json` son demostrativas y no constituyen una medición oficial.
 
+> Los objetivos verificables y el diccionario mínimo de KPIs están definidos en [Objetivos e indicadores medibles](01-Objetivos-medibles.md).
+
 ## 1 Propósito
 
 Este documento define la visión de Pulse EPIS, una plataforma institucional para conocer el nivel de certificación tecnológica de los estudiantes, conservar evidencia verificable y producir información útil para acreditación y mejora curricular.

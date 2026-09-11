@@ -16,6 +16,8 @@
 
 > La formulación vigente del problema, las definiciones de estudiante activo y certificación válida, la línea base y la clasificación de fuentes se mantienen en [Problema, población y línea base](00-Problema-y-linea-base.md).
 
+> Los objetivos, metas y fórmulas de medición se mantienen en [Objetivos e indicadores medibles](01-Objetivos-medibles.md).
+
 ## Control de versiones
 
 | Versión | Autores | Fecha | Motivo |

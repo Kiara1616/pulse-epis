@@ -105,6 +105,7 @@ pulse-epis/
 │   └── src/                # Aplicación Next.js
 ├── docs/
 │   ├── 00-Problema-y-linea-base.md
+│   ├── 01-Objetivos-medibles.md
 │   ├── FD01-Informe-Factibilidad.md
 │   ├── FD02-Informe-Vision.md
 │   ├── FD03-EPIS-Informe Especificación Requerimientos.md
@@ -225,6 +226,7 @@ No deben subirse credenciales, tokens, padrones reales, correos personales ni ev
 ## Documentación
 
 - [Problema, población y línea base](docs/00-Problema-y-linea-base.md)
+- [Objetivos e indicadores medibles](docs/01-Objetivos-medibles.md)
 - [FD01 — Informe de Factibilidad](docs/FD01-Informe-Factibilidad.md)
 - [FD02 — Informe de Visión](docs/FD02-Informe-Vision.md)
 - [FD03 — Especificación de Requisitos](docs/FD03-EPIS-Informe%20Especificación%20Requerimientos.md)
