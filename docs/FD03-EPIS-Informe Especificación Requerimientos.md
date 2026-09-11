@@ -6,6 +6,8 @@
 **Versión:** 2.0  
 **Fecha:** 09/09/2026
 
+> Las definiciones de estudiante activo, certificación válida, certificación vigente, fecha de corte y fuentes operacionales están centralizadas en [Problema, población y línea base](00-Problema-y-linea-base.md). Este SRS las convierte en requisitos y reglas verificables.
+
 ## 1 Introducción
 
 Este documento especifica las funciones, reglas, datos y atributos de calidad necesarios para transformar el prototipo Pulse EPIS en un sistema institucional completo.

@@ -7,6 +7,8 @@
 **Versión:** 2.0  
 **Fecha:** 09/09/2026
 
+> Este documento adopta las definiciones y la línea base de [Problema, población y línea base](00-Problema-y-linea-base.md). Las cifras de `mock-data.json` son demostrativas y no constituyen una medición oficial.
+
 ## 1 Propósito
 
 Este documento define la visión de Pulse EPIS, una plataforma institucional para conocer el nivel de certificación tecnológica de los estudiantes, conservar evidencia verificable y producir información útil para acreditación y mejora curricular.
@@ -23,6 +25,8 @@ La EPIS dispone de información académica y publica algunos datos agregados, mi
 | Afecta a | Dirección, Comité de Calidad, estudiantes y acreditación |
 | Consecuencia | Reportes manuales e indicadores no reproducibles |
 | Solución | BI con padrón oficial, evidencias, validación, ETL y dashboard por roles |
+
+La población de referencia será el padrón EPIS autorizado por periodo. La cobertura se calculará sobre estudiantes activos y solo contabilizará certificaciones válidas según las reglas operativas del documento base.
 
 ## 4 Visión del producto
 

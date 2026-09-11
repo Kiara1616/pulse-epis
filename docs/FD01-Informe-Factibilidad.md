@@ -14,6 +14,8 @@
 
 **Tacna Perú 2026**
 
+> La formulación vigente del problema, las definiciones de estudiante activo y certificación válida, la línea base y la clasificación de fuentes se mantienen en [Problema, población y línea base](00-Problema-y-linea-base.md).
+
 ## Control de versiones
 
 | Versión | Autores | Fecha | Motivo |
@@ -28,9 +30,11 @@
 
 ### 1.2 Problema y propuesta
 
-La EPIS necesita demostrar, para sus procesos de mejora continua y acreditación, qué proporción de sus estudiantes posee certificaciones de la industria, cómo evoluciona el indicador y qué brechas existen frente al mercado laboral. La información puede encontrarse dispersa entre formularios, hojas de cálculo, certificados PDF, plataformas de insignias y registros académicos. Una cifra agregada publicada en el portal institucional permite conocer el universo, pero no identifica de forma confiable a cada estudiante ni prueba que una credencial le pertenezca.
+La EPIS necesita demostrar, para sus procesos de mejora continua y acreditación, qué proporción de sus estudiantes activos posee certificaciones tecnológicas válidas, cómo evoluciona el indicador y qué brechas existen frente al mercado laboral. La información puede encontrarse dispersa entre formularios, hojas de cálculo, certificados PDF, plataformas de insignias y registros académicos. Una cifra agregada publicada en el portal institucional permite conocer el contexto, pero no identifica de forma confiable a cada estudiante ni prueba que una credencial le pertenezca.
 
 Pulse EPIS centralizará el padrón académico autorizado y las evidencias de certificación, validará cada registro y producirá indicadores trazables. La fuente de identidad será un padrón entregado por EPIS o Secretaría Académica con código universitario, correo institucional, estado y ciclo; no se obtendrán identidades mediante scraping de páginas públicas.
+
+La definición operativa es deliberadamente estricta: el padrón oficial determina el denominador; una certificación solo entra en los KPIs después de conciliar titularidad, emisor, fechas, evidencia, estado aprobado y duplicidad. La línea base actual es sintética y sirve únicamente para demostrar el prototipo; la línea base institucional se levantará durante el piloto con fecha de corte aprobada por EPIS.
 
 ### 1.3 Objetivo general
 
