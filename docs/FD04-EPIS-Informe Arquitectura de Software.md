@@ -2,9 +2,11 @@
 
 ## Pulse EPIS Dashboard de acreditaciones y certificaciones de estudiantes de la EPIS
 
-**Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)  
-**Versión:** 2.0  
-**Fecha:** 09/09/2026
+**Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
+**Versión:** 2.1<br>
+**Fecha:** 11/09/2026
+
+**Issue relacionado:** [#4 — Completar FD02: actores, capacidades y visión](https://github.com/Kiara1616/pulse-epis/issues/4)
 
 > La arquitectura debe respetar la población, el corte y la autoridad de fuentes definidos en [Problema, población y línea base](00-Problema-y-linea-base.md): el padrón EPIS es la fuente del denominador, mientras que las evidencias y validaciones sustentan las certificaciones.
 
@@ -27,13 +29,19 @@ La arquitectura convierte el prototipo Next.js y Python en una plataforma segura
 | Despliegue | Contenedores y CI CD | Reproducibilidad |
 | Analítica | Esquema estrella y vistas materializadas | KPIs rápidos y reproducibles |
 
+### 2.1 Autorización
+
+El MVP implementará tres roles técnicos: `ADMIN`, `VALIDATOR` y `STUDENT`. El permiso `PADRON_MANAGE` se asignará a cuentas `ADMIN` responsables de importar y conciliar el padrón. El alcance `ANALYTICS_READ` permitirá consultar indicadores y reportes sin crear un cuarto rol técnico ni conceder administración o validación. El backend aplicará denegación por defecto; el visitante solo utilizará vistas públicas agregadas.
+
 ## 3 Vista de contexto
 
 ```mermaid
 flowchart LR
-  Student[Estudiante] --> Pulse[Pulse EPIS]
-  Validator[Validador EPIS] --> Pulse
-  Analyst[Comité de Calidad] --> Pulse
+  Admin[ADMIN autorizado] --> Pulse[Pulse EPIS]
+  Validator[VALIDATOR] --> Pulse
+  Student[STUDENT] --> Pulse
+  Analyst[Analista con ANALYTICS_READ] --> Pulse
+  Visitor[Visitante] --> Pulse
   Registry[Padrón autorizado] --> Pulse
   Badges[Credly y Open Badges] --> Pulse
   Forms[Formulario o CSV] --> Pulse
@@ -94,21 +102,22 @@ Cada ejecución será idempotente. Los archivos entran a staging, se identifican
 
 | Método y ruta | Propósito | Rol |
 |---|---|---|
-| POST `/imports/students` | Importar padrón | Responsable |
-| POST `/certifications` | Registrar credencial | Estudiante |
-| POST `/certifications/{id}/evidence` | Adjuntar evidencia | Estudiante |
-| POST `/validations/{id}` | Registrar decisión | Validador |
-| GET `/analytics/kpis` | KPIs filtrados | Analista |
-| GET `/analytics/vendors` | Participación por emisor | Analista |
-| GET `/analytics/gaps` | Brechas por habilidad | Analista |
-| GET `/reports/accreditation` | Generar reporte | Analista |
-| GET `/etl/runs` | Estado de cargas | Responsable |
+| POST `/imports/students` | Importar padrón | `ADMIN` + `PADRON_MANAGE` |
+| POST `/certifications` | Registrar credencial | `STUDENT` |
+| POST `/certifications/{id}/evidence` | Adjuntar evidencia | `STUDENT` |
+| POST `/validations/{id}` | Registrar decisión | `VALIDATOR` |
+| GET `/analytics/kpis` | KPIs filtrados | `ANALYTICS_READ` |
+| GET `/analytics/vendors` | Participación por emisor | `ANALYTICS_READ` |
+| GET `/analytics/gaps` | Brechas por habilidad | `ANALYTICS_READ` |
+| GET `/reports/accreditation` | Generar reporte | `ANALYTICS_READ` |
+| GET `/etl/runs` | Estado de cargas | `ADMIN` |
 
 Se usarán paginación, esquemas validados, identificadores opacos, límites de archivo y respuestas sin datos personales salvo autorización.
 
 ## 8 Seguridad y privacidad
 
 - SSO u OIDC, sesiones seguras y segundo factor institucional.
+- Roles técnicos limitados a `ADMIN`, `VALIDATOR` y `STUDENT`, con scopes explícitos para `PADRON_MANAGE` y `ANALYTICS_READ`.
 - RBAC con denegación por defecto.
 - TLS, cifrado de campos y objetos privados.
 - URLs de evidencia firmadas y temporales.

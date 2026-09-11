@@ -2,9 +2,11 @@
 
 ## Pulse EPIS Dashboard de acreditaciones y certificaciones de estudiantes de la EPIS
 
-**Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)  
-**Versión:** 2.0  
-**Fecha:** 09/09/2026
+**Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
+**Versión:** 2.1<br>
+**Fecha:** 11/09/2026
+
+**Issue:** [#4 — Completar FD02: actores, capacidades y visión](https://github.com/Kiara1616/pulse-epis/issues/4)
 
 > Las definiciones de estudiante activo, certificación válida, certificación vigente, fecha de corte y fuentes operacionales están centralizadas en [Problema, población y línea base](00-Problema-y-linea-base.md). Este SRS las convierte en requisitos y reglas verificables.
 
@@ -18,32 +20,61 @@ Este documento especifica las funciones, reglas, datos y atributos de calidad ne
 
 El sistema administrará el padrón autorizado, recepción y validación de evidencias, normalización de credenciales, generación de indicadores y reportes. Habrá vistas privadas de administración y vistas agregadas de consulta.
 
-## 3 Actores
+## 3 Actores de negocio
 
-- **Administrador:** configura periodos, catálogos, roles y políticas.
-- **Responsable de datos:** importa y concilia el padrón.
-- **Validador:** acepta, observa o rechaza certificaciones.
-- **Analista:** consulta indicadores y genera reportes.
-- **Estudiante:** registra y revisa sus propias evidencias.
-- **Visitante:** consulta datos agregados autorizados.
+Los actores de negocio describen quién participa o tiene interés en el proceso. No son, por sí mismos, roles técnicos de autorización.
+
+| Actor de negocio | Objetivo | Operación principal |
+|---|---|---|
+| Administrador | Mantener la configuración del producto | Periodos, catálogos, políticas y usuarios autorizados |
+| Responsable de datos | Mantener confiable el universo EPIS | Importar, conciliar y corregir el padrón |
+| Validador | Asegurar que una credencial sea válida | Aprobar, observar o rechazar evidencias |
+| Analista | Interpretar resultados | Consultar indicadores y generar reportes |
+| Estudiante | Declarar sus logros | Registrar y revisar sus propias evidencias |
+| Visitante | Conocer resultados generales | Consultar datos agregados autorizados |
+
+Dirección EPIS y Comité de Calidad son interesados y consumidores de reportes. No se modelan como roles técnicos adicionales del MVP.
+
+### 3.1 Roles técnicos y permisos
+
+El MVP implementará únicamente estos tres roles técnicos de autorización:
+
+| Rol técnico | Permisos base | Restricciones |
+|---|---|---|
+| `ADMIN` | Periodos, catálogos, configuración, padrón y auditoría según permisos | No valida evidencias ni publica datos nominales por defecto |
+| `VALIDATOR` | Consulta de evidencia necesaria y decisión de validación | No administra usuarios, periodos, catálogos ni padrón |
+| `STUDENT` | Registro y consulta de sus propias certificaciones | No consulta ni modifica datos de otros estudiantes |
+
+El permiso `PADRON_MANAGE` se asignará a cuentas `ADMIN` que actúen como responsables de datos. El alcance `ANALYTICS_READ` permitirá a un analista consumir indicadores y reportes de solo lectura sin concederle administración ni validación; no se creará un cuarto rol técnico para el MVP. Un visitante solo utilizará vistas o endpoints públicos agregados.
+
+| Actor de negocio | Autorización MVP | Regla verificable |
+|---|---|---|
+| Administrador | `ADMIN` | Solo opera capacidades asignadas |
+| Responsable de datos | `ADMIN` + `PADRON_MANAGE` | Importa y concilia, pero no valida por defecto |
+| Validador | `VALIDATOR` | Decide evidencias y no administra el sistema |
+| Analista | `ANALYTICS_READ` | Solo lectura de indicadores y reportes permitidos |
+| Estudiante | `STUDENT` | Solo sus propios datos |
+| Visitante | Público agregado | Nunca recibe datos nominales |
+
+La selección de rol no estará disponible en el frontend. El backend verificará cada permiso, aplicará denegación por defecto y registrará la identidad, rol técnico, alcance y acción en `AuditLog`.
 
 ## 4 Requerimientos funcionales
 
 | ID | Requerimiento | Prioridad | Criterio verificable |
 |---|---|---|---|
-| RF-01 | Autenticar y aplicar roles | Crítica | Ningún usuario accede fuera de su rol |
-| RF-02 | Importar padrón por periodo desde CSV | Crítica | Informa filas válidas, rechazadas y duplicadas |
+| RF-01 | Autenticar y aplicar roles y permisos | Crítica | Solo existen `ADMIN`, `VALIDATOR` y `STUDENT`; los alcances `PADRON_MANAGE` y `ANALYTICS_READ` se verifican en backend |
+| RF-02 | Importar padrón por periodo desde CSV | Crítica | Una cuenta `ADMIN` con `PADRON_MANAGE` obtiene filas válidas, rechazadas y duplicadas |
 | RF-03 | Crear clave interna por estudiante | Crítica | No expone código en analítica pública |
 | RF-04 | Registrar credencial y evidencia | Crítica | Exige emisor, nombre, fechas y URL o archivo |
-| RF-05 | Validar evidencia y decisión | Crítica | Conserva autor, fecha, comentario y estado |
+| RF-05 | Validar evidencia y decisión | Crítica | Solo `VALIDATOR` conserva autor, fecha, comentario y estado |
 | RF-06 | Detectar duplicados | Alta | Marca coincidencia por alumno, credencial, emisor y fecha |
 | RF-07 | Normalizar proveedor, nivel y habilidades | Alta | Usa catálogos versionados |
-| RF-08 | Calcular KPIs por fecha de corte | Crítica | Fórmula y población son visibles |
-| RF-09 | Filtrar periodo, ciclo, cohorte, proveedor, nivel y área | Alta | Todos los gráficos responden al filtro |
+| RF-08 | Calcular KPIs por fecha de corte | Crítica | Fórmula y población son visibles para `ANALYTICS_READ` y permisos superiores |
+| RF-09 | Filtrar periodo, ciclo, cohorte, proveedor, nivel y área | Alta | Todos los gráficos autorizados responden al filtro |
 | RF-10 | Mostrar evolución y participación | Alta | Compara periodos |
 | RF-11 | Restringir detalle nominal | Crítica | Visitantes reciben agregados |
 | RF-12 | Exportar CSV y PDF | Alta | Refleja filtros y fecha de corte |
-| RF-13 | Registrar auditoría | Crítica | Conserva actor, acción y fecha |
+| RF-13 | Registrar auditoría | Crítica | Conserva principal, rol, alcance, acción y fecha |
 | RF-14 | Gestionar expiraciones | Alta | Distingue vigente, próxima y vencida |
 | RF-15 | Importar demanda laboral con fuente | Media | Conserva URL, consulta, ubicación y fecha |
 | RF-16 | Ejecutar ETL y mostrar estado | Alta | Registra inicio, fin, filas y errores |
@@ -79,6 +110,7 @@ El sistema administrará el padrón autorizado, recepción y validación de evid
 | RN-08 | Catálogos versionados permiten reproducir cierres |
 | RN-09 | El estudiante solo consulta sus datos y modifica registros abiertos |
 | RN-10 | Eliminación y retención siguen la política institucional |
+| RN-11 | No se realiza scraping de LinkedIn ni búsqueda de identidades desde perfiles públicos; las fuentes laborales son agregadas y trazables |
 
 ## 7 Modelo de datos mínimo
 
@@ -92,14 +124,14 @@ El sistema administrará el padrón autorizado, recepción y validación de evid
 | Skill | nombre y categoría |
 | Validation | certificación, validador, decisión, comentario y fecha |
 | MarketDemand | habilidad, fuente, consulta, ubicación, periodo y conteo |
-| AuditLog | actor, acción, entidad, antes, después y fecha |
+| AuditLog | principal, rol técnico, alcance, acción, entidad, antes, después y fecha |
 | EtlRun | fuente, inicio, fin, estado, filas y errores |
 
 ## 8 Casos de uso
 
 ### CU-01 Importar padrón
 
-El responsable selecciona periodo y archivo. El sistema valida columnas, normaliza códigos, muestra errores y confirma la importación. Cada alumno queda asociado a una clave interna y matrícula.
+El responsable de datos, mediante una cuenta `ADMIN` con permiso `PADRON_MANAGE`, selecciona periodo y archivo. El sistema valida columnas, normaliza códigos, muestra errores y confirma la importación. Cada alumno queda asociado a una clave interna y matrícula.
 
 ### CU-02 Registrar certificación
 
@@ -111,17 +143,17 @@ El validador compara evidencia con emisor, decide aprobar, observar o rechazar y
 
 ### CU-04 Consultar dashboard
 
-El analista selecciona filtros. El sistema presenta KPIs y gráficos coherentes y habilita detalle solo si el rol lo autoriza.
+El analista con alcance `ANALYTICS_READ` selecciona filtros. El sistema presenta KPIs y gráficos coherentes y habilita detalle solo si el permiso explícito lo autoriza.
 
 ### CU-05 Exportar reporte
 
-El analista genera un reporte con fecha de corte, filtros, fórmulas, gráficos, calidad del dato y fuentes.
+El analista con alcance `ANALYTICS_READ` genera un reporte con fecha de corte, filtros, fórmulas, gráficos, calidad del dato y fuentes. El sistema oculta campos nominales salvo autorización adicional.
 
 ## 9 Historias de usuario
 
 ### HU-01 Cobertura real
 
-Como miembro del Comité de Calidad quiero conocer la proporción de estudiantes activos con certificación válida para sustentar un informe.
+Como consumidor autorizado del Comité de Calidad quiero conocer la proporción de estudiantes activos con certificación válida para sustentar un informe.
 
 **Aceptación:** dado un periodo cerrado, al consultar cobertura se muestran numerador, denominador, fórmula y fecha reproducibles.
 
@@ -139,7 +171,7 @@ Como visitante quiero consultar resultados generales sin datos personales.
 
 ### HU-04 Calidad
 
-Como responsable quiero conocer errores de carga.
+Como responsable de datos con permiso `PADRON_MANAGE` quiero conocer errores de carga.
 
 **Aceptación:** una importación informa totales, filas y causas sin aplicar parcialmente un lote inválido.
 
@@ -150,9 +182,9 @@ Como responsable quiero conocer errores de carga.
 | Cobertura confiable | RF-02, RF-03, RF-08 | conciliación y prueba de fórmula |
 | Credenciales verificadas | RF-04 a RF-07, RF-14 | validación y duplicados |
 | Acreditación | RF-09, RF-10, RF-12, RF-18 | filtros y exportación |
-| Privacidad | RF-01, RF-11, RF-13 | autorización y auditoría |
+| Privacidad | RF-01, RF-11, RF-13 | matriz de roles, autorización y auditoría |
 | Brecha laboral | RF-15 | procedencia y fecha |
 
 ## 11 Criterio de terminación
 
-La versión productiva debe superar pruebas unitarias, integración, end to end, autorización, seguridad, accesibilidad, carga, respaldo y restauración. Una muestra será conciliada manualmente con padrón y evidencias por EPIS.
+La versión productiva debe superar pruebas unitarias, integración, end to end, autorización horizontal y vertical, seguridad, accesibilidad, carga, respaldo y restauración. Las pruebas de autorización deben demostrar que `STUDENT` solo ve sus datos, `VALIDATOR` no administra, `ADMIN` respeta sus permisos, `ANALYTICS_READ` no modifica datos y el visitante solo recibe agregados. Una muestra será conciliada manualmente con padrón y evidencias por EPIS.
