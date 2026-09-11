@@ -8,6 +8,8 @@
 
 > Las definiciones de estudiante activo, certificación válida, certificación vigente, fecha de corte y fuentes operacionales están centralizadas en [Problema, población y línea base](00-Problema-y-linea-base.md). Este SRS las convierte en requisitos y reglas verificables.
 
+> Los objetivos, fórmulas, metas y criterios de demostración se mantienen en [Objetivos e indicadores medibles](01-Objetivos-medibles.md).
+
 ## 1 Introducción
 
 Este documento especifica las funciones, reglas, datos y atributos de calidad necesarios para transformar el prototipo Pulse EPIS en un sistema institucional completo.

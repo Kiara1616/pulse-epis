@@ -8,6 +8,8 @@
 
 > La arquitectura debe respetar la población, el corte y la autoridad de fuentes definidos en [Problema, población y línea base](00-Problema-y-linea-base.md): el padrón EPIS es la fuente del denominador, mientras que las evidencias y validaciones sustentan las certificaciones.
 
+> La API y el modelo analítico deben implementar los contratos descritos en [Objetivos e indicadores medibles](01-Objetivos-medibles.md), incluyendo filtros, fecha de corte y trazabilidad.
+
 ## 1 Propósito y alcance
 
 La arquitectura convierte el prototipo Next.js y Python en una plataforma segura, trazable y escalable. Se separan operación, evidencias y analítica. Para el volumen inicial se recomienda un monolito modular con trabajadores asíncronos; los microservicios agregarían complejidad prematura.
