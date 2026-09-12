@@ -201,6 +201,12 @@ GitHub Actions deberá automatizar:
 
 Consulta los issues de [integración continua](https://github.com/Kiara1616/pulse-epis/issues/8), [documentación automática](https://github.com/Kiara1616/pulse-epis/issues/18) y [despliegue público](https://github.com/Kiara1616/pulse-epis/issues/20).
 
+## Gobierno del repositorio
+
+El flujo de contribución, la convención de ramas, los commits, la plantilla de PR, los formularios de issues, CODEOWNERS y la Definition of Done están documentados en [CONTRIBUTING.md](CONTRIBUTING.md) y [Gobierno del repositorio](docs/REPOSITORY-GOVERNANCE.md). Cada cambio debe llegar mediante un PR vinculado a un issue y con revisión cruzada.
+
+La protección efectiva de `main` y el bloqueo por checks de CI requieren permisos de administrador y se activarán junto con el workflow del [issue #8](https://github.com/Kiara1616/pulse-epis/issues/8). Mientras tanto, la política versionada sirve como guía obligatoria del proyecto.
+
 ## Plan académico
 
 | Periodo | Entregables |
@@ -214,12 +220,7 @@ Los entregables están organizados mediante [milestones de GitHub](https://githu
 
 ## Flujo de contribución
 
-1. Seleccionar un issue del backlog.
-2. Crear una rama corta, por ejemplo `feat/9-fastapi-base` o `docs/3-fd01`.
-3. Implementar el alcance y sus pruebas.
-4. Abrir un pull request indicando `Closes #N`.
-5. Solicitar revisión del otro integrante.
-6. Fusionar únicamente cuando los criterios y verificaciones estén completos.
+Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para el flujo completo. En resumen: seleccionar un issue, crear una rama independiente, implementar con pruebas, abrir un PR con `Closes #N`, solicitar revisión cruzada y fusionar únicamente cuando los criterios y verificaciones estén completos.
 
 No deben subirse credenciales, tokens, padrones reales, correos personales ni evidencias de estudiantes al repositorio.
 
@@ -231,6 +232,7 @@ No deben subirse credenciales, tokens, padrones reales, correos personales ni ev
 - [FD02 — Informe de Visión](docs/FD02-Informe-Vision.md)
 - [FD03 — Especificación de Requisitos](docs/FD03-EPIS-Informe%20Especificación%20Requerimientos.md)
 - [FD04 — Arquitectura de Software](docs/FD04-EPIS-Informe%20Arquitectura%20de%20Software.md)
+- [Gobierno del repositorio](docs/REPOSITORY-GOVERNANCE.md)
 - [Especificación del dashboard](docs/schemas/dashboard-spec.json)
 
 ## Equipo

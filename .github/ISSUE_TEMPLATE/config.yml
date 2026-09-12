@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Consultar el backlog del proyecto
+    url: https://github.com/Kiara1616/pulse-epis/issues
+    about: Revisa si ya existe un issue antes de crear uno nuevo.

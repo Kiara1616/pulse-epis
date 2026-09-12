@@ -1,0 +1,62 @@
+name: Reporte de error
+description: Reporta un comportamiento incorrecto o una regresión reproducible.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe el problema con datos sintéticos. No adjuntes padrones, correos, certificados ni evidencias reales.
+  - type: input
+    id: summary
+    attributes:
+      label: Resumen
+      description: ¿Qué ocurrió?
+      placeholder: El filtro de periodo no actualiza el indicador de cobertura.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Pasos para reproducir
+      description: Incluye ruta, datos de prueba y resultado esperado/actual.
+      placeholder: |
+        1. Abrir ...
+        2. Seleccionar ...
+        3. Observar ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área afectada
+      options:
+        - Frontend
+        - ETL
+        - Documentación
+        - Seguridad o privacidad
+        - Datos o contratos
+        - Despliegue
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Entorno
+      description: Indica sistema operativo, navegador, commit o versión.
+      placeholder: Windows 11, Chrome 140, commit abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs o evidencia
+      description: Pega mensajes sanitizados o enlaza una captura sin datos personales.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacidad
+      options:
+        - label: Confirmo que no incluí secretos, PII, padrones reales ni evidencias privadas.
+          required: true
