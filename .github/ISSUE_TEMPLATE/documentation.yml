@@ -1,0 +1,36 @@
+name: Mejora de documentación
+description: Solicita corregir, ampliar o generar documentación del proyecto.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: input
+    id: document
+    attributes:
+      label: Documento o área
+      placeholder: docs/FD03-EPIS-Informe Especificación Requerimientos.md
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: Qué falta o es incorrecto
+      description: Describe la discrepancia y por qué importa.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      placeholder: |
+        - [ ] El documento incluye ...
+        - [ ] Los enlaces y ejemplos funcionan ...
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacidad
+      options:
+        - label: Confirmo que no incluiré datos reales de estudiantes en el issue o PR.
+          required: true

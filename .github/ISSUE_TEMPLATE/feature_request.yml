@@ -1,0 +1,49 @@
+name: Propuesta de funcionalidad
+description: Propón una capacidad alineada con los objetivos y el backlog de Pulse EPIS.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema u oportunidad
+      description: ¿Qué necesidad concreta se debe resolver y para quién?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Alcance propuesto
+      description: Describe lo que debe incluir y excluir la primera versión.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      description: Escríbelos como resultados observables y comprobables.
+      placeholder: |
+        - [ ] Dado ..., cuando ..., entonces ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia o diseño
+      description: Añade wireframes, contratos, fuentes o referencias. No adjuntes datos reales.
+  - type: input
+    id: related
+    attributes:
+      label: Issues relacionados
+      placeholder: "#12, #15"
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacidad y trazabilidad
+      options:
+        - label: Confirmo que revisé el backlog y que no duplico un issue existente.
+          required: true
+        - label: Confirmo que no incluí secretos, PII, padrones reales ni evidencias privadas.
+          required: true
