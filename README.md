@@ -280,6 +280,8 @@ python scripts/build_docs.py
 
 El resultado queda en `artifacts/docs`: manuales HTML/PDF, diagramas Mermaid SVG, OpenAPI JSON/HTML y un manifiesto con el commit de origen. CI publica el directorio como el artefacto `project-manuals`.
 
+En GitHub Actions, Chromium se ejecuta sin sandbox únicamente dentro del runner efímero y sin contenido externo; la ejecución local conserva el sandbox predeterminado.
+
 El flujo objetivo del repositorio es:
 
 ```text

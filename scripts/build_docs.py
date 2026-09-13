@@ -190,7 +190,10 @@ def _build_diagrams() -> list[str]:
         input_path = DIAGRAMS / f"{stem}-{index}.mmd"
         output_path = DIAGRAMS / f"{stem}-{index}.svg"
         input_path.write_text(diagram + "\n", encoding="utf-8")
-        subprocess.run([str(command), "-i", str(input_path), "-o", str(output_path), "-b", "transparent"], cwd=ROOT, check=True)
+        arguments = [str(command), "-i", str(input_path), "-o", str(output_path), "-b", "transparent"]
+        if os.getenv("CI"):
+            arguments.extend(["-p", str(DOCS / "tooling" / "puppeteer-config.json")])
+        subprocess.run(arguments, cwd=ROOT, check=True)
         outputs.append(str(output_path.relative_to(ROOT)))
     return outputs
 
