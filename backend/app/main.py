@@ -13,6 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from .api.routes.auth import router as auth_router
+from .api.routes.analytics import router as analytics_router
 from .api.routes.certifications import router as certifications_router
 from .api.routes.validations import router as validations_router
 from .api.errors import (
@@ -24,6 +25,11 @@ from .api.middleware import RequestIdMiddleware
 from .api.routes.health import router as health_router
 from .api.routes.meta import router as meta_router
 from .api.routes.roster import router as roster_router
+from .analytics.service import (
+    AnalyticsService,
+    AnalyticsServiceProtocol,
+    UnavailableAnalyticsService,
+)
 from .auth.oidc import GoogleOidcClient, OidcClient
 from .auth.service import AuthService
 from .auth.store import (
@@ -64,6 +70,7 @@ def create_app(
     roster_import_service: RosterImportServiceProtocol | None = None,
     certification_service: CertificationServiceProtocol | None = None,
     validation_service: ValidationServiceProtocol | None = None,
+    analytics_service: AnalyticsServiceProtocol | None = None,
 ) -> FastAPI:
     """Create an isolated application instance for production or tests."""
 
@@ -94,6 +101,12 @@ def create_app(
             validation_service = ValidationService(session_factory, settings)
         else:
             validation_service = UnavailableValidationService()
+    if analytics_service is None:
+        analytics_service = (
+            AnalyticsService(session_factory)
+            if session_factory is not None
+            else UnavailableAnalyticsService()
+        )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -123,6 +136,7 @@ def create_app(
     app.state.roster_import_service = roster_import_service
     app.state.certification_service = certification_service
     app.state.validation_service = validation_service
+    app.state.analytics_service = analytics_service
 
     app.add_middleware(
         SessionMiddleware,
@@ -149,6 +163,7 @@ def create_app(
     app.include_router(roster_router, prefix=settings.api_prefix)
     app.include_router(certifications_router, prefix=settings.api_prefix)
     app.include_router(validations_router, prefix=settings.api_prefix)
+    app.include_router(analytics_router, prefix=settings.api_prefix)
     return app
 
 

@@ -492,6 +492,7 @@ class FactStudentPeriod(Base):
     )
     cutoff_date: Mapped[date] = mapped_column(Date, primary_key=True)
     cohort: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    cycle: Mapped[str | None] = mapped_column(String(32), nullable=True)
     enrollment_status: Mapped[str] = mapped_column(String(20), nullable=False)
     certification_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     approved_certification_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -529,6 +530,7 @@ class FactCertification(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     level: Mapped[str | None] = mapped_column(String(50), nullable=True)
     issued_on: Mapped[date] = mapped_column(Date, nullable=False)
+    expires_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     loaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

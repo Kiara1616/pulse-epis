@@ -6,6 +6,8 @@ Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migrac
 
 El esquema separa la operación institucional de los hechos usados para indicadores. Las tablas analíticas conservan una fecha de corte para que los reportes sean reproducibles y no copian directamente el correo o código institucional.
 
+`fact_student_period` conserva también cohorte y ciclo, de modo que la API analítica pueda aplicar esas dimensiones sin consultar ni exponer información personal del padrón.
+
 ```mermaid
 erDiagram
     USERS ||--o| STUDENTS : "representa"
