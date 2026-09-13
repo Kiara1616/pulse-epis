@@ -67,6 +67,13 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
 
     assert "google_subject" in users.c
     assert {"school", "study_plan"}.issubset(set(enrollments.c.keys()))
+    evidences = Table("evidences", metadata, autoload_with=engine)
+    assert {
+        "original_filename",
+        "content_type",
+        "byte_size",
+        "retention_until",
+    }.issubset(set(evidences.c.keys()))
 
     user_id = _database_id(database_url)
     student_id = _database_id(database_url)

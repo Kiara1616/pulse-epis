@@ -120,6 +120,8 @@ pulse-epis/
 │   ├── FD02-Informe-Vision.md
 │   ├── FD03-EPIS-Informe Especificación Requerimientos.md
 │   ├── FD04-EPIS-Informe Arquitectura de Software.md
+│   ├── 06-Plantilla-padron.md
+│   ├── 07-Certificaciones-evidencias.md
 │   └── schemas/            # Contratos y especificaciones
 ├── .gitignore
 └── README.md
@@ -189,10 +191,15 @@ La API queda disponible en `http://localhost:8000`. Sus endpoints iniciales son:
 | `POST /api/v1/auth/logout` | Invalida la sesión actual |
 | `POST /api/v1/padron/imports` | Carga un CSV del padrón para un periodo; requiere `PADRON_MANAGE` |
 | `GET /api/v1/padron/imports?period_code=...` | Consulta el historial no nominal de cargas |
+| `POST /api/v1/certifications` | Registra una certificación propia en estado `PENDING` |
+| `GET /api/v1/certifications` | Lista las certificaciones del estudiante autenticado |
+| `PATCH /api/v1/certifications/{id}` | Corrige una certificación `PENDING` u `OBSERVED` |
+| `POST /api/v1/certifications/{id}/evidence` | Adjunta una URL o evidencia privada validada |
+| `POST /api/v1/certifications/{id}/evidence/{evidence_id}/access` | Genera un enlace temporal de evidencia |
 | `GET /docs` | Swagger UI generado por FastAPI |
 | `GET /openapi.json` | Contrato OpenAPI |
 
-La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Se puede copiar [`.env.example`](backend/.env.example) a `.env` para configurar la base de datos, Google OIDC y la sesión. Google solo solicita `openid email profile`; el backend además exige que la cuenta esté provisionada en `users` y, para `STUDENT`, vinculada a `students`. El dominio permitido es un filtro adicional, no prueba de pertenencia a EPIS. En producción se requiere un secreto de sesión aleatorio, cookies seguras y credenciales fuera del repositorio.
+La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Se puede copiar [`.env.example`](backend/.env.example) a `.env` para configurar la base de datos, Google OIDC, la sesión y las evidencias privadas. Google solo solicita `openid email profile`; el backend además exige que la cuenta esté provisionada en `users` y, para `STUDENT`, vinculada a `students`. El dominio permitido es un filtro adicional, no prueba de pertenencia a EPIS. En producción se requiere un secreto de sesión y de acceso a evidencias aleatorios, cookies seguras y credenciales fuera del repositorio. La política de evidencias está en [`docs/07-Certificaciones-evidencias.md`](docs/07-Certificaciones-evidencias.md).
 
 ### Pruebas del backend
 
@@ -204,7 +211,7 @@ python -m pytest backend/tests
 
 ## Modelo y migraciones de base de datos
 
-El [modelo de datos inicial](docs/05-Modelo-de-datos.md) cubre usuarios, estudiantes, periodos, matrículas, importaciones del padrón, rechazos, emisores, certificaciones, evidencias, validaciones, habilidades, auditoría y hechos analíticos. La [plantilla del padrón](docs/06-Plantilla-padron.md) documenta el CSV autorizado. Las migraciones se ejecutan con Alembic y pueden revertirse:
+El [modelo de datos inicial](docs/05-Modelo-de-datos.md) cubre usuarios, estudiantes, periodos, matrículas, importaciones del padrón, rechazos, emisores, certificaciones, evidencias, validaciones, habilidades, auditoría y hechos analíticos. La [plantilla del padrón](docs/06-Plantilla-padron.md) documenta el CSV autorizado y [`docs/07-Certificaciones-evidencias.md`](docs/07-Certificaciones-evidencias.md) documenta el flujo privado de certificaciones. Las migraciones se ejecutan con Alembic y pueden revertirse:
 
 ```bash
 # Desde la raíz, con PULSE_DATABASE_URL apuntando a PostgreSQL

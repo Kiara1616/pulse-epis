@@ -287,7 +287,12 @@ class Evidence(Base):
             "evidence_type IN ('URL', 'FILE')",
             name="ck_evidence_type",
         ),
+        CheckConstraint(
+            "byte_size IS NULL OR byte_size >= 0",
+            name="ck_evidence_byte_size_nonnegative",
+        ),
         Index("ix_evidences_certification", "certification_id"),
+        Index("ix_evidences_retention", "retention_until"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
@@ -298,6 +303,12 @@ class Evidence(Base):
     source_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    byte_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    retention_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
