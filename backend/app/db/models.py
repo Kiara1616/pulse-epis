@@ -187,6 +187,78 @@ class RosterImportRejection(Base):
     message: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
+class EtlRun(Base):
+    """Traceability record for one deterministic BI publication attempt."""
+
+    __tablename__ = "etl_runs"
+    __table_args__ = (
+        UniqueConstraint(
+            "period_id",
+            "cutoff_date",
+            "source_sha256",
+            name="uq_etl_run_source",
+        ),
+        CheckConstraint(
+            "status IN ('APPLIED', 'REJECTED')",
+            name="ck_etl_runs_status",
+        ),
+        CheckConstraint(
+            "total_rows >= 0 AND accepted_rows >= 0 AND rejected_rows >= 0 AND duplicate_rows >= 0",
+            name="ck_etl_runs_counts_nonnegative",
+        ),
+        Index("ix_etl_runs_period_cutoff", "period_id", "cutoff_date"),
+        Index("ix_etl_runs_status_created", "status", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    period_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("academic_periods.id", ondelete="RESTRICT"), nullable=False
+    )
+    actor_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    cutoff_date: Mapped[date] = mapped_column(Date, nullable=False)
+    source_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    total_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    accepted_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    rejected_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    duplicate_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    quality_report: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class EtlRejection(Base):
+    """Row-level data-quality rejection without storing personal data."""
+
+    __tablename__ = "etl_rejections"
+    __table_args__ = (
+        UniqueConstraint(
+            "run_id",
+            "row_number",
+            "field_name",
+            "reason_code",
+            name="uq_etl_rejection_detail",
+        ),
+        Index("ix_etl_rejections_run", "run_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    run_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("etl_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    row_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    record_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    field_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    reason_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    message: Mapped[str] = mapped_column(String(255), nullable=False)
+
+
 class Issuer(Base):
     __tablename__ = "issuers"
     __table_args__ = (Index("ix_issuers_name", "name"),)
@@ -432,7 +504,7 @@ class FactCertification(Base):
     __tablename__ = "fact_certification"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('PENDING', 'APPROVED', 'OBSERVED', 'REJECTED', 'EXPIRED')",
+            "status IN ('PENDING', 'UNDER_REVIEW', 'APPROVED', 'OBSERVED', 'RESUBMITTED', 'REJECTED', 'EXPIRED')",
             name="ck_fact_certification_status",
         ),
         Index("ix_fact_certification_period_status", "period_id", "status"),

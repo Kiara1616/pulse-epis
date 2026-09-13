@@ -2,7 +2,7 @@
 
 ## Pulse EPIS — esquema operacional y analítico
 
-Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10), [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11), [#12 — Implementar importación y conciliación del padrón EPIS](https://github.com/Kiara1616/pulse-epis/issues/12), [#13 — Implementar registro de certificaciones y evidencias privadas](https://github.com/Kiara1616/pulse-epis/issues/13) y [#14 — Implementar flujo de validación y auditoría de certificaciones](https://github.com/Kiara1616/pulse-epis/issues/14). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
+Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10), [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11), [#12 — Implementar importación y conciliación del padrón EPIS](https://github.com/Kiara1616/pulse-epis/issues/12), [#13 — Implementar registro de certificaciones y evidencias privadas](https://github.com/Kiara1616/pulse-epis/issues/13), [#14 — Implementar flujo de validación y auditoría de certificaciones](https://github.com/Kiara1616/pulse-epis/issues/14) y [#15 — Construir ETL idempotente y controles de calidad de datos](https://github.com/Kiara1616/pulse-epis/issues/15). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
 
 El esquema separa la operación institucional de los hechos usados para indicadores. Las tablas analíticas conservan una fecha de corte para que los reportes sean reproducibles y no copian directamente el correo o código institucional.
 
@@ -17,6 +17,9 @@ erDiagram
     ACADEMIC_PERIODS ||--o{ ROSTER_IMPORTS : "recibe"
     ROSTER_IMPORTS ||--o{ ROSTER_IMPORT_REJECTIONS : "reporta"
     USERS ||--o{ ROSTER_IMPORTS : "ejecuta"
+    ACADEMIC_PERIODS ||--o{ ETL_RUNS : "procesa"
+    ETL_RUNS ||--o{ ETL_REJECTIONS : "explica"
+    USERS ||--o{ ETL_RUNS : "ejecuta"
     STUDENTS ||--o{ CERTIFICATIONS : "declara"
     ISSUERS ||--o{ CERTIFICATIONS : "emite"
     CERTIFICATIONS ||--o{ EVIDENCES : "respalda"
@@ -78,6 +81,30 @@ erDiagram
         uuid id PK
         uuid import_id FK
         integer row_number
+        string field_name
+        string reason_code
+        string message
+    }
+    ETL_RUNS {
+        uuid id PK
+        uuid period_id FK
+        uuid actor_user_id FK
+        date cutoff_date
+        string source_sha256
+        string status
+        integer total_rows
+        integer accepted_rows
+        integer rejected_rows
+        integer duplicate_rows
+        json quality_report
+        datetime created_at
+        datetime completed_at
+    }
+    ETL_REJECTIONS {
+        uuid id PK
+        uuid run_id FK
+        integer row_number
+        string record_key
         string field_name
         string reason_code
         string message
@@ -173,6 +200,10 @@ erDiagram
 - El correo y el dominio de Google no reemplazan el padrón: una sesión solo se crea para un `users` provisionado y un `STUDENT` debe tener registro en `students`.
 - Una importación del padrón se identifica por periodo y hash del archivo; los reintentos exactos no crean nuevos registros.
 - Los lotes rechazados conservan únicamente metadatos y causas no sensibles por fila; el CSV original no se persiste.
+- Una corrida ETL se identifica por periodo, fecha de corte y hash de la extracción; repetir la misma fuente es idempotente.
+- `etl_runs` conserva filas, duplicados, calidad, estado y hash de fuente; `etl_rejections` conserva la causa por fila sin almacenar correos ni el extracto original.
+- La publicación elimina y carga el snapshot de un periodo/corte dentro de la misma transacción; una corrida rechazada mantiene intacta la última publicación.
+- El ETL extrae desde las tablas operativas autorizadas y no realiza búsqueda simulada por correo en Credly.
 - `Enrollment` conserva escuela y plan por periodo para mantener el historial sin sobrescribir el contexto académico anterior.
 - Una matrícula es única por estudiante y periodo (`student_id`, `period_id`).
 - Una certificación es única por estudiante, emisor, nombre y fecha de emisión.

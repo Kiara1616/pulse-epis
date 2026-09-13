@@ -1,106 +1,83 @@
+"""Command-line entry point for the production certification ETL.
+
+The command reads the operational database and publishes a reproducible
+snapshot. It deliberately has no network client and never searches Credly.
+"""
+
+from __future__ import annotations
+
+import argparse
 import json
 import logging
-from datetime import datetime
-from credly_api import CredlyScraper
+from datetime import date
+from uuid import UUID
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from backend.app.core.config import get_settings
+from backend.app.db.session import create_session_factory
+from backend.app.etl.catalogs import normalize_issuer_name, normalize_level, normalize_skill_name
+from backend.app.etl.service import EtlError, EtlService
 
-def extract():
-    """
-    Simulates extracting data from University DB (Emails) and Credly API.
-    """
-    logging.info("Starting Extract phase...")
-    # 1. Simulate reading emails from university DB or Google Sheet
-    student_emails = [
-        "kz2023077087@virtual.upt.pe",
-        "kz2022011044@virtual.upt.pe",
-        "fake@virtual.upt.pe" # Should return no badges
-    ]
-    
-    # 2. Extract badges from Credly
-    scraper = CredlyScraper()
-    raw_data = []
-    
-    for email in student_emails:
-        badges = scraper.get_user_badges_by_email(email)
-        for badge in badges:
-            # Attach the email to the badge record for tracing
-            badge["student_email"] = email
-            raw_data.append(badge)
-            
-    return raw_data
 
-def transform(raw_data):
-    """
-    Cleans and transforms raw data into aggregate BI metrics.
-    """
-    logging.info("Starting Transform phase...")
-    
-    # 1. Clean vendor names (e.g., "Amazon Web Services Training and Certification" -> "AWS")
-    vendor_mapping = {
-        "Amazon Web Services Training and Certification": "AWS",
-        "Cisco": "Cisco",
-        "Microsoft": "Microsoft"
-    }
-    
-    # 2. Categorize levels (Simplified logic based on keywords)
-    def determine_level(badge_name):
-        name_lower = badge_name.lower()
-        if "practitioner" in name_lower or "fundamentals" in name_lower:
-            return "Fundamentals"
-        elif "associate" in name_lower:
-            return "Associate"
-        elif "professional" in name_lower or "expert" in name_lower:
-            return "Professional"
-        return "Other"
+logger = logging.getLogger(__name__)
 
-    transformed_records = []
+
+def transform(raw_data: list[dict[str, str | None]]) -> list[dict[str, str | None]]:
+    """Normalize a local, already-authorized source extract for unit tests.
+
+    This helper is intentionally file/database agnostic. Production execution
+    uses :class:`EtlService`, which extracts from the operational schema.
+    """
+
+    transformed: list[dict[str, str | None]] = []
     for row in raw_data:
-        clean_vendor = vendor_mapping.get(row["issuer_name"], "Otros")
-        level = determine_level(row["badge_name"])
-        
-        # Calculate cohort (year of entry) from email using regex logic
-        # Email format: kz2023077087@virtual.upt.pe
-        email = row["student_email"]
-        entry_year = email[2:6] if len(email) > 6 and email[2:6].isdigit() else "Unknown"
-        
-        transformed_records.append({
-            "vendor": clean_vendor,
-            "level": level,
-            "entry_year": entry_year,
-            "badge": row["badge_name"]
-        })
-        
-    return transformed_records
+        credential_name = (row.get("credential_name") or "").strip()
+        student_key = (row.get("student_key") or "").strip()
+        transformed.append(
+            {
+                "student_key": student_key,
+                "issuer_name": normalize_issuer_name(row.get("issuer_name")),
+                "credential_name": credential_name,
+                "skill_name": normalize_skill_name(row.get("skill_name")),
+                "level": normalize_level(row.get("level"), credential_name),
+                "status": (row.get("status") or "").strip().upper(),
+            }
+        )
+    return transformed
 
-def load(transformed_data):
-    """
-    Loads (Saves) the transformed data into a JSON file for the Next.js Dashboard.
-    """
-    logging.info("Starting Load phase...")
-    
-    # Aggregate data for the pie chart
-    vendor_counts = {}
-    for row in transformed_data:
-        v = row["vendor"]
-        vendor_counts[v] = vendor_counts.get(v, 0) + 1
-        
-    pie_chart_data = [{"name": k, "value": v} for k, v in vendor_counts.items()]
-    
-    final_output = {
-        "last_updated": datetime.now().isoformat(),
-        "total_records_processed": len(transformed_data),
-        "vendorMarketShare": pie_chart_data,
-        "raw_transformed": transformed_data
-    }
-    
-    output_path = "output_data.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(final_output, f, indent=4)
-        
-    logging.info(f"ETL Complete! Data saved to {output_path}")
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run the Pulse EPIS certification ETL")
+    parser.add_argument("--period-code", required=True, help="Academic period, e.g. 2026-II")
+    parser.add_argument(
+        "--cutoff-date",
+        type=date.fromisoformat,
+        required=True,
+        help="Snapshot date in ISO format (YYYY-MM-DD)",
+    )
+    parser.add_argument("--actor-user-id", type=UUID, default=None)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    settings = get_settings()
+    if not settings.database_url:
+        raise SystemExit("PULSE_DATABASE_URL es obligatorio para ejecutar el ETL")
+
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level),
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+    service = EtlService(create_session_factory(settings.database_url))
+    try:
+        report = service.run(args.period_code, args.cutoff_date, args.actor_user_id)
+    except EtlError as error:
+        logger.error("ETL rechazado antes de publicar: %s", error)
+        return 2
+
+    print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+    return 0 if report.status == "APPLIED" else 1
+
 
 if __name__ == "__main__":
-    raw = extract()
-    transformed = transform(raw)
-    load(transformed)
+    raise SystemExit(main())

@@ -29,7 +29,7 @@ El proyecto no pretende descubrir estudiantes mediante scraping de redes profesi
 | Dashboard y navegación | Prototipo funcional con datos simulados |
 | Roles principales | Interfaz para administrador, validador y estudiante |
 | Documentos FD01–FD04 | Versionados en `docs/` |
-| ETL | Prueba de concepto en Python |
+| ETL | Pipeline reproducible desde la base operacional, con calidad e idempotencia |
 | API backend | Base FastAPI con `/health`, `/ready`, OpenAPI y errores uniformes |
 | Base de datos | Esquema PostgreSQL y migración inicial reversible; entorno pendiente |
 | Autenticación institucional | Google OIDC, sesión firmada y RBAC backend; frontend aún usa selector de demo |
@@ -62,7 +62,7 @@ Consulta el [backlog del proyecto](https://github.com/Kiara1616/pulse-epis/issue
 | Interfaz | React 19 y TypeScript | Componentes y lógica de presentación |
 | Estilos | Tailwind CSS 4 | Sistema visual y diseño adaptable |
 | Visualización | Recharts | Gráficos e indicadores |
-| ETL demostrativo | Python, Pandas y Requests | Transformación inicial de datos |
+| ETL | Python, SQLAlchemy y Alembic | Extracción operacional, normalización, calidad y publicación BI |
 | API backend | FastAPI, Pydantic y Uvicorn | Servicio REST, health checks, OpenAPI, OIDC y RBAC |
 | Persistencia inicial | SQLAlchemy, Alembic y PostgreSQL | Modelo operacional/analítico y migraciones versionadas |
 
@@ -109,7 +109,7 @@ pulse-epis/
 │   ├── alembic.ini
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
-│   └── scripts_etl/        # ETL demostrativo y datos de prueba
+│   └── scripts_etl/        # Comando ETL reproducible
 ├── dashboard-app/
 │   ├── public/             # Recursos gráficos institucionales
 │   └── src/                # Aplicación Next.js
@@ -225,21 +225,26 @@ alembic -c backend/alembic.ini downgrade base
 
 El test `backend/tests/test_database_migrations.py` crea el esquema desde cero, inserta datos sintéticos, verifica restricciones contra duplicados y ejecuta el rollback. En GitHub Actions se ejecuta contra un servicio PostgreSQL; localmente usa SQLite si no se define `PULSE_DATABASE_URL`.
 
-## ETL demostrativo
+## ETL de certificaciones
 
-El directorio `backend/scripts_etl` contiene una prueba de concepto que transforma registros simulados. No consulta todavía un padrón institucional ni una fuente real de certificaciones.
+El ETL productivo lee las certificaciones, habilidades y matrículas autorizadas de la base operacional; no realiza búsquedas por correo ni llamadas simuladas a Credly. Cada ejecución calcula un SHA-256 determinista de la extracción, registra su estado en `etl_runs`, conserva rechazos sin PII en `etl_rejections` y reemplaza el snapshot de hechos solo dentro de una transacción completa.
+
+Las reejecuciones con la misma fuente, periodo y fecha de corte devuelven la corrida existente. Los catálogos de emisores, habilidades y niveles se normalizan antes de cargar `fact_certification`. Una corrida con errores no toca el último snapshot publicado.
 
 ```bash
-cd backend
-python -m venv .venv
+python -m venv backend/.venv
 
 # Windows PowerShell
-.venv\Scripts\Activate.ps1
+backend/.venv\Scripts\Activate.ps1
 
-pip install -r requirements.txt
-cd scripts_etl
-python main.py
+pip install -r backend/requirements.txt
+
+# PULSE_DATABASE_URL debe apuntar a una base migrada con Alembic
+$env:PULSE_DATABASE_URL = "postgresql+psycopg://pulse:pulse@localhost:5432/pulse_epis"
+python -m backend.scripts_etl.main --period-code 2026-II --cutoff-date 2026-09-13
 ```
+
+La ejecución programada está declarada en `.github/workflows/etl-scheduled.yml`. Requiere configurar el secreto `PULSE_DATABASE_URL` y las variables `ETL_PERIOD_CODE` y `ETL_CUTOFF_DATE`; también puede iniciarse manualmente desde GitHub Actions.
 
 ## Estrategia Docker
 

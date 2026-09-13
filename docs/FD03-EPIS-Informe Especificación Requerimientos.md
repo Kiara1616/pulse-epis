@@ -70,7 +70,7 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 | RF-04 | Registrar credencial y evidencia | Crítica | Exige emisor, nombre, fechas y URL o archivo | Implementado en backend: registro propio, estado `PENDING`, validación de URL/archivo, hash y almacenamiento privado |
 | RF-05 | Validar evidencia y decisión | Crítica | Solo `VALIDATOR` conserva autor, fecha, comentario y estado | Implementado en backend y conectado en la bandeja: transiciones autorizadas, decisiones, comentarios, evidencia temporal e historial |
 | RF-06 | Detectar duplicados | Alta | Marca coincidencia por alumno, credencial, emisor y fecha | Implementado en backend: restricción persistente y respuesta `409 DUPLICATE_RECORD` para credenciales y evidencias repetidas |
-| RF-07 | Normalizar proveedor, nivel y habilidades | Alta | Usa catálogos versionados | Parcial: ETL de prueba normaliza algunos proveedores y niveles |
+| RF-07 | Normalizar proveedor, nivel y habilidades | Alta | Usa catálogos versionados | Implementado en el ETL: alias de emisores, niveles y habilidades se normalizan antes de publicar hechos |
 | RF-08 | Calcular KPIs por fecha de corte | Crítica | Fórmula y población son visibles para `ANALYTICS_READ` y permisos superiores | Parcial: KPIs estáticos desde `mock-data.json`, sin fecha de corte real |
 | RF-09 | Filtrar periodo, ciclo, cohorte, proveedor, nivel y área | Alta | Todos los gráficos autorizados responden al filtro | Parcial: selector de periodo y filtros visuales aislados; no hay consulta común |
 | RF-10 | Mostrar evolución y participación | Alta | Compara periodos y muestra la fecha de corte | Parcial: gráficos sobre datos estáticos |
@@ -79,7 +79,7 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 | RF-13 | Registrar auditoría | Crítica | Conserva principal, rol, alcance, acción y fecha | Implementado para certificaciones: los cambios de estado generan `AuditLog` e historial append-only |
 | RF-14 | Gestionar expiraciones | Alta | Distingue vigente, próxima y vencida con fecha de corte | Parcial implementado: `EXPIRED` se deriva de `APPROVED` y `expires_on` al consultar el corte; el tablero analítico queda para #16 |
 | RF-15 | Importar demanda laboral con fuente | Media | Conserva URL, consulta, ubicación y fecha | Parcial: el mock muestra demanda sin procedencia completa |
-| RF-16 | Ejecutar ETL y mostrar estado | Alta | Registra inicio, fin, filas y errores por corrida | Parcial: ETL Python escribe JSON y logs, sin API ni panel de estado |
+| RF-16 | Ejecutar ETL y mostrar estado | Alta | Registra inicio, fin, filas y errores por corrida | Implementado en backend: `EtlService`, `etl_runs`, rechazos por causa y comando CLI; el panel/API de estado queda para #16/#17 |
 | RF-17 | Corregir y volver a revisar | Alta | Mantiene historial anterior y exige una nueva decisión | Implementado: `OBSERVED` pasa a `RESUBMITTED`, requiere `START_REVIEW` y conserva las decisiones anteriores |
 | RF-18 | Generar paquete de acreditación | Media | Incluye KPIs, metodología, calidad y referencias | Pendiente: no existe paquete institucional reproducible |
 
@@ -98,9 +98,9 @@ En la demo, el selector del encabezado permite alternar entre roles y la ruta de
 | RNF-05 | Accesibilidad | Alta | WCAG 2.2 AA en flujos principales y revisión documentada | Parcial: HTML semántico básico, sin auditoría WCAG |
 | RNF-06 | Mantenibilidad | Alta | lint, tipos, pruebas automatizadas y API documentada | Parcial: lint, TypeScript y build; faltan pruebas y API |
 | RNF-07 | Recuperación | Alta | respaldo diario y restauración trimestral probada | Pendiente: no existe base de datos ni respaldo |
-| RNF-08 | Observabilidad | Media | logs estructurados, métricas y alertas con responsable | Parcial: ETL emite logs locales; no hay monitoreo |
+| RNF-08 | Observabilidad | Media | logs estructurados, métricas y alertas con responsable | Parcial: cada corrida deja trazabilidad y calidad persistente; monitoreo y alertas quedan para #21 |
 | RNF-09 | Portabilidad | Media | despliegue reproducible en contenedores | Pendiente: Docker forma parte de un issue posterior |
-| RNF-10 | Calidad de datos | Crítica | completitud, unicidad, validez y consistencia medibles por corrida | Parcial: ETL de prueba calcula salida, sin contrato persistente |
+| RNF-10 | Calidad de datos | Crítica | completitud, unicidad, validez y consistencia medibles por corrida | Implementado en ETL: validación previa, duplicados, causas por fila, hash e informe persistente |
 
 ## 6 Estados, errores y contratos
 
@@ -269,7 +269,7 @@ La matriz relaciona los objetivos medibles con el requisito que los habilita, el
 | T-05 | Unitarias | Fórmulas de cobertura, vigencia y duplicados | Numerador, denominador y corte coinciden con el diccionario | Pendiente — #16 |
 | T-06 | Integración | Filtros combinados | Proveedor, nivel y área no alteran indebidamente el denominador | Pendiente — #16/#17 |
 | T-07 | Unitarias | Máquina de estados | Solo transiciones permitidas; estados fuera de regla quedan excluidos y `EXPIRED` se deriva al corte | Disponible — #14 |
-| T-08 | Integración | ETL repetido y datos erróneos | Corrida idempotente, calidad medida y errores aislados | Pendiente — #15 |
+| T-08 | Integración | ETL repetido y datos erróneos | Corrida idempotente, calidad medida y errores aislados | Disponible — #15 |
 | T-09 | Integración | Evolución entre periodos | Serie reproducible con corte, filtros y periodo anterior | Pendiente — #16 |
 | T-10 | Contrato | Demanda laboral | Cada punto conserva fuente, consulta, ubicación y fecha | Pendiente — #16 |
 | T-11 | Seguridad | Autorización horizontal y vertical | `STUDENT`, `VALIDATOR`, `ADMIN`, `ANALYTICS_READ` y visitante respetan límites | Pendiente — #11/#17 |

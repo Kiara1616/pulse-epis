@@ -99,13 +99,12 @@ En el MVP se usarán tres roles técnicos (`ADMIN`, `VALIDATOR` y `STUDENT`). Lo
 
 ### 3.1 Qué demuestra el prototipo actual
 
-El repositorio demuestra viabilidad visual con Next.js, TypeScript, Tailwind CSS y Recharts. También contiene un ETL inicial en Python y pantallas para dashboard, estudiantes, tecnologías, validaciones y administración.
+El repositorio demuestra viabilidad visual con Next.js, TypeScript, Tailwind CSS y Recharts. También contiene un ETL reproducible en Python y pantallas para dashboard, estudiantes, tecnologías, validaciones y administración.
 
 Los siguientes archivos contienen datos de demostración o de prueba y **no representan la línea base institucional**:
 
 - `dashboard-app/src/shared/api/mock-data.json`.
 - `dashboard-app/src/shared/api/etl_data.json`.
-- `backend/scripts_etl/output_data.json`.
 
 En consecuencia, el prototipo permite revisar la experiencia y la lógica de presentación, pero todavía no ofrece persistencia multiusuario, autenticación institucional, autorización real, auditoría completa, almacenamiento privado de evidencias ni una integración validada con el padrón de EPIS.
 
@@ -119,7 +118,7 @@ En consecuencia, el prototipo permite revisar la experiencia y la lógica de pre
 | Acceso | Roles simulados en frontend | Autenticación institucional y RBAC en backend |
 | Almacenamiento | Archivos locales del repositorio | Base de datos y evidencias privadas con respaldo |
 | Indicadores | Cálculo sobre datos estáticos | Consultas reproducibles por periodo y fecha de corte |
-| Integraciones | ETL inicial y fuentes de prueba | Importación autorizada, límites documentados y reintentos |
+| Integraciones | ETL reproducible y fuentes de prueba | Importación autorizada, límites documentados y reintentos |
 | Publicación | Vistas del dashboard | Separación entre vistas nominales restringidas y agregadas públicas |
 | Operación | Ejecución manual | Monitoreo, logs, restauración y responsable de soporte |
 

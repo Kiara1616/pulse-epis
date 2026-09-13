@@ -61,7 +61,7 @@ El mismo estudiante puede tener varias certificaciones y una certificación pued
 
 ### 4.1 Estado actual
 
-La línea base operacional todavía no está disponible: el repositorio no contiene un padrón EPIS autorizado ni certificaciones reales validadas. Los archivos `mock-data.json`, `etl_data.json` y `output_data.json` son datos sintéticos o de demostración y no deben usarse para reportes oficiales.
+La línea base operacional todavía no está disponible: el repositorio no contiene un padrón EPIS autorizado ni certificaciones reales validadas. Los archivos frontend `mock-data.json` y `etl_data.json` siguen siendo datos sintéticos o de demostración y no deben usarse para reportes oficiales; el ETL backend ya no depende de un archivo `output_data.json`.
 
 El prototipo contiene una línea base técnica mínima para comprobar la interfaz:
 
