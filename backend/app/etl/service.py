@@ -86,6 +86,7 @@ class EtlEnrollmentSnapshot:
     student_key: str
     period_id: UUID
     cohort: str | None
+    cycle: str | None
     status: str
 
 
@@ -256,6 +257,7 @@ class EtlService:
                     student_key=student.student_key,
                     period_id=period.id,
                     cohort=enrollment.cohort,
+                    cycle=enrollment.cycle,
                     status=enrollment.status,
                 )
                 for enrollment, student in enrollment_rows
@@ -318,6 +320,7 @@ class EtlService:
                         "student_id": str(enrollment.student_id),
                         "student_key": enrollment.student_key,
                         "cohort": enrollment.cohort,
+                        "cycle": enrollment.cycle,
                         "status": enrollment.status,
                     }
                     for enrollment in enrollments
@@ -530,6 +533,7 @@ class EtlService:
                     status=record.status,
                     level=record.level,
                     issued_on=record.source.issued_on,
+                    expires_on=record.source.expires_on,
                 )
             )
             certification_ids_by_student.setdefault(record.source.student_id, set()).add(
@@ -547,6 +551,7 @@ class EtlService:
                     period_id=period.id,
                     cutoff_date=cutoff_date,
                     cohort=enrollment.cohort,
+                    cycle=enrollment.cycle,
                     enrollment_status=enrollment.status,
                     certification_count=len(certification_ids_by_student.get(enrollment.student_id, set())),
                     approved_certification_count=len(approved_ids_by_student.get(enrollment.student_id, set())),
