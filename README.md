@@ -187,6 +187,8 @@ La API queda disponible en `http://localhost:8000`. Sus endpoints iniciales son:
 | `GET /api/v1/auth/google/callback` | Valida el código, el padrón y crea la sesión |
 | `GET /api/v1/auth/me` | Devuelve identidad, rol y permisos de la sesión |
 | `POST /api/v1/auth/logout` | Invalida la sesión actual |
+| `POST /api/v1/padron/imports` | Carga un CSV del padrón para un periodo; requiere `PADRON_MANAGE` |
+| `GET /api/v1/padron/imports?period_code=...` | Consulta el historial no nominal de cargas |
 | `GET /docs` | Swagger UI generado por FastAPI |
 | `GET /openapi.json` | Contrato OpenAPI |
 
@@ -202,7 +204,7 @@ python -m pytest backend/tests
 
 ## Modelo y migraciones de base de datos
 
-El [modelo de datos inicial](docs/05-Modelo-de-datos.md) cubre usuarios, estudiantes, periodos, matrículas, emisores, certificaciones, evidencias, validaciones, habilidades, auditoría y hechos analíticos. Las migraciones se ejecutan con Alembic y pueden revertirse:
+El [modelo de datos inicial](docs/05-Modelo-de-datos.md) cubre usuarios, estudiantes, periodos, matrículas, importaciones del padrón, rechazos, emisores, certificaciones, evidencias, validaciones, habilidades, auditoría y hechos analíticos. La [plantilla del padrón](docs/06-Plantilla-padron.md) documenta el CSV autorizado. Las migraciones se ejecutan con Alembic y pueden revertirse:
 
 ```bash
 # Desde la raíz, con PULSE_DATABASE_URL apuntando a PostgreSQL

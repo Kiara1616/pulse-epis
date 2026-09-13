@@ -113,7 +113,78 @@ class Enrollment(Base):
     )
     cycle: Mapped[str | None] = mapped_column(String(32), nullable=True)
     cohort: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    school: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    study_plan: Mapped[str | None] = mapped_column(String(120), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+
+
+class RosterImport(Base):
+    """Immutable metadata for an authorized padrón load."""
+
+    __tablename__ = "roster_imports"
+    __table_args__ = (
+        UniqueConstraint(
+            "period_id",
+            "source_sha256",
+            name="uq_roster_import_period_hash",
+        ),
+        CheckConstraint(
+            "status IN ('APPLIED', 'REJECTED')",
+            name="ck_roster_import_status",
+        ),
+        CheckConstraint(
+            "total_rows >= 0 AND accepted_rows >= 0 AND rejected_rows >= 0",
+            name="ck_roster_import_counts_nonnegative",
+        ),
+        Index("ix_roster_imports_period_created", "period_id", "created_at"),
+        Index("ix_roster_imports_status", "status"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    period_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academic_periods.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    actor_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    source_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    total_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    accepted_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    rejected_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class RosterImportRejection(Base):
+    """Non-sensitive row-level reason for a rejected padrón record."""
+
+    __tablename__ = "roster_import_rejections"
+    __table_args__ = (
+        UniqueConstraint(
+            "import_id",
+            "row_number",
+            "field_name",
+            "reason_code",
+            name="uq_roster_rejection_location",
+        ),
+        Index("ix_roster_rejections_import", "import_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    import_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("roster_imports.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    row_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    field_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    reason_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    message: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
 class Issuer(Base):

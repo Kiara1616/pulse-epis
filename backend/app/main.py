@@ -20,6 +20,7 @@ from .api.errors import (
 from .api.middleware import RequestIdMiddleware
 from .api.routes.health import router as health_router
 from .api.routes.meta import router as meta_router
+from .api.routes.roster import router as roster_router
 from .auth.oidc import GoogleOidcClient, OidcClient
 from .auth.service import AuthService
 from .auth.store import (
@@ -31,6 +32,11 @@ from .core.config import Settings, get_settings
 from .core.logging import configure_logging
 from .db.session import create_session_factory
 from .repositories.readiness import ApplicationReadinessRepository, ReadinessRepository
+from .roster.service import (
+    RosterImportService,
+    RosterImportServiceProtocol,
+    UnavailableRosterImportService,
+)
 from .services.health import HealthService
 
 
@@ -42,20 +48,27 @@ def create_app(
     readiness_repository: ReadinessRepository | None = None,
     user_directory: UserDirectory | None = None,
     oidc_client: OidcClient | None = None,
+    roster_import_service: RosterImportServiceProtocol | None = None,
 ) -> FastAPI:
     """Create an isolated application instance for production or tests."""
 
     settings = settings or get_settings()
     configure_logging(settings.log_level)
     repository = readiness_repository or ApplicationReadinessRepository()
+    session_factory = (
+        create_session_factory(settings.database_url) if settings.database_url else None
+    )
     if user_directory is None:
-        if settings.database_url:
-            user_directory = SqlAlchemyUserDirectory(
-                create_session_factory(settings.database_url)
-            )
+        if session_factory is not None:
+            user_directory = SqlAlchemyUserDirectory(session_factory)
         else:
             user_directory = UnavailableUserDirectory()
     oidc_client = oidc_client or GoogleOidcClient(settings)
+    if roster_import_service is None:
+        if session_factory is not None:
+            roster_import_service = RosterImportService(session_factory, settings)
+        else:
+            roster_import_service = UnavailableRosterImportService()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -82,6 +95,7 @@ def create_app(
     app.state.user_directory = user_directory
     app.state.oidc_client = oidc_client
     app.state.auth_service = AuthService(settings, user_directory)
+    app.state.roster_import_service = roster_import_service
 
     app.add_middleware(
         SessionMiddleware,
@@ -98,6 +112,7 @@ def create_app(
     app.include_router(health_router)
     app.include_router(meta_router, prefix=settings.api_prefix)
     app.include_router(auth_router, prefix=settings.api_prefix)
+    app.include_router(roster_router, prefix=settings.api_prefix)
     return app
 
 

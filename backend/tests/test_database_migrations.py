@@ -26,6 +26,8 @@ EXPECTED_TABLES = {
     "audit_logs",
     "fact_student_period",
     "fact_certification",
+    "roster_imports",
+    "roster_import_rejections",
 }
 
 
@@ -64,6 +66,7 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
     certifications = Table("certifications", metadata, autoload_with=engine)
 
     assert "google_subject" in users.c
+    assert {"school", "study_plan"}.issubset(set(enrollments.c.keys()))
 
     user_id = _database_id(database_url)
     student_id = _database_id(database_url)
