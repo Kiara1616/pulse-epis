@@ -44,7 +44,7 @@ La cuenta que administra `Kiara1616/pulse-epis` debe abrir **Settings → Branch
 - Dismiss stale pull request approvals when new commits are pushed.
 - Require review from Code Owners.
 - Require conversation resolution before merging.
-- Require status checks to pass before merging, una vez creado el workflow de [#8 — CI](https://github.com/Kiara1616/pulse-epis/issues/8).
+- Require status checks to pass before merging: `frontend`, `backend` y `docs` del workflow de [#8 — CI](https://github.com/Kiara1616/pulse-epis/issues/8).
 - Restrict force pushes y branch deletion.
 - Mantener los administradores sujetos a las reglas cuando la política institucional lo permita.
 
@@ -57,9 +57,11 @@ No se deben escribir nombres de checks inexistentes como obligatorios: primero s
 - Colaboradores confirmados: `Kiara1616` y `Vinny-13`.
 - La cuenta de trabajo tiene `push`/`pull`, pero no permisos `admin`.
 - La API de GitHub devuelve `404 Not Found` al consultar la protección de `main`; no se puede activar desde esta cuenta.
-- No existen workflows de GitHub Actions todavía; el CI corresponde al issue #8.
+- El workflow `.github/workflows/ci.yml` ejecuta `frontend`, `backend` y `docs` en PR/push a `main`.
+- CI publica `backend-coverage` y `project-manuals` como artefactos.
+- La protección de `main` todavía debe seleccionar esos checks desde Settings.
 
-Por lo tanto, este PR deja el gobierno versionado y reproducible, pero la protección efectiva de `main` y el bloqueo por CI requieren una acción posterior de un administrador después de implementar #8.
+Por lo tanto, el workflow y el gobierno quedan versionados y reproducibles, pero la protección efectiva de `main` y el bloqueo de merge por CI requieren una acción posterior de un administrador.
 
 ## Definition of Done del repositorio
 
