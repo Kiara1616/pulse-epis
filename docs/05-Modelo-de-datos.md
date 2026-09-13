@@ -38,14 +38,14 @@ erDiagram
     USERS {
         uuid id PK
         string email UK
-        string google_subject UK,nullable
+        string google_subject UK "nullable"
         string role
         boolean is_active
         datetime created_at
     }
     STUDENTS {
         uuid id PK
-        uuid user_id FK,UK
+        uuid user_id FK, UK
         string student_key UK
         smallint entry_year
         string status
@@ -132,8 +132,8 @@ erDiagram
         string status
     }
     CERTIFICATION_SKILLS {
-        uuid certification_id PK,FK
-        uuid skill_id PK,FK
+        uuid certification_id PK, FK
+        uuid skill_id PK, FK
         string level
     }
     EVIDENCES {
@@ -159,7 +159,7 @@ erDiagram
     CERTIFICATION_STATUS_HISTORY {
         uuid id PK
         uuid certification_id FK
-        uuid actor_user_id FK,nullable
+        uuid actor_user_id FK "nullable"
         string from_status
         string to_status
         string comment
@@ -178,15 +178,15 @@ erDiagram
     }
     FACT_STUDENT_PERIOD {
         string student_key PK
-        uuid period_id PK,FK
+        uuid period_id PK, FK
         date cutoff_date PK
         string cohort
         integer certification_count
         integer approved_certification_count
     }
     FACT_CERTIFICATION {
-        uuid certification_id PK,FK
-        uuid skill_id PK,FK
+        uuid certification_id PK, FK
+        uuid skill_id PK, FK
         date cutoff_date PK
         uuid period_id FK
         uuid issuer_id FK
