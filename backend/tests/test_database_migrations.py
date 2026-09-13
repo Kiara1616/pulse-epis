@@ -29,6 +29,8 @@ EXPECTED_TABLES = {
     "fact_certification",
     "roster_imports",
     "roster_import_rejections",
+    "etl_runs",
+    "etl_rejections",
 }
 
 

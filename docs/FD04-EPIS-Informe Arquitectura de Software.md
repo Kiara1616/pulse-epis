@@ -23,7 +23,7 @@ La arquitectura convierte el prototipo Next.js y Python en una plataforma segura
 |---|---|---|
 | Frontend | Next.js, TypeScript, Recharts y JSON demostrativos | Next.js conectado a una API con contratos versionados |
 | Backend | API FastAPI base con health checks y OpenAPI | FastAPI modular con OpenAPI, validación y autorización |
-| Datos | ETL de prueba y esquema PostgreSQL inicial con migración | PostgreSQL operacional, staging y modelo analítico |
+| Datos | ETL reproducible y esquema PostgreSQL versionado | PostgreSQL operacional, staging y modelo analítico |
 | Evidencias | Formulario y vistas simuladas | Objetos privados, hash, URLs temporales y retención |
 | Identidad | Selector de rol para demostración | OIDC institucional, sesiones seguras y RBAC/scopes |
 | Operación | CI para calidad; no hay Docker ni ambientes | Desarrollo, staging y producción reproducibles |
@@ -404,7 +404,7 @@ Las migraciones destructivas no se ejecutan en la misma promoción que el códig
 | Diagramas | Mermaid en revisión y render de cada vista | Contexto, contenedores, componentes y despliegue sin referencias huérfanas | Documentado; automatización pendiente en #18 |
 | Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | `dashboard-spec.json`, OpenAPI base y contratos de certificación/validación disponibles; analítica pendiente |
 | Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Backend base de #11 y permisos de certificación/validación de #13/#14; analítica pública pendiente |
-| Datos | Lotes, deduplicación, fórmulas y cortes | Resultados idempotentes y reproducibles | ETL demostrativo; pruebas pendientes en #15/#16 |
+| Datos | Lotes, deduplicación, fórmulas y cortes | Resultados idempotentes y reproducibles | Implementado en #15; indicadores de negocio quedan para #16 |
 | Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Parcial: registro, evidencia y validación de #13/#14; storage productivo y worker pendientes en #19 |
 | Rendimiento | p95, lotes y consultas materializadas | Cumple metas de FD03 | Pendiente |
 | Recuperación | Backup, restore y rollback | RPO/RTO verificados en staging | Pendiente en #21 |
@@ -431,7 +431,7 @@ La estructura objetivo se alinea con las carpetas actuales y los issues pendient
 ```text
 pulse-epis/
   dashboard-app/                 # Next.js actual -> apps/web en migración futura
-  backend/scripts_etl/           # ETL demostrativo -> workers/etl
+  backend/scripts_etl/           # Comando ETL reproducible -> workers/etl
   backend/app/                   # FastAPI base: API, dominio, servicios y repositorios (#9)
   backend/migrations/            # PostgreSQL/Alembic inicial (#10)
   storage/                       # Contrato de objetos privados: MVP en #13, S3/infraestructura en #19

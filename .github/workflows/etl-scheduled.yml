@@ -1,0 +1,61 @@
+name: Certification ETL
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      period_code:
+        description: "Academic period to publish"
+        required: true
+        type: string
+      cutoff_date:
+        description: "Snapshot cutoff in YYYY-MM-DD"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: certification-etl
+  cancel-in-progress: false
+
+jobs:
+  etl:
+    # Configure ETL_PERIOD_CODE and PULSE_DATABASE_URL as repository
+    # variables/secrets before enabling the scheduled execution.
+    if: github.event_name == 'workflow_dispatch' || vars.ETL_PERIOD_CODE != ''
+    runs-on: ubuntu-latest
+    env:
+      PULSE_DATABASE_URL: ${{ secrets.PULSE_DATABASE_URL }}
+      PULSE_ETL_PERIOD_CODE: ${{ github.event.inputs.period_code || vars.ETL_PERIOD_CODE }}
+      PULSE_ETL_CUTOFF_DATE: ${{ github.event.inputs.cutoff_date || vars.ETL_CUTOFF_DATE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements.txt
+
+      - name: Validate scheduler configuration
+        shell: bash
+        run: |
+          test -n "$PULSE_DATABASE_URL" || { echo "Missing PULSE_DATABASE_URL secret"; exit 1; }
+          test -n "$PULSE_ETL_PERIOD_CODE" || { echo "Missing ETL_PERIOD_CODE variable"; exit 1; }
+          test -n "$PULSE_ETL_CUTOFF_DATE" || { echo "Missing ETL_CUTOFF_DATE variable"; exit 1; }
+
+      - name: Run idempotent certification ETL
+        env:
+          PYTHONPATH: .
+        run: >-
+          python -m backend.scripts_etl.main
+          --period-code "$PULSE_ETL_PERIOD_CODE"
+          --cutoff-date "$PULSE_ETL_CUTOFF_DATE"
