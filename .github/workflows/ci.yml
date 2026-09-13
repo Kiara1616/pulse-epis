@@ -148,38 +148,24 @@ jobs:
   containers:
     name: containers
     runs-on: ubuntu-latest
+    env:
+      PULSE_POSTGRES_DB: pulse_epis
+      PULSE_POSTGRES_USER: pulse
+      PULSE_POSTGRES_PASSWORD: ci-only-password
+      PULSE_AUTH_SESSION_SECRET: ci-only-session-secret-at-least-32-characters
+      PULSE_ROSTER_PSEUDONYM_SECRET: ci-only-pseudonym-secret
+      PULSE_EVIDENCE_ACCESS_SECRET: ci-only-evidence-secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Validate Compose configuration
-        env:
-          PULSE_POSTGRES_DB: pulse_epis
-          PULSE_POSTGRES_USER: pulse
-          PULSE_POSTGRES_PASSWORD: ci-only-password
-          PULSE_AUTH_SESSION_SECRET: ci-only-session-secret-at-least-32-characters
-          PULSE_ROSTER_PSEUDONYM_SECRET: ci-only-pseudonym-secret
-          PULSE_EVIDENCE_ACCESS_SECRET: ci-only-evidence-secret
         run: docker compose config --quiet
 
       - name: Build container images
-        env:
-          PULSE_POSTGRES_DB: pulse_epis
-          PULSE_POSTGRES_USER: pulse
-          PULSE_POSTGRES_PASSWORD: ci-only-password
-          PULSE_AUTH_SESSION_SECRET: ci-only-session-secret-at-least-32-characters
-          PULSE_ROSTER_PSEUDONYM_SECRET: ci-only-pseudonym-secret
-          PULSE_EVIDENCE_ACCESS_SECRET: ci-only-evidence-secret
         run: docker compose build backend frontend
 
       - name: Start stack and verify health
-        env:
-          PULSE_POSTGRES_DB: pulse_epis
-          PULSE_POSTGRES_USER: pulse
-          PULSE_POSTGRES_PASSWORD: ci-only-password
-          PULSE_AUTH_SESSION_SECRET: ci-only-session-secret-at-least-32-characters
-          PULSE_ROSTER_PSEUDONYM_SECRET: ci-only-pseudonym-secret
-          PULSE_EVIDENCE_ACCESS_SECRET: ci-only-evidence-secret
         run: |
           docker compose up --detach --wait --wait-timeout 120
           curl --fail --retry 5 --retry-delay 2 http://localhost:8000/ready
