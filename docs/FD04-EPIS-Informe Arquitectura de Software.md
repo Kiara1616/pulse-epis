@@ -209,7 +209,7 @@ El esquema operacional conserva la trazabilidad de la captura y decisión. El es
 | Entidad o hecho | Campos principales | Regla de protección |
 |---|---|---|
 | `Student` | `id`, `student_key`, código y correo cifrados, estado | Código/correo restringidos |
-| `Enrollment` | estudiante, periodo, ciclo, cohorte y estado | El padrón define el denominador |
+| `Enrollment` | estudiante, periodo, ciclo, cohorte, escuela, plan y estado | El padrón define el denominador y conserva el contexto por periodo |
 | `Certification` | estudiante, credencial, emisor, nivel, emisión, expiración y estado | Solo estados aprobados entran al KPI |
 | `Evidence` | certificación, tipo, URL, `object_key`, hash y fecha | Archivo privado y URL temporal |
 | `Validation` | certificación, validador, decisión, comentario y fecha | Inmutable; nuevas decisiones agregan historial |
@@ -235,8 +235,8 @@ No se copiarán nombres, correos ni códigos sin cifrar al esquema analítico. L
 
 | Método y ruta | Propósito | Autorización | Entrada principal | Salida |
 |---|---|---|---|---|
-| `POST /imports/students` | Importar padrón | `ADMIN` + `PADRON_MANAGE` | CSV, periodo y fecha de corte | `batch_id`, totales y errores |
-| `GET /etl/runs/{id}` | Consultar carga | `ADMIN` | `batch_id` | Estado, filas, causas y timestamps |
+| `POST /api/v1/padron/imports` | Importar padrón | `ADMIN` + `PADRON_MANAGE` | CSV y periodo | `import_id`, totales y rechazos |
+| `GET /api/v1/padron/imports?period_code=...` | Consultar historial de cargas | `ADMIN` + `PADRON_MANAGE` | Código de periodo | Estado, filas, causas y timestamps |
 | `POST /certifications` | Registrar credencial | `STUDENT` | Emisor, nombre, fechas y URL/archivo | ID y estado `PENDIENTE` |
 | `POST /certifications/{id}/evidence` | Adjuntar evidencia | `STUDENT` propietario | Archivo o URL permitida | Hash, metadatos y estado |
 | `POST /validations/{id}` | Registrar decisión | `VALIDATOR` | Decisión, comentario y evidencia | Estado e historial |
@@ -410,7 +410,7 @@ La secuencia recomendada mantiene la aplicación demostrativa ejecutable mientra
 2. Crear PostgreSQL, migraciones y contratos de datos.
 3. Inicializar FastAPI con health check, configuración por entorno y OpenAPI.
 4. Integrar en el frontend el OIDC/RBAC backend de #11 y reemplazar el selector de rol por una sesión real.
-5. Implementar padrón, `student_key`, certificaciones, evidencias y auditoría.
+5. Implementar certificaciones, evidencias y auditoría sobre el padrón de #12.
 6. Convertir el ETL en worker idempotente con staging y controles de calidad.
 7. Llevar KPIs, filtros, brechas y fecha de corte al backend.
 8. Conectar Next.js a la API y retirar JSON duplicados de producción.
@@ -440,4 +440,4 @@ pulse-epis/
 
 La arquitectura es implementable con un monolito modular, PostgreSQL, almacenamiento privado, un worker ETL y una interfaz Next.js. Las fronteras de confianza, responsabilidades, contratos, respaldos, monitoreo y rollback quedan definidas para que el sistema pueda evolucionar sin exponer datos nominales ni depender de scraping.
 
-El repositorio actual sigue siendo un prototipo: contiene una base FastAPI, un esquema PostgreSQL migrable y CI de calidad, pero no contiene un entorno PostgreSQL operativo, OIDC, Docker ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.
+El repositorio actual sigue siendo un prototipo: contiene una base FastAPI, un esquema PostgreSQL migrable, OIDC/RBAC y carga controlada del padrón, pero no contiene un entorno PostgreSQL operativo, Docker ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.

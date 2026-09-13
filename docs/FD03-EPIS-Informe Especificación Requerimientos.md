@@ -65,8 +65,8 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 | ID | Requerimiento | Prioridad | Criterio verificable | Estado en el repositorio |
 |---|---|---|---|---|
 | RF-01 | Autenticar y aplicar roles y permisos | Crítica | Solo existen `ADMIN`, `VALIDATOR` y `STUDENT`; los alcances `PADRON_MANAGE` y `ANALYTICS_READ` se verifican en backend | Implementado en el backend base: Google OIDC, padrón local, sesión firmada y dependencias RBAC; el frontend demo aún no consume la sesión |
-| RF-02 | Importar padrón por periodo desde CSV | Crítica | Una cuenta `ADMIN` con `PADRON_MANAGE` obtiene filas válidas, rechazadas y duplicadas | Parcial: la pantalla muestra un botón demostrativo, sin carga CSV |
-| RF-03 | Crear clave interna por estudiante | Crítica | No expone código en analítica pública | Pendiente: no existe persistencia ni generación de `student_key` |
+| RF-02 | Importar padrón por periodo desde CSV | Crítica | Una cuenta `ADMIN` con `PADRON_MANAGE` obtiene filas válidas, rechazadas y duplicadas | Implementado en backend: plantilla, validación atómica, reporte de rechazos, idempotencia e historial por periodo |
+| RF-03 | Crear clave interna por estudiante | Crítica | No expone código en analítica pública | Implementado en backend: `student_key` HMAC estable con secreto externo |
 | RF-04 | Registrar credencial y evidencia | Crítica | Exige emisor, nombre, fechas y URL o archivo | Parcial: formulario local sin API ni almacenamiento de evidencias |
 | RF-05 | Validar evidencia y decisión | Crítica | Solo `VALIDATOR` conserva autor, fecha, comentario y estado | Parcial: la bandeja cambia estados en memoria y no registra auditoría |
 | RF-06 | Detectar duplicados | Alta | Marca coincidencia por alumno, credencial, emisor y fecha | Pendiente: no hay regla persistente de deduplicación |
@@ -260,8 +260,8 @@ La matriz relaciona los objetivos medibles con el requisito que los habilita, el
 | ID | Tipo | Alcance | Resultado esperado | Estado |
 |---|---|---|---|---|
 | T-00 | Automatizada | Lint, TypeScript y build del frontend | Cero errores de lint y compilación exitosa | Disponible: `npm run lint`, `npm run build` |
-| T-01 | Integración | Importación de lote válido, inválido y duplicado | Totales, causas y estado de lote reproducibles | Pendiente — #12 |
-| T-02 | Unitarias | Generación y no exposición de `student_key` | Clave estable, sin código/correo en analítica pública | Pendiente — #12 |
+| T-01 | Integración | Importación de lote válido, inválido y duplicado | Totales, causas y estado de lote reproducibles | Disponible — #12 |
+| T-02 | Unitarias | Generación y no exposición de `student_key` | Clave estable, sin código/correo en analítica pública | Disponible — #12 |
 | T-03 | Integración | Registro de certificación y evidencia | Campos obligatorios, formato y estado `PENDIENTE` | Pendiente — #13 |
 | T-04 | Integración | Decisiones del validador | Solo `VALIDATOR` decide; se conserva historial y auditoría | Pendiente — #14 |
 | T-05 | Unitarias | Fórmulas de cobertura, vigencia y duplicados | Numerador, denominador y corte coinciden con el diccionario | Pendiente — #16 |

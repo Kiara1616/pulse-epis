@@ -2,7 +2,7 @@
 
 ## Pulse EPIS — esquema operacional y analítico
 
-Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10) y [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
+Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10), [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11) y [#12 — Implementar importación y conciliación del padrón EPIS](https://github.com/Kiara1616/pulse-epis/issues/12). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
 
 El esquema separa la operación institucional de los hechos usados para indicadores. Las tablas analíticas conservan una fecha de corte para que los reportes sean reproducibles y no copian directamente el correo o código institucional.
 
@@ -13,6 +13,9 @@ erDiagram
     USERS ||--o{ AUDIT_LOGS : "origina"
     STUDENTS ||--o{ ENROLLMENTS : "tiene"
     ACADEMIC_PERIODS ||--o{ ENROLLMENTS : "contiene"
+    ACADEMIC_PERIODS ||--o{ ROSTER_IMPORTS : "recibe"
+    ROSTER_IMPORTS ||--o{ ROSTER_IMPORT_REJECTIONS : "reporta"
+    USERS ||--o{ ROSTER_IMPORTS : "ejecuta"
     STUDENTS ||--o{ CERTIFICATIONS : "declara"
     ISSUERS ||--o{ CERTIFICATIONS : "emite"
     CERTIFICATIONS ||--o{ EVIDENCES : "respalda"
@@ -53,7 +56,29 @@ erDiagram
         uuid period_id FK
         string cycle
         string cohort
+        string school
+        string study_plan
         string status
+    }
+    ROSTER_IMPORTS {
+        uuid id PK
+        uuid period_id FK
+        uuid actor_user_id FK
+        string source_sha256
+        string status
+        integer total_rows
+        integer accepted_rows
+        integer rejected_rows
+        datetime created_at
+        datetime completed_at
+    }
+    ROSTER_IMPORT_REJECTIONS {
+        uuid id PK
+        uuid import_id FK
+        integer row_number
+        string field_name
+        string reason_code
+        string message
     }
     ISSUERS {
         uuid id PK
@@ -130,6 +155,9 @@ erDiagram
 - Los roles y estados se restringen mediante `CHECK` constraints para evitar valores fuera del contrato.
 - `google_subject` es opcional hasta el primer login autorizado y luego vincula la cuenta local con el `sub` estable de Google mediante un índice único.
 - El correo y el dominio de Google no reemplazan el padrón: una sesión solo se crea para un `users` provisionado y un `STUDENT` debe tener registro en `students`.
+- Una importación del padrón se identifica por periodo y hash del archivo; los reintentos exactos no crean nuevos registros.
+- Los lotes rechazados conservan únicamente metadatos y causas no sensibles por fila; el CSV original no se persiste.
+- `Enrollment` conserva escuela y plan por periodo para mantener el historial sin sobrescribir el contexto académico anterior.
 - Una matrícula es única por estudiante y periodo (`student_id`, `period_id`).
 - Una certificación es única por estudiante, emisor, nombre y fecha de emisión.
 - El identificador externo de una certificación es único dentro de su emisor cuando existe.
@@ -138,4 +166,4 @@ erDiagram
 - Las tablas de hechos incluyen fecha de corte y claves compuestas para evitar snapshots duplicados.
 - Los índices cubren estados, periodos, estudiantes, emisores, validaciones, auditoría y consultas analíticas frecuentes.
 
-Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se revierten a `base` al finalizar la prueba. La conexión de identidad desde la API usa Google OIDC sin scopes de Gmail, sesiones firmadas y autorización RBAC en backend. El almacenamiento privado de evidencias y los respaldos pertenecen a issues posteriores.
+Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se revierten a `base` al finalizar la prueba. La conexión de identidad desde la API usa Google OIDC sin scopes de Gmail, sesiones firmadas y autorización RBAC en backend. El padrón se carga mediante un lote atómico, con HMAC para `student_key`, historial por periodo y reporte de rechazos sin PII. El almacenamiento privado de evidencias y los respaldos pertenecen a issues posteriores.
