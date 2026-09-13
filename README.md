@@ -12,6 +12,8 @@
   Aplicación de Inteligencia de Negocios para consolidar, validar y analizar las certificaciones obtenidas por estudiantes de la Escuela Profesional de Ingeniería de Sistemas de la Universidad Privada de Tacna.
 </p>
 
+[![CI](https://github.com/Kiara1616/pulse-epis/actions/workflows/ci.yml/badge.svg)](https://github.com/Kiara1616/pulse-epis/actions/workflows/ci.yml)
+
 ## Descripción
 
 Pulse EPIS busca proporcionar información confiable para la toma de decisiones académicas y los procesos de acreditación. La solución permitirá integrar el padrón institucional de estudiantes con las certificaciones declaradas y validadas, calcular indicadores reproducibles y detectar tendencias o brechas de competencias tecnológicas.
@@ -31,7 +33,8 @@ El proyecto no pretende descubrir estudiantes mediante scraping de redes profesi
 | API backend | Pendiente de implementación con FastAPI |
 | Base de datos | Pendiente de implementación con PostgreSQL |
 | Autenticación institucional | Pendiente |
-| Docker y CI/CD | Planificados en el backlog |
+| CI | Workflow de PR para frontend, ETL, documentación y auditoría |
+| Docker y despliegue | Planificados en el backlog |
 | Despliegue público | Pendiente |
 
 Consulta el [backlog del proyecto](https://github.com/Kiara1616/pulse-epis/issues) para conocer el avance y los criterios de aceptación.
@@ -232,6 +235,7 @@ No deben subirse credenciales, tokens, padrones reales, correos personales ni ev
 - [FD02 — Informe de Visión](docs/FD02-Informe-Vision.md)
 - [FD03 — Especificación de Requisitos](docs/FD03-EPIS-Informe%20Especificación%20Requerimientos.md)
 - [FD04 — Arquitectura de Software](docs/FD04-EPIS-Informe%20Arquitectura%20de%20Software.md)
+- [Contribuir al proyecto](CONTRIBUTING.md)
 - [Gobierno del repositorio](docs/REPOSITORY-GOVERNANCE.md)
 - [Especificación del dashboard](docs/schemas/dashboard-spec.json)
 

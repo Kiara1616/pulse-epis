@@ -6,3 +6,7 @@ specs/
 docs/PLAN-DESARROLLO-COMPLETO.md
 PLAN-DESARROLLO-COMPLETO.md
 .env
+coverage/
+coverage.xml
+.coverage
+.pytest_cache/
