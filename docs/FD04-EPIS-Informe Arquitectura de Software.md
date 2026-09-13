@@ -211,7 +211,7 @@ El esquema operacional conserva la trazabilidad de la captura y decisión. El es
 | `Student` | `id`, `student_key`, código y correo cifrados, estado | Código/correo restringidos |
 | `Enrollment` | estudiante, periodo, ciclo, cohorte, escuela, plan y estado | El padrón define el denominador y conserva el contexto por periodo |
 | `Certification` | estudiante, credencial, emisor, nivel, emisión, expiración y estado | Solo estados aprobados entran al KPI |
-| `Evidence` | certificación, tipo, URL, `object_key`, hash y fecha | Archivo privado y URL temporal |
+| `Evidence` | certificación, tipo, URL, `object_key`, hash, tipo/tamaño y retención | Archivo privado y URL temporal firmada |
 | `Validation` | certificación, validador, decisión, comentario y fecha | Inmutable; nuevas decisiones agregan historial |
 | `Issuer` / `Skill` | nombres canónicos, alias y categorías | Catálogos versionados |
 | `MarketDemand` | habilidad, fuente, consulta, ubicación, periodo y conteo | Nunca contiene identidades estudiantiles |
@@ -237,8 +237,12 @@ No se copiarán nombres, correos ni códigos sin cifrar al esquema analítico. L
 |---|---|---|---|---|
 | `POST /api/v1/padron/imports` | Importar padrón | `ADMIN` + `PADRON_MANAGE` | CSV y periodo | `import_id`, totales y rechazos |
 | `GET /api/v1/padron/imports?period_code=...` | Consultar historial de cargas | `ADMIN` + `PADRON_MANAGE` | Código de periodo | Estado, filas, causas y timestamps |
-| `POST /certifications` | Registrar credencial | `STUDENT` | Emisor, nombre, fechas y URL/archivo | ID y estado `PENDIENTE` |
-| `POST /certifications/{id}/evidence` | Adjuntar evidencia | `STUDENT` propietario | Archivo o URL permitida | Hash, metadatos y estado |
+| `POST /api/v1/certifications` | Registrar credencial | `STUDENT` + `CERTIFICATION_WRITE_OWN` | Emisor, nombre, fechas y URL/archivo | ID y estado `PENDING` |
+| `GET /api/v1/certifications` | Listar registros propios | `STUDENT` + `CERTIFICATION_READ_OWN` | Sesión institucional | Certificaciones sin datos de terceros |
+| `PATCH /api/v1/certifications/{id}` | Corregir registro observado | `STUDENT` propietario | Campos corregibles y habilidades | Estado `PENDING` y decisión previa preservada |
+| `POST /api/v1/certifications/{id}/evidence` | Adjuntar evidencia | `STUDENT` propietario | Archivo o URL permitida | Hash, metadatos y retención |
+| `POST /api/v1/certifications/{id}/evidence/{evidence_id}/access` | Emitir acceso temporal | `STUDENT` propietario | Evidencia propia | URL firmada con expiración |
+| `GET /api/v1/certifications/evidence/{evidence_id}/download` | Descargar o redirigir | Token firmado | Token temporal | Archivo privado o URL externa |
 | `POST /validations/{id}` | Registrar decisión | `VALIDATOR` | Decisión, comentario y evidencia | Estado e historial |
 | `GET /analytics/kpis` | Consultar KPIs | `ANALYTICS_READ` | Corte y filtros | Numerador, denominador, fórmula y calidad |
 | `GET /analytics/vendors` | Participación por emisor | `ANALYTICS_READ` | Corte y filtros | Serie agregada |
@@ -350,7 +354,7 @@ flowchart LR
 | Staging | Validar migraciones, contratos, seguridad y rendimiento | Sintéticos o anonimizados | CI exitoso y revisión |
 | Producción | Piloto o servicio institucional | Datos autorizados reales | Aprobación, backup verificado y rollback preparado |
 
-La arquitectura objetivo requiere contenedores, un entorno PostgreSQL operativo, almacenamiento privado, CI/CD y monitoreo. El repositorio ya contiene el esquema y la migración inicial de [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10); los entornos y componentes restantes corresponden a los issues [#13 evidencias](https://github.com/Kiara1616/pulse-epis/issues/13), [#19 contenedores](https://github.com/Kiara1616/pulse-epis/issues/19) y [#20 staging](https://github.com/Kiara1616/pulse-epis/issues/20).
+La arquitectura objetivo requiere contenedores, un entorno PostgreSQL operativo, almacenamiento privado, CI/CD y monitoreo. El repositorio ya contiene el esquema, la migración inicial de [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10) y el flujo MVP privado de [#13 evidencias](https://github.com/Kiara1616/pulse-epis/issues/13); los adaptadores productivos y entornos restantes corresponden a [#19 contenedores](https://github.com/Kiara1616/pulse-epis/issues/19) y [#20 staging](https://github.com/Kiara1616/pulse-epis/issues/20).
 
 ## 11. Respaldo, monitoreo y rollback
 
@@ -398,7 +402,7 @@ Las migraciones destructivas no se ejecutan en la misma promoción que el códig
 | Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | `dashboard-spec.json` y OpenAPI base existen; contratos de negocio pendientes |
 | Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Backend base implementado en #11; endpoints de negocio pendientes |
 | Datos | Lotes, deduplicación, fórmulas y cortes | Resultados idempotentes y reproducibles | ETL demostrativo; pruebas pendientes en #15/#16 |
-| Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Pendiente en #9/#10/#13/#14 |
+| Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Parcial: registro y evidencia de #13; validación, storage productivo y worker pendientes en #14/#19 |
 | Rendimiento | p95, lotes y consultas materializadas | Cumple metas de FD03 | Pendiente |
 | Recuperación | Backup, restore y rollback | RPO/RTO verificados en staging | Pendiente en #21 |
 
@@ -410,7 +414,7 @@ La secuencia recomendada mantiene la aplicación demostrativa ejecutable mientra
 2. Crear PostgreSQL, migraciones y contratos de datos.
 3. Inicializar FastAPI con health check, configuración por entorno y OpenAPI.
 4. Integrar en el frontend el OIDC/RBAC backend de #11 y reemplazar el selector de rol por una sesión real.
-5. Implementar certificaciones, evidencias y auditoría sobre el padrón de #12.
+5. Implementar certificaciones, evidencias y auditoría sobre el padrón de #12 (registro privado disponible en #13).
 6. Convertir el ETL en worker idempotente con staging y controles de calidad.
 7. Llevar KPIs, filtros, brechas y fecha de corte al backend.
 8. Conectar Next.js a la API y retirar JSON duplicados de producción.
@@ -427,7 +431,7 @@ pulse-epis/
   backend/scripts_etl/           # ETL demostrativo -> workers/etl
   backend/app/                   # FastAPI base: API, dominio, servicios y repositorios (#9)
   backend/migrations/            # PostgreSQL/Alembic inicial (#10)
-  storage/                       # Contrato de objetos privados pendiente (#13/#19)
+  storage/                       # Contrato de objetos privados: MVP en #13, S3/infraestructura en #19
   tests/                         # Unitarias, integración y seguridad
   docs/
     architecture/                # Diagramas y decisiones como código
@@ -440,4 +444,4 @@ pulse-epis/
 
 La arquitectura es implementable con un monolito modular, PostgreSQL, almacenamiento privado, un worker ETL y una interfaz Next.js. Las fronteras de confianza, responsabilidades, contratos, respaldos, monitoreo y rollback quedan definidas para que el sistema pueda evolucionar sin exponer datos nominales ni depender de scraping.
 
-El repositorio actual sigue siendo un prototipo: contiene una base FastAPI, un esquema PostgreSQL migrable, OIDC/RBAC y carga controlada del padrón, pero no contiene un entorno PostgreSQL operativo, Docker ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.
+El repositorio actual sigue siendo un prototipo: contiene una base FastAPI, un esquema PostgreSQL migrable, OIDC/RBAC, carga controlada del padrón y registro privado de certificaciones/evidencias con enlaces temporales, pero no contiene un entorno PostgreSQL operativo, Docker, purga programada ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.

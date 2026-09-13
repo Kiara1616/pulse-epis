@@ -67,20 +67,20 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 | RF-01 | Autenticar y aplicar roles y permisos | Crítica | Solo existen `ADMIN`, `VALIDATOR` y `STUDENT`; los alcances `PADRON_MANAGE` y `ANALYTICS_READ` se verifican en backend | Implementado en el backend base: Google OIDC, padrón local, sesión firmada y dependencias RBAC; el frontend demo aún no consume la sesión |
 | RF-02 | Importar padrón por periodo desde CSV | Crítica | Una cuenta `ADMIN` con `PADRON_MANAGE` obtiene filas válidas, rechazadas y duplicadas | Implementado en backend: plantilla, validación atómica, reporte de rechazos, idempotencia e historial por periodo |
 | RF-03 | Crear clave interna por estudiante | Crítica | No expone código en analítica pública | Implementado en backend: `student_key` HMAC estable con secreto externo |
-| RF-04 | Registrar credencial y evidencia | Crítica | Exige emisor, nombre, fechas y URL o archivo | Parcial: formulario local sin API ni almacenamiento de evidencias |
+| RF-04 | Registrar credencial y evidencia | Crítica | Exige emisor, nombre, fechas y URL o archivo | Implementado en backend: registro propio, estado `PENDING`, validación de URL/archivo, hash y almacenamiento privado |
 | RF-05 | Validar evidencia y decisión | Crítica | Solo `VALIDATOR` conserva autor, fecha, comentario y estado | Parcial: la bandeja cambia estados en memoria y no registra auditoría |
-| RF-06 | Detectar duplicados | Alta | Marca coincidencia por alumno, credencial, emisor y fecha | Pendiente: no hay regla persistente de deduplicación |
+| RF-06 | Detectar duplicados | Alta | Marca coincidencia por alumno, credencial, emisor y fecha | Implementado en backend: restricción persistente y respuesta `409 DUPLICATE_RECORD` para credenciales y evidencias repetidas |
 | RF-07 | Normalizar proveedor, nivel y habilidades | Alta | Usa catálogos versionados | Parcial: ETL de prueba normaliza algunos proveedores y niveles |
 | RF-08 | Calcular KPIs por fecha de corte | Crítica | Fórmula y población son visibles para `ANALYTICS_READ` y permisos superiores | Parcial: KPIs estáticos desde `mock-data.json`, sin fecha de corte real |
 | RF-09 | Filtrar periodo, ciclo, cohorte, proveedor, nivel y área | Alta | Todos los gráficos autorizados responden al filtro | Parcial: selector de periodo y filtros visuales aislados; no hay consulta común |
 | RF-10 | Mostrar evolución y participación | Alta | Compara periodos y muestra la fecha de corte | Parcial: gráficos sobre datos estáticos |
 | RF-11 | Restringir detalle nominal | Crítica | Visitantes reciben agregados y ningún endpoint público devuelve PII | Parcial: `RoleGate` es del cliente y no existe endpoint público/backend |
 | RF-12 | Exportar CSV y PDF | Alta | Refleja filtros, fecha de corte, fuentes y fórmula | Parcial: botones simulan exportación y solo muestran una alerta |
-| RF-13 | Registrar auditoría | Crítica | Conserva principal, rol, alcance, acción y fecha | Pendiente: no existe bitácora persistente |
+| RF-13 | Registrar auditoría | Crítica | Conserva principal, rol, alcance, acción y fecha | Parcial: registro, corrección y adjuntos generan `AuditLog`; las decisiones del validador quedan para #14 |
 | RF-14 | Gestionar expiraciones | Alta | Distingue vigente, próxima y vencida con fecha de corte | Pendiente: no existe cálculo conectado a datos reales |
 | RF-15 | Importar demanda laboral con fuente | Media | Conserva URL, consulta, ubicación y fecha | Parcial: el mock muestra demanda sin procedencia completa |
 | RF-16 | Ejecutar ETL y mostrar estado | Alta | Registra inicio, fin, filas y errores por corrida | Parcial: ETL Python escribe JSON y logs, sin API ni panel de estado |
-| RF-17 | Corregir y volver a revisar | Alta | Mantiene historial anterior y exige una nueva decisión | Parcial: la pantalla permite observar/validar en memoria, sin historial |
+| RF-17 | Corregir y volver a revisar | Alta | Mantiene historial anterior y exige una nueva decisión | Parcial: `OBSERVED` vuelve a `PENDING` y conserva decisiones; el flujo completo de revisión se implementa en #14 |
 | RF-18 | Generar paquete de acreditación | Media | Incluye KPIs, metodología, calidad y referencias | Pendiente: no existe paquete institucional reproducible |
 
 `Implementado` significa que existe un flujo persistente y verificable; `Parcial` significa que hay una demostración sin garantías de producción; `Pendiente` significa que aún no hay una implementación funcional en el repositorio.
@@ -93,8 +93,8 @@ En la demo, el selector del encabezado permite alternar entre roles y la ruta de
 |---|---|---|---|---|
 | RNF-01 | Rendimiento | Alta | p95 menor a 2 segundos en consultas habituales con el volumen del piloto | Pendiente: no existe medición p95 de la API ni consultas de negocio |
 | RNF-02 | Disponibilidad | Alta | 99.5 por ciento durante la ventana de reportes acordada | Pendiente: no existe ambiente operativo |
-| RNF-03 | Seguridad | Crítica | TLS, SSO/OIDC, RBAC, validación servidor y secretos externos | Parcial: OIDC/RBAC y secretos externos están en el backend; TLS y despliegue seguro quedan pendientes |
-| RNF-04 | Privacidad | Crítica | minimización, seudonimización, retención y cero PII en vistas públicas | Parcial: algunos datos están anonimizados en la demo, sin enforcement servidor |
+| RNF-03 | Seguridad | Crítica | TLS, SSO/OIDC, RBAC, validación servidor y secretos externos | Parcial: OIDC/RBAC, validación server-side, tokens temporales y secretos externos están en el backend; TLS y despliegue seguro quedan pendientes |
+| RNF-04 | Privacidad | Crítica | minimización, seudonimización, retención y cero PII en vistas públicas | Parcial: padrón y evidencias se restringen en backend, con retención configurable y enlaces temporales; falta operación productiva de purga y backups |
 | RNF-05 | Accesibilidad | Alta | WCAG 2.2 AA en flujos principales y revisión documentada | Parcial: HTML semántico básico, sin auditoría WCAG |
 | RNF-06 | Mantenibilidad | Alta | lint, tipos, pruebas automatizadas y API documentada | Parcial: lint, TypeScript y build; faltan pruebas y API |
 | RNF-07 | Recuperación | Alta | respaldo diario y restauración trimestral probada | Pendiente: no existe base de datos ni respaldo |
@@ -262,7 +262,7 @@ La matriz relaciona los objetivos medibles con el requisito que los habilita, el
 | T-00 | Automatizada | Lint, TypeScript y build del frontend | Cero errores de lint y compilación exitosa | Disponible: `npm run lint`, `npm run build` |
 | T-01 | Integración | Importación de lote válido, inválido y duplicado | Totales, causas y estado de lote reproducibles | Disponible — #12 |
 | T-02 | Unitarias | Generación y no exposición de `student_key` | Clave estable, sin código/correo en analítica pública | Disponible — #12 |
-| T-03 | Integración | Registro de certificación y evidencia | Campos obligatorios, formato y estado `PENDIENTE` | Pendiente — #13 |
+| T-03 | Integración | Registro de certificación y evidencia | Campos obligatorios, formato y estado `PENDIENTE` | Disponible — #13 |
 | T-04 | Integración | Decisiones del validador | Solo `VALIDATOR` decide; se conserva historial y auditoría | Pendiente — #14 |
 | T-05 | Unitarias | Fórmulas de cobertura, vigencia y duplicados | Numerador, denominador y corte coinciden con el diccionario | Pendiente — #16 |
 | T-06 | Integración | Filtros combinados | Proveedor, nivel y área no alteran indebidamente el denominador | Pendiente — #16/#17 |

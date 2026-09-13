@@ -12,6 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from .api.routes.auth import router as auth_router
+from .api.routes.certifications import router as certifications_router
 from .api.errors import (
     http_exception_handler,
     unhandled_exception_handler,
@@ -27,6 +28,11 @@ from .auth.store import (
     SqlAlchemyUserDirectory,
     UnavailableUserDirectory,
     UserDirectory,
+)
+from .certifications.service import (
+    CertificationService,
+    CertificationServiceProtocol,
+    UnavailableCertificationService,
 )
 from .core.config import Settings, get_settings
 from .core.logging import configure_logging
@@ -49,6 +55,7 @@ def create_app(
     user_directory: UserDirectory | None = None,
     oidc_client: OidcClient | None = None,
     roster_import_service: RosterImportServiceProtocol | None = None,
+    certification_service: CertificationServiceProtocol | None = None,
 ) -> FastAPI:
     """Create an isolated application instance for production or tests."""
 
@@ -69,6 +76,11 @@ def create_app(
             roster_import_service = RosterImportService(session_factory, settings)
         else:
             roster_import_service = UnavailableRosterImportService()
+    if certification_service is None:
+        if session_factory is not None:
+            certification_service = CertificationService(session_factory, settings)
+        else:
+            certification_service = UnavailableCertificationService()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -96,6 +108,7 @@ def create_app(
     app.state.oidc_client = oidc_client
     app.state.auth_service = AuthService(settings, user_directory)
     app.state.roster_import_service = roster_import_service
+    app.state.certification_service = certification_service
 
     app.add_middleware(
         SessionMiddleware,
@@ -113,6 +126,7 @@ def create_app(
     app.include_router(meta_router, prefix=settings.api_prefix)
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(roster_router, prefix=settings.api_prefix)
+    app.include_router(certifications_router, prefix=settings.api_prefix)
     return app
 
 

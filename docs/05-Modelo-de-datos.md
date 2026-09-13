@@ -2,7 +2,7 @@
 
 ## Pulse EPIS — esquema operacional y analítico
 
-Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10), [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11) y [#12 — Implementar importación y conciliación del padrón EPIS](https://github.com/Kiara1616/pulse-epis/issues/12). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
+Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10), [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11), [#12 — Implementar importación y conciliación del padrón EPIS](https://github.com/Kiara1616/pulse-epis/issues/12) y [#13 — Implementar registro de certificaciones y evidencias privadas](https://github.com/Kiara1616/pulse-epis/issues/13). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
 
 El esquema separa la operación institucional de los hechos usados para indicadores. Las tablas analíticas conservan una fecha de corte para que los reportes sean reproducibles y no copian directamente el correo o código institucional.
 
@@ -112,6 +112,10 @@ erDiagram
         string source_url
         string object_key
         string sha256
+        string original_filename
+        string content_type
+        integer byte_size
+        datetime retention_until
     }
     VALIDATIONS {
         uuid id PK
@@ -162,8 +166,10 @@ erDiagram
 - Una certificación es única por estudiante, emisor, nombre y fecha de emisión.
 - El identificador externo de una certificación es único dentro de su emisor cuando existe.
 - Una evidencia exige una URL o una clave de objeto y evita repetir el mismo hash para una certificación.
+- Los archivos de evidencia se guardan con una clave aleatoria, metadatos de tipo/tamaño y `retention_until`; el acceso se entrega mediante tokens firmados de corta duración.
+- La corrección de una certificación observada vuelve a `PENDING` y no elimina las decisiones anteriores.
 - Las fechas de periodo y certificación son consistentes; los contadores analíticos no pueden ser negativos ni superar el total.
 - Las tablas de hechos incluyen fecha de corte y claves compuestas para evitar snapshots duplicados.
 - Los índices cubren estados, periodos, estudiantes, emisores, validaciones, auditoría y consultas analíticas frecuentes.
 
-Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se revierten a `base` al finalizar la prueba. La conexión de identidad desde la API usa Google OIDC sin scopes de Gmail, sesiones firmadas y autorización RBAC en backend. El padrón se carga mediante un lote atómico, con HMAC para `student_key`, historial por periodo y reporte de rechazos sin PII. El almacenamiento privado de evidencias y los respaldos pertenecen a issues posteriores.
+Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se revierten a `base` al finalizar la prueba. La conexión de identidad desde la API usa Google OIDC sin scopes de Gmail, sesiones firmadas y autorización RBAC en backend. El padrón se carga mediante un lote atómico, con HMAC para `student_key`, historial por periodo y reporte de rechazos sin PII. La issue #13 añade el flujo privado de evidencias con acceso temporal; el adaptador de almacenamiento de producción, purga programada y respaldos pertenecen a las issues #19 y #21.

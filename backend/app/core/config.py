@@ -11,6 +11,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DEVELOPMENT_SESSION_SECRET = "development-only-change-me"
 _DEVELOPMENT_ROSTER_SECRET = "development-only-roster-secret"
+_DEVELOPMENT_EVIDENCE_SECRET = "development-only-evidence-secret"
 
 
 class Settings(BaseSettings):
@@ -37,6 +38,12 @@ class Settings(BaseSettings):
     roster_pseudonym_secret: SecretStr = SecretStr(_DEVELOPMENT_ROSTER_SECRET)
     roster_max_bytes: int = 5_000_000
     roster_max_rows: int = 10_000
+    evidence_storage_path: str = ".data/evidence"
+    evidence_access_secret: SecretStr = SecretStr(_DEVELOPMENT_EVIDENCE_SECRET)
+    evidence_access_ttl_seconds: int = 600
+    evidence_max_bytes: int = 10_000_000
+    evidence_retention_days: int = 1_825
+    evidence_allowed_mime_types: str = "application/pdf,image/png,image/jpeg"
 
     model_config = SettingsConfigDict(
         env_prefix="PULSE_",
@@ -129,6 +136,43 @@ class Settings(BaseSettings):
             raise ValueError("roster_max_rows must be positive")
         return value
 
+    @field_validator("evidence_storage_path")
+    @classmethod
+    def validate_evidence_storage_path(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("evidence_storage_path cannot be empty")
+        return value
+
+    @field_validator("evidence_access_ttl_seconds")
+    @classmethod
+    def validate_evidence_access_ttl(cls, value: int) -> int:
+        if value < 60 or value > 3_600:
+            raise ValueError("evidence_access_ttl_seconds must be between 60 and 3600")
+        return value
+
+    @field_validator("evidence_max_bytes")
+    @classmethod
+    def validate_evidence_max_bytes(cls, value: int) -> int:
+        if value < 1_024:
+            raise ValueError("evidence_max_bytes must be at least 1024 bytes")
+        return value
+
+    @field_validator("evidence_retention_days")
+    @classmethod
+    def validate_evidence_retention_days(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("evidence_retention_days must be positive")
+        return value
+
+    @field_validator("evidence_allowed_mime_types")
+    @classmethod
+    def normalize_evidence_mime_types(cls, value: str) -> str:
+        values = [item.strip().lower() for item in value.split(",") if item.strip()]
+        if not values or any("/" not in value or ";" in value for value in values):
+            raise ValueError("evidence_allowed_mime_types must contain MIME types")
+        return ",".join(dict.fromkeys(values))
+
     @model_validator(mode="after")
     def validate_auth_configuration(self) -> "Settings":
         if self.auth_cookie_samesite == "none" and not self.auth_cookie_secure:
@@ -142,6 +186,8 @@ class Settings(BaseSettings):
                 raise ValueError("Google OIDC credentials are required in production")
             if self.roster_pseudonym_secret.get_secret_value() == _DEVELOPMENT_ROSTER_SECRET:
                 raise ValueError("roster_pseudonym_secret must be changed in production")
+            if self.evidence_access_secret.get_secret_value() == _DEVELOPMENT_EVIDENCE_SECRET:
+                raise ValueError("evidence_access_secret must be changed in production")
             if not self.auth_cookie_secure:
                 raise ValueError("auth_cookie_secure must be true in production")
         return self
@@ -177,6 +223,16 @@ class Settings(BaseSettings):
         """Return normalized status values accepted by the padrón import."""
 
         return tuple(item.strip().upper() for item in self.roster_allowed_statuses.split(","))
+
+    @property
+    def allowed_evidence_mime_types(self) -> tuple[str, ...]:
+        """Return the MIME types accepted for private file evidence."""
+
+        return tuple(
+            item.strip().lower()
+            for item in self.evidence_allowed_mime_types.split(",")
+            if item.strip()
+        )
 
 
 @lru_cache
