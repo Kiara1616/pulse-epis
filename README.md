@@ -270,6 +270,16 @@ Actualmente este comando aún no está disponible porque los archivos Docker for
 
 ## Automatización y despliegue
 
+La documentación técnica se genera con un único comando desde la raíz:
+
+```bash
+pip install -r backend/requirements-dev.txt
+cd docs/tooling && npm ci && cd ../..
+python scripts/build_docs.py
+```
+
+El resultado queda en `artifacts/docs`: manuales HTML/PDF, diagramas Mermaid SVG, OpenAPI JSON/HTML y un manifiesto con el commit de origen. CI publica el directorio como el artefacto `project-manuals`.
+
 El flujo objetivo del repositorio es:
 
 ```text
@@ -324,6 +334,7 @@ No deben subirse credenciales, tokens, padrones reales, correos personales ni ev
 - [Gobierno del repositorio](docs/REPOSITORY-GOVERNANCE.md)
 - [Especificación del dashboard](docs/schemas/dashboard-spec.json)
 - [Modelo de datos inicial](docs/05-Modelo-de-datos.md)
+- [Manual de usuario por roles](docs/10-Manual-de-usuario.md)
 
 ## Equipo
 
