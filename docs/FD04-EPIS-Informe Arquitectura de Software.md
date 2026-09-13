@@ -213,6 +213,7 @@ El esquema operacional conserva la trazabilidad de la captura y decisión. El es
 | `Certification` | estudiante, credencial, emisor, nivel, emisión, expiración y estado | Solo estados aprobados entran al KPI |
 | `Evidence` | certificación, tipo, URL, `object_key`, hash, tipo/tamaño y retención | Archivo privado y URL temporal firmada |
 | `Validation` | certificación, validador, decisión, comentario y fecha | Inmutable; nuevas decisiones agregan historial |
+| `CertificationStatusHistory` | certificación, actor, estado anterior/nuevo, comentario y corte | Append-only para reconstruir transiciones |
 | `Issuer` / `Skill` | nombres canónicos, alias y categorías | Catálogos versionados |
 | `MarketDemand` | habilidad, fuente, consulta, ubicación, periodo y conteo | Nunca contiene identidades estudiantiles |
 | `AuditLog` | principal, rol, scope, acción, entidad, antes, después y fecha | Sin documentos, códigos o correos |
@@ -239,11 +240,13 @@ No se copiarán nombres, correos ni códigos sin cifrar al esquema analítico. L
 | `GET /api/v1/padron/imports?period_code=...` | Consultar historial de cargas | `ADMIN` + `PADRON_MANAGE` | Código de periodo | Estado, filas, causas y timestamps |
 | `POST /api/v1/certifications` | Registrar credencial | `STUDENT` + `CERTIFICATION_WRITE_OWN` | Emisor, nombre, fechas y URL/archivo | ID y estado `PENDING` |
 | `GET /api/v1/certifications` | Listar registros propios | `STUDENT` + `CERTIFICATION_READ_OWN` | Sesión institucional | Certificaciones sin datos de terceros |
-| `PATCH /api/v1/certifications/{id}` | Corregir registro observado | `STUDENT` propietario | Campos corregibles y habilidades | Estado `PENDING` y decisión previa preservada |
+| `PATCH /api/v1/certifications/{id}` | Corregir registro observado | `STUDENT` propietario | Campos corregibles y habilidades | Estado `RESUBMITTED` y decisión previa preservada |
 | `POST /api/v1/certifications/{id}/evidence` | Adjuntar evidencia | `STUDENT` propietario | Archivo o URL permitida | Hash, metadatos y retención |
 | `POST /api/v1/certifications/{id}/evidence/{evidence_id}/access` | Emitir acceso temporal | `STUDENT` propietario | Evidencia propia | URL firmada con expiración |
 | `GET /api/v1/certifications/evidence/{evidence_id}/download` | Descargar o redirigir | Token firmado | Token temporal | Archivo privado o URL externa |
-| `POST /validations/{id}` | Registrar decisión | `VALIDATOR` | Decisión, comentario y evidencia | Estado e historial |
+| `GET /api/v1/validations` | Consultar bandeja al corte | `VALIDATOR` + `CERTIFICATION_VALIDATE` | Fecha de corte opcional | Registros sin PII nominal |
+| `POST /api/v1/validations/{id}` | Registrar transición | `VALIDATOR` + `CERTIFICATION_VALIDATE` | Acción, comentario y evidencia | Estado e historial |
+| `GET /api/v1/validations/{id}/history` | Consultar historial | `VALIDATOR` + `CERTIFICATION_VALIDATE` | Identificador de certificación | Transiciones append-only |
 | `GET /analytics/kpis` | Consultar KPIs | `ANALYTICS_READ` | Corte y filtros | Numerador, denominador, fórmula y calidad |
 | `GET /analytics/vendors` | Participación por emisor | `ANALYTICS_READ` | Corte y filtros | Serie agregada |
 | `GET /analytics/gaps` | Brechas por habilidad | `ANALYTICS_READ` | Habilidad, lugar y periodo | Oferta, demanda, fuente y fecha |
@@ -354,7 +357,7 @@ flowchart LR
 | Staging | Validar migraciones, contratos, seguridad y rendimiento | Sintéticos o anonimizados | CI exitoso y revisión |
 | Producción | Piloto o servicio institucional | Datos autorizados reales | Aprobación, backup verificado y rollback preparado |
 
-La arquitectura objetivo requiere contenedores, un entorno PostgreSQL operativo, almacenamiento privado, CI/CD y monitoreo. El repositorio ya contiene el esquema, la migración inicial de [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10) y el flujo MVP privado de [#13 evidencias](https://github.com/Kiara1616/pulse-epis/issues/13); los adaptadores productivos y entornos restantes corresponden a [#19 contenedores](https://github.com/Kiara1616/pulse-epis/issues/19) y [#20 staging](https://github.com/Kiara1616/pulse-epis/issues/20).
+La arquitectura objetivo requiere contenedores, un entorno PostgreSQL operativo, almacenamiento privado, CI/CD y monitoreo. El repositorio ya contiene el esquema, la migración inicial de [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10), el flujo privado de [#13 evidencias](https://github.com/Kiara1616/pulse-epis/issues/13) y la máquina de validación de [#14](https://github.com/Kiara1616/pulse-epis/issues/14); los adaptadores productivos y entornos restantes corresponden a [#19 contenedores](https://github.com/Kiara1616/pulse-epis/issues/19) y [#20 staging](https://github.com/Kiara1616/pulse-epis/issues/20).
 
 ## 11. Respaldo, monitoreo y rollback
 
@@ -399,10 +402,10 @@ Las migraciones destructivas no se ejecutan en la misma promoción que el códig
 | Nivel | Prueba | Criterio de salida | Estado actual |
 |---|---|---|---|
 | Diagramas | Mermaid en revisión y render de cada vista | Contexto, contenedores, componentes y despliegue sin referencias huérfanas | Documentado; automatización pendiente en #18 |
-| Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | `dashboard-spec.json` y OpenAPI base existen; contratos de negocio pendientes |
-| Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Backend base implementado en #11; endpoints de negocio pendientes |
+| Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | `dashboard-spec.json`, OpenAPI base y contratos de certificación/validación disponibles; analítica pendiente |
+| Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Backend base de #11 y permisos de certificación/validación de #13/#14; analítica pública pendiente |
 | Datos | Lotes, deduplicación, fórmulas y cortes | Resultados idempotentes y reproducibles | ETL demostrativo; pruebas pendientes en #15/#16 |
-| Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Parcial: registro y evidencia de #13; validación, storage productivo y worker pendientes en #14/#19 |
+| Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Parcial: registro, evidencia y validación de #13/#14; storage productivo y worker pendientes en #19 |
 | Rendimiento | p95, lotes y consultas materializadas | Cumple metas de FD03 | Pendiente |
 | Recuperación | Backup, restore y rollback | RPO/RTO verificados en staging | Pendiente en #21 |
 
@@ -414,7 +417,7 @@ La secuencia recomendada mantiene la aplicación demostrativa ejecutable mientra
 2. Crear PostgreSQL, migraciones y contratos de datos.
 3. Inicializar FastAPI con health check, configuración por entorno y OpenAPI.
 4. Integrar en el frontend el OIDC/RBAC backend de #11 y reemplazar el selector de rol por una sesión real.
-5. Implementar certificaciones, evidencias y auditoría sobre el padrón de #12 (registro privado disponible en #13).
+5. Implementar certificaciones, evidencias, validación y auditoría sobre el padrón de #12 (registro privado en #13 y máquina de estados en #14).
 6. Convertir el ETL en worker idempotente con staging y controles de calidad.
 7. Llevar KPIs, filtros, brechas y fecha de corte al backend.
 8. Conectar Next.js a la API y retirar JSON duplicados de producción.

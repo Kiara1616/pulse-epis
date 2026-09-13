@@ -1,5 +1,5 @@
 import os
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -20,6 +20,7 @@ EXPECTED_TABLES = {
     "issuers",
     "skills",
     "certifications",
+    "certification_status_history",
     "certification_skills",
     "evidences",
     "validations",
@@ -64,6 +65,7 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
     enrollments = Table("enrollments", metadata, autoload_with=engine)
     issuers = Table("issuers", metadata, autoload_with=engine)
     certifications = Table("certifications", metadata, autoload_with=engine)
+    status_history = Table("certification_status_history", metadata, autoload_with=engine)
 
     assert "google_subject" in users.c
     assert {"school", "study_plan"}.issubset(set(enrollments.c.keys()))
@@ -74,6 +76,14 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
         "byte_size",
         "retention_until",
     }.issubset(set(evidences.c.keys()))
+    assert {
+        "actor_user_id",
+        "from_status",
+        "to_status",
+        "comment",
+        "cutoff_date",
+        "changed_at",
+    }.issubset(set(status_history.c.keys()))
 
     user_id = _database_id(database_url)
     student_id = _database_id(database_url)
@@ -131,6 +141,17 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
                 credential_name="Synthetic Cloud Fundamentals",
                 issued_on=issued_on,
                 source_url="https://example.com/certification/001",
+            )
+        )
+        connection.execute(
+            status_history.insert().values(
+                id=_database_id(database_url),
+                certification_id=certification_id,
+                actor_user_id=user_id,
+                from_status=None,
+                to_status="PENDING",
+                comment="Registro inicial",
+                changed_at=datetime(2026, 9, 13),
             )
         )
 

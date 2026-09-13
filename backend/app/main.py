@@ -8,11 +8,13 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from .api.routes.auth import router as auth_router
 from .api.routes.certifications import router as certifications_router
+from .api.routes.validations import router as validations_router
 from .api.errors import (
     http_exception_handler,
     unhandled_exception_handler,
@@ -44,6 +46,11 @@ from .roster.service import (
     UnavailableRosterImportService,
 )
 from .services.health import HealthService
+from .validation.service import (
+    UnavailableValidationService,
+    ValidationService,
+    ValidationServiceProtocol,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -56,6 +63,7 @@ def create_app(
     oidc_client: OidcClient | None = None,
     roster_import_service: RosterImportServiceProtocol | None = None,
     certification_service: CertificationServiceProtocol | None = None,
+    validation_service: ValidationServiceProtocol | None = None,
 ) -> FastAPI:
     """Create an isolated application instance for production or tests."""
 
@@ -81,6 +89,11 @@ def create_app(
             certification_service = CertificationService(session_factory, settings)
         else:
             certification_service = UnavailableCertificationService()
+    if validation_service is None:
+        if session_factory is not None:
+            validation_service = ValidationService(session_factory, settings)
+        else:
+            validation_service = UnavailableValidationService()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -109,6 +122,7 @@ def create_app(
     app.state.auth_service = AuthService(settings, user_directory)
     app.state.roster_import_service = roster_import_service
     app.state.certification_service = certification_service
+    app.state.validation_service = validation_service
 
     app.add_middleware(
         SessionMiddleware,
@@ -117,6 +131,13 @@ def create_app(
         max_age=settings.auth_session_max_age,
         https_only=settings.auth_cookie_secure,
         same_site=settings.auth_cookie_samesite,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.allowed_cors_origins),
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     app.add_middleware(RequestIdMiddleware)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
@@ -127,6 +148,7 @@ def create_app(
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(roster_router, prefix=settings.api_prefix)
     app.include_router(certifications_router, prefix=settings.api_prefix)
+    app.include_router(validations_router, prefix=settings.api_prefix)
     return app
 
 

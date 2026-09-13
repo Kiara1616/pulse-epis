@@ -1,6 +1,6 @@
 # Registro de certificaciones y evidencias privadas
 
-Este documento describe la implementación de [#13 — Implementar registro de certificaciones y evidencias privadas](https://github.com/Kiara1616/pulse-epis/issues/13).
+Este documento describe la implementación de [#13 — Implementar registro de certificaciones y evidencias privadas](https://github.com/Kiara1616/pulse-epis/issues/13) y su continuación en [#14 — Implementar flujo de validación y auditoría de certificaciones](https://github.com/Kiara1616/pulse-epis/issues/14).
 
 ## Alcance implementado
 
@@ -11,7 +11,7 @@ Este documento describe la implementación de [#13 — Implementar registro de c
 - Las evidencias pueden ser una URL `http/https` o un archivo PDF, PNG o JPEG.
 - Los archivos se guardan fuera de las rutas públicas con una clave aleatoria y hash SHA-256.
 - El acceso a una evidencia se entrega mediante un enlace firmado con expiración corta; no se expone `object_key`.
-- Una certificación `OBSERVED` puede corregirse y vuelve a `PENDING`; las decisiones anteriores permanecen en `validations`.
+- Una certificación `OBSERVED` puede corregirse y pasa a `RESUBMITTED`; las decisiones anteriores permanecen en `validations` y todos los cambios quedan en `certification_status_history`.
 - Las acciones de registro, corrección y adjunto generan entradas en `audit_logs` sin contenido binario ni credenciales.
 
 ## API
@@ -21,7 +21,7 @@ Este documento describe la implementación de [#13 — Implementar registro de c
 | `POST /api/v1/certifications` | Registrar una certificación propia | `STUDENT` + `CERTIFICATION_WRITE_OWN` |
 | `GET /api/v1/certifications` | Listar las certificaciones propias | `STUDENT` + `CERTIFICATION_READ_OWN` |
 | `GET /api/v1/certifications/{id}` | Consultar una certificación propia | `STUDENT` + `CERTIFICATION_READ_OWN` |
-| `PATCH /api/v1/certifications/{id}` | Corregir un registro `PENDING` u `OBSERVED` | `STUDENT` + `CERTIFICATION_WRITE_OWN` |
+| `PATCH /api/v1/certifications/{id}` | Corregir un registro `PENDING`, `OBSERVED` o `RESUBMITTED` | `STUDENT` + `CERTIFICATION_WRITE_OWN` |
 | `POST /api/v1/certifications/{id}/evidence` | Adjuntar una URL o archivo | `STUDENT` + `CERTIFICATION_WRITE_OWN` |
 | `POST /api/v1/certifications/{id}/evidence/{evidence_id}/access` | Emitir enlace temporal | `STUDENT` propietario |
 | `GET /api/v1/certifications/evidence/{evidence_id}/download?token=...` | Descargar o redirigir con token válido | Token firmado temporal |

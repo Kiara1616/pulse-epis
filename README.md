@@ -178,7 +178,7 @@ pip install -r requirements-dev.txt
 uvicorn app.main:app --reload
 ```
 
-La API queda disponible en `http://localhost:8000`. Sus endpoints iniciales son:
+La API queda disponible en `http://localhost:8000`. Para consumirla desde el dashboard local, `PULSE_CORS_ALLOWED_ORIGINS` acepta por defecto `http://localhost:3000` y `http://127.0.0.1:3000`; en otros ambientes debe configurarse explícitamente. El frontend usa `NEXT_PUBLIC_API_URL` y por defecto apunta a `http://localhost:8000/api/v1`. Sus endpoints iniciales son:
 
 | Ruta | Propósito |
 |---|---|
@@ -193,9 +193,13 @@ La API queda disponible en `http://localhost:8000`. Sus endpoints iniciales son:
 | `GET /api/v1/padron/imports?period_code=...` | Consulta el historial no nominal de cargas |
 | `POST /api/v1/certifications` | Registra una certificación propia en estado `PENDING` |
 | `GET /api/v1/certifications` | Lista las certificaciones del estudiante autenticado |
-| `PATCH /api/v1/certifications/{id}` | Corrige una certificación `PENDING` u `OBSERVED` |
+| `PATCH /api/v1/certifications/{id}` | Corrige una certificación `PENDING`, `OBSERVED` o `RESUBMITTED` |
 | `POST /api/v1/certifications/{id}/evidence` | Adjunta una URL o evidencia privada validada |
 | `POST /api/v1/certifications/{id}/evidence/{evidence_id}/access` | Genera un enlace temporal de evidencia |
+| `GET /api/v1/validations` | Lista la bandeja de certificaciones para el validador al corte solicitado |
+| `POST /api/v1/validations/{id}` | Ejecuta una transición autorizada de validación |
+| `GET /api/v1/validations/{id}/history` | Consulta el historial inmutable de estados |
+| `POST /api/v1/validations/{id}/evidence/{evidence_id}/access` | Genera un enlace temporal para revisar evidencia |
 | `GET /docs` | Swagger UI generado por FastAPI |
 | `GET /openapi.json` | Contrato OpenAPI |
 
@@ -211,7 +215,7 @@ python -m pytest backend/tests
 
 ## Modelo y migraciones de base de datos
 
-El [modelo de datos inicial](docs/05-Modelo-de-datos.md) cubre usuarios, estudiantes, periodos, matrículas, importaciones del padrón, rechazos, emisores, certificaciones, evidencias, validaciones, habilidades, auditoría y hechos analíticos. La [plantilla del padrón](docs/06-Plantilla-padron.md) documenta el CSV autorizado y [`docs/07-Certificaciones-evidencias.md`](docs/07-Certificaciones-evidencias.md) documenta el flujo privado de certificaciones. Las migraciones se ejecutan con Alembic y pueden revertirse:
+El [modelo de datos inicial](docs/05-Modelo-de-datos.md) cubre usuarios, estudiantes, periodos, matrículas, importaciones del padrón, rechazos, emisores, certificaciones, evidencias, validaciones, historial de estados, habilidades, auditoría y hechos analíticos. La [plantilla del padrón](docs/06-Plantilla-padron.md) documenta el CSV autorizado, [`docs/07-Certificaciones-evidencias.md`](docs/07-Certificaciones-evidencias.md) documenta el registro privado y [`docs/08-Validacion-certificaciones.md`](docs/08-Validacion-certificaciones.md) documenta la máquina de estados. Las migraciones se ejecutan con Alembic y pueden revertirse:
 
 ```bash
 # Desde la raíz, con PULSE_DATABASE_URL apuntando a PostgreSQL

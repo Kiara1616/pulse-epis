@@ -22,17 +22,19 @@ from ..core.config import Settings
 from ..db.models import (
     AuditLog,
     Certification,
+    CertificationStatusHistory,
     CertificationSkill,
     Evidence,
     Issuer,
     Skill,
     Student,
+    User,
 )
 from ..evidence.storage import EvidenceStorageError, LocalEvidenceStorage
 
 
 logger = logging.getLogger(__name__)
-_ALLOWED_CERTIFICATION_STATUSES = {"PENDING", "OBSERVED"}
+_ALLOWED_CERTIFICATION_STATUSES = {"PENDING", "OBSERVED", "RESUBMITTED"}
 _FILE_SIGNATURES = {
     "application/pdf": (b"%PDF-",),
     "image/png": (b"\x89PNG\r\n\x1a\n",),
@@ -219,6 +221,14 @@ class CertificationServiceProtocol(Protocol):
     ) -> EvidenceAccess:
         """Issue a short-lived signed access token for owned evidence."""
 
+    def create_validator_evidence_access(
+        self,
+        actor_user_id: UUID,
+        certification_id: UUID,
+        evidence_id: UUID,
+    ) -> EvidenceAccess:
+        """Issue a short-lived signed access token for validator evidence review."""
+
     def download_evidence(self, evidence_id: UUID, token: str) -> EvidenceDownload:
         """Resolve a signed token without exposing the private storage root."""
 
@@ -303,6 +313,33 @@ def _audit(
             created_at=_utc_now(),
         )
     )
+
+
+def append_status_history(
+    session: Session,
+    *,
+    certification_id: UUID,
+    actor_user_id: UUID | None,
+    from_status: str | None,
+    to_status: str,
+    comment: str | None = None,
+    cutoff_date: date | None = None,
+    changed_at: datetime | None = None,
+) -> CertificationStatusHistory:
+    """Append a transition; callers never update or delete history rows."""
+
+    history = CertificationStatusHistory(
+        id=uuid4(),
+        certification_id=certification_id,
+        actor_user_id=actor_user_id,
+        from_status=from_status,
+        to_status=to_status,
+        comment=comment,
+        cutoff_date=cutoff_date,
+        changed_at=changed_at or _utc_now(),
+    )
+    session.add(history)
+    return history
 
 
 class CertificationService:
@@ -539,6 +576,13 @@ class CertificationService:
                 )
                 session.add(certification)
                 session.flush()
+                append_status_history(
+                    session,
+                    certification_id=certification.id,
+                    actor_user_id=actor_user_id,
+                    from_status=None,
+                    to_status=certification.status,
+                )
                 self._add_skill_links(session, certification.id, draft.skills)
                 _audit(
                     session,
@@ -613,7 +657,7 @@ class CertificationService:
                     raise CertificationNotFound("Certification not found")
                 if certification.status not in _ALLOWED_CERTIFICATION_STATUSES:
                     raise CertificationNotCorrectable(
-                        "Only pending or observed certifications can be corrected"
+                        "Only pending, observed or resubmitted certifications can be corrected"
                     )
                 issuer = session.get(Issuer, certification.issuer_id)
                 if issuer is None:
@@ -681,8 +725,9 @@ class CertificationService:
                 certification.issued_on = issued_on
                 certification.expires_on = expires_on
                 certification.source_url = source_url
+                previous_status = certification.status
                 if certification.status == "OBSERVED":
-                    certification.status = "PENDING"
+                    certification.status = "RESUBMITTED"
                 certification.updated_at = _utc_now()
                 if "skills" in changes:
                     values = changes["skills"]
@@ -710,6 +755,14 @@ class CertificationService:
                         "issued_on": certification.issued_on.isoformat(),
                     },
                 )
+                if certification.status != previous_status:
+                    append_status_history(
+                        session,
+                        certification_id=certification.id,
+                        actor_user_id=actor_user_id,
+                        from_status=previous_status,
+                        to_status=certification.status,
+                    )
                 session.flush()
                 return self._certification_view(session, certification)
         except (
@@ -992,6 +1045,59 @@ class CertificationService:
         finally:
             session.close()
 
+    def create_validator_evidence_access(
+        self,
+        actor_user_id: UUID,
+        certification_id: UUID,
+        evidence_id: UUID,
+    ) -> EvidenceAccess:
+        session = self._session_factory()
+        try:
+            with session.begin():
+                actor = session.get(User, actor_user_id)
+                if actor is None or not actor.is_active or actor.role != "VALIDATOR":
+                    raise EvidenceNotFound("Evidence not found")
+                evidence = session.scalar(
+                    select(Evidence)
+                    .where(
+                        Evidence.id == evidence_id,
+                        Evidence.certification_id == certification_id,
+                    )
+                )
+                if evidence is None:
+                    raise EvidenceNotFound("Evidence not found")
+                now = _utc_now()
+                if evidence.retention_until is None or _as_utc(evidence.retention_until) <= now:
+                    raise EvidenceAccessDenied("Evidence retention period has expired")
+                expires_at = now + timedelta(seconds=self._settings.evidence_access_ttl_seconds)
+                _audit(
+                    session,
+                    actor_user_id=actor_user_id,
+                    action="EVIDENCE_ACCESS_ISSUED",
+                    entity_type="EVIDENCE",
+                    entity_id=evidence.id,
+                    before=None,
+                    after={"expires_at": expires_at.isoformat(), "scope": "VALIDATOR"},
+                )
+                session.flush()
+                return EvidenceAccess(
+                    evidence_id=evidence.id,
+                    token=_sign_access_token(
+                        evidence.id,
+                        actor_user_id,
+                        expires_at,
+                        self._settings.evidence_access_secret,
+                    ),
+                    expires_at=expires_at,
+                )
+        except (EvidenceAccessDenied, EvidenceNotFound):
+            raise
+        except Exception as exc:
+            logger.error("Validator evidence access issuance failed")
+            raise CertificationServiceUnavailable("Evidence service is unavailable") from exc
+        finally:
+            session.close()
+
     def download_evidence(self, evidence_id: UUID, token: str) -> EvidenceDownload:
         try:
             token_evidence_id, actor_user_id, expires_at = _verify_access_token(
@@ -1010,10 +1116,12 @@ class CertificationService:
                 raise EvidenceAccessDenied("Evidence access token is invalid")
             certification = session.get(Certification, evidence.certification_id)
             student = session.get(Student, certification.student_id) if certification else None
+            actor = session.get(User, actor_user_id)
+            validator_access = actor is not None and actor.is_active and actor.role == "VALIDATOR"
             if (
                 certification is None
                 or student is None
-                or student.user_id != actor_user_id
+                or (student.user_id != actor_user_id and not validator_access)
             ):
                 raise EvidenceAccessDenied("Evidence access token is invalid")
             if evidence.retention_until is None or _as_utc(evidence.retention_until) <= _utc_now():
@@ -1151,6 +1259,15 @@ class UnavailableCertificationService:
         self._raise()
         raise AssertionError("unreachable")
 
+    def create_validator_evidence_access(
+        self,
+        actor_user_id: UUID,
+        certification_id: UUID,
+        evidence_id: UUID,
+    ) -> EvidenceAccess:
+        self._raise()
+        raise AssertionError("unreachable")
+
     def download_evidence(self, evidence_id: UUID, token: str) -> EvidenceDownload:
         self._raise()
         raise AssertionError("unreachable")
@@ -1176,4 +1293,5 @@ __all__ = [
     "SkillInput",
     "StudentNotProvisioned",
     "UnavailableCertificationService",
+    "append_status_history",
 ]
