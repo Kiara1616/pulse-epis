@@ -12,6 +12,7 @@ Pulse EPIS utiliza issues, ramas, pull requests y revisiones para mantener traza
 | `.github/PULL_REQUEST_TEMPLATE.md` | Información y checklist obligatorios en cada PR |
 | `.github/ISSUE_TEMPLATE/*.yml` | Formularios estructurados para bugs, funcionalidades y documentación |
 | `.github/CODEOWNERS` | Revisión automática de los dos integrantes del proyecto |
+| `.github/branch-protection.json` | Política reproducible aplicada a la rama `main` mediante la API de GitHub |
 | `.github/ISSUE_TEMPLATE/config.yml` | Deshabilita issues sin estructura y enlaza el backlog |
 
 ## Política de ramas
@@ -50,18 +51,26 @@ La cuenta que administra `Kiara1616/pulse-epis` debe abrir **Settings → Branch
 
 No se deben escribir nombres de checks inexistentes como obligatorios: primero se implementa #8, se observa el nombre exacto de cada job y luego se selecciona en la protección de `main`.
 
-## Estado verificado el 12/09/2026
+## Aplicación y auditoría de la protección
+
+Un administrador puede aplicar de forma reproducible la política versionada con:
+
+```bash
+gh api --method PUT repos/Kiara1616/pulse-epis/branches/main/protection \
+  --input .github/branch-protection.json
+```
+
+La comprobación posterior se realiza con `gh api repos/Kiara1616/pulse-epis/branches/main/protection`. La respuesta debe declarar una aprobación, revisión de CODEOWNERS, descarte de aprobaciones obsoletas, resolución de conversaciones y los checks `frontend`, `backend` y `docs`.
+
+## Estado verificado el 13/09/2026
 
 - Repositorio público: `Kiara1616/pulse-epis`.
 - Rama por defecto: `main`.
 - Colaboradores confirmados: `Kiara1616` y `Vinny-13`.
-- La cuenta de trabajo tiene `push`/`pull`, pero no permisos `admin`.
-- La API de GitHub devuelve `404 Not Found` al consultar la protección de `main`; no se puede activar desde esta cuenta.
 - El workflow `.github/workflows/ci.yml` ejecuta `frontend`, `backend` y `docs` en PR/push a `main`.
 - CI publica `backend-coverage` y `project-manuals` como artefactos.
-- La protección de `main` todavía debe seleccionar esos checks desde Settings.
-
-Por lo tanto, el workflow y el gobierno quedan versionados y reproducibles, pero la protección efectiva de `main` y el bloqueo de merge por CI requieren una acción posterior de un administrador.
+- La política versionada exige PR, revisión cruzada de CODEOWNERS, aprobación posterior al último push, conversaciones resueltas y CI exitoso.
+- Los pushes forzados y la eliminación de `main` permanecen deshabilitados; las reglas también aplican a administradores.
 
 ## Definition of Done del repositorio
 
