@@ -86,11 +86,11 @@ jobs:
 
       - name: Run ETL tests with coverage
         env:
-          PYTHONPATH: backend/scripts_etl
+          PYTHONPATH: .
         run: >-
           python -m pytest backend/tests
           --cov=backend.app
-          --cov=main
+          --cov=backend.scripts_etl.main
           --cov-report=term-missing
           --cov-report=xml:backend/coverage.xml
 

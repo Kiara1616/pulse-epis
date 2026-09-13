@@ -1,4 +1,5 @@
 from datetime import date
+import os
 from pathlib import Path
 
 from alembic import command
@@ -29,7 +30,22 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 def _migrate(database_url: str) -> None:
     config = Config(str(REPOSITORY_ROOT / "backend" / "alembic.ini"))
     config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
-    command.upgrade(config, "head")
+    # migrations/env.py intentionally prioritizes PULSE_DATABASE_URL for CI.
+    # Override it temporarily so these isolated synthetic tests migrate the
+    # same SQLite database that they use for their sessions.
+    previous = {
+        key: os.environ.get(key) for key in ("PULSE_DATABASE_URL", "DATABASE_URL")
+    }
+    os.environ["PULSE_DATABASE_URL"] = database_url
+    os.environ.pop("DATABASE_URL", None)
+    try:
+        command.upgrade(config, "head")
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 def _seed_database(database_url: str, *, missing_skill: bool = False):
