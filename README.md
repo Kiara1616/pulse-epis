@@ -22,7 +22,7 @@ El proyecto no pretende descubrir estudiantes mediante scraping de redes profesi
 
 ## Estado del proyecto
 
-> **Prototipo en desarrollo.** El frontend y los documentos académicos ya cuentan con una base funcional. Actualmente, los datos del dashboard son demostrativos y los scripts Python no constituyen todavía una API de producción.
+> **Prototipo en desarrollo.** El frontend y los documentos académicos ya cuentan con una base funcional. El backend dispone de una API FastAPI base con health checks, OpenAPI y configuración por entorno; los datos del dashboard todavía son demostrativos y la persistencia pertenece a los siguientes issues.
 
 | Componente | Estado |
 |---|---|
@@ -30,7 +30,7 @@ El proyecto no pretende descubrir estudiantes mediante scraping de redes profesi
 | Roles principales | Interfaz para administrador, validador y estudiante |
 | Documentos FD01–FD04 | Versionados en `docs/` |
 | ETL | Prueba de concepto en Python |
-| API backend | Pendiente de implementación con FastAPI |
+| API backend | Base FastAPI con `/health`, `/ready`, OpenAPI y errores uniformes |
 | Base de datos | Pendiente de implementación con PostgreSQL |
 | Autenticación institucional | Pendiente |
 | CI | Workflow de PR para frontend, ETL, documentación y auditoría |
@@ -63,6 +63,7 @@ Consulta el [backlog del proyecto](https://github.com/Kiara1616/pulse-epis/issue
 | Estilos | Tailwind CSS 4 | Sistema visual y diseño adaptable |
 | Visualización | Recharts | Gráficos e indicadores |
 | ETL demostrativo | Python, Pandas y Requests | Transformación inicial de datos |
+| API backend | FastAPI, Pydantic y Uvicorn | Servicio REST base, health checks y OpenAPI |
 
 ### Arquitectura objetivo
 
@@ -101,7 +102,10 @@ flowchart LR
 ```text
 pulse-epis/
 ├── backend/
+│   ├── app/                # API FastAPI: API, dominio, servicios y repositorios
+│   ├── tests/              # Pruebas de API y ETL
 │   ├── requirements.txt
+│   ├── requirements-dev.txt
 │   └── scripts_etl/        # ETL demostrativo y datos de prueba
 ├── dashboard-app/
 │   ├── public/             # Recursos gráficos institucionales
@@ -118,7 +122,7 @@ pulse-epis/
 └── README.md
 ```
 
-La estructura evolucionará para incorporar la aplicación FastAPI, migraciones, pruebas, diagramas, manuales, contenedores y workflows de GitHub Actions.
+La estructura seguirá evolucionando para incorporar migraciones, persistencia, diagramas, manuales, contenedores y workflows de despliegue.
 
 ## Ejecución actual del frontend
 
@@ -143,6 +147,50 @@ Abre [http://localhost:3000](http://localhost:3000) en el navegador.
 ```bash
 npm run lint
 npm run build
+```
+
+## Ejecución de la API backend
+
+### Requisitos
+
+- Python 3.12 o superior.
+
+### Instalación y ejecución
+
+Desde la raíz del repositorio:
+
+```bash
+cd backend
+python -m venv .venv
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+# macOS/Linux
+# source .venv/bin/activate
+
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload
+```
+
+La API queda disponible en `http://localhost:8000`. Sus endpoints iniciales son:
+
+| Ruta | Propósito |
+|---|---|
+| `GET /health` | Liveness del proceso |
+| `GET /ready` | Readiness de las dependencias configuradas |
+| `GET /api/v1/` | Metadatos de la instancia |
+| `GET /docs` | Swagger UI generado por FastAPI |
+| `GET /openapi.json` | Contrato OpenAPI |
+
+La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Se puede copiar [`.env.example`](backend/.env.example) a `.env` para modificar `PULSE_ENVIRONMENT`, `PULSE_API_PREFIX` o `PULSE_LOG_LEVEL`. El endpoint `/ready` comprueba por ahora la configuración de la aplicación; la conexión a PostgreSQL se incorporará con el issue [#10](https://github.com/Kiara1616/pulse-epis/issues/10).
+
+### Pruebas del backend
+
+Desde la raíz del repositorio:
+
+```bash
+python -m pytest backend/tests
 ```
 
 ## ETL demostrativo

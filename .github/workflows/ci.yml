@@ -73,6 +73,7 @@ jobs:
           PYTHONPATH: backend/scripts_etl
         run: >-
           python -m pytest backend/tests
+          --cov=backend.app
           --cov=main
           --cov-report=term-missing
           --cov-report=xml:backend/coverage.xml

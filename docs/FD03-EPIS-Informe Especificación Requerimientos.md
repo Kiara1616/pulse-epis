@@ -20,7 +20,7 @@ Este documento especifica las funciones, reglas, datos, estados, errores y atrib
 
 El sistema objetivo administrará el padrón autorizado, recepción y validación de evidencias, normalización de credenciales, generación de indicadores y reportes. Habrá vistas privadas de administración y vistas agregadas de consulta.
 
-El prototipo vigente contiene una aplicación Next.js con datos JSON demostrativos, navegación por páginas, `RoleProvider`/`RoleGate` del lado cliente, una bandeja local de validaciones, un formulario local de estudiante y un ETL Python de prueba. No contiene todavía API, autenticación institucional, base de datos, almacenamiento privado, auditoría persistente, importación CSV real ni exportación PDF/CSV real. Esas diferencias se registran como `Pendiente` o `Parcial` en los requisitos.
+El prototipo vigente contiene una aplicación Next.js con datos JSON demostrativos, navegación por páginas, `RoleProvider`/`RoleGate` del lado cliente, una bandeja local de validaciones, un formulario local de estudiante, un ETL Python de prueba y una API FastAPI base. No contiene todavía API de negocio, autenticación institucional, base de datos, almacenamiento privado, auditoría persistente, importación CSV real ni exportación PDF/CSV real. Esas diferencias se registran como `Pendiente` o `Parcial` en los requisitos.
 
 ## 3 Actores de negocio
 
@@ -91,7 +91,7 @@ En la demo, el selector del encabezado permite alternar entre roles y la ruta de
 
 | ID | Requerimiento | Prioridad | Meta verificable | Estado en el repositorio |
 |---|---|---|---|---|
-| RNF-01 | Rendimiento | Alta | p95 menor a 2 segundos en consultas habituales con el volumen del piloto | Pendiente: no existe API ni medición p95 |
+| RNF-01 | Rendimiento | Alta | p95 menor a 2 segundos en consultas habituales con el volumen del piloto | Pendiente: no existe medición p95 de la API ni consultas de negocio |
 | RNF-02 | Disponibilidad | Alta | 99.5 por ciento durante la ventana de reportes acordada | Pendiente: no existe ambiente operativo |
 | RNF-03 | Seguridad | Crítica | TLS, SSO/OIDC, RBAC, validación servidor y secretos externos | Parcial: hay control visual de roles, sin autenticación ni backend |
 | RNF-04 | Privacidad | Crítica | minimización, seudonimización, retención y cero PII en vistas públicas | Parcial: algunos datos están anonimizados en la demo, sin enforcement servidor |
