@@ -51,6 +51,22 @@ jobs:
   backend:
     name: backend
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: pulse_epis
+          POSTGRES_USER: pulse
+          POSTGRES_PASSWORD: pulse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PULSE_DATABASE_URL: postgresql+psycopg://pulse:pulse@localhost:5432/pulse_epis
     steps:
       - name: Checkout
         uses: actions/checkout@v4

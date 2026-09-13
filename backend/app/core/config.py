@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     environment: Literal["development", "test", "staging", "production"] = "development"
     api_prefix: str = "/api/v1"
     log_level: str = "INFO"
+    database_url: str | None = None
 
     model_config = SettingsConfigDict(
         env_prefix="PULSE_",
