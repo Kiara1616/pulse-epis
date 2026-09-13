@@ -63,6 +63,8 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
     issuers = Table("issuers", metadata, autoload_with=engine)
     certifications = Table("certifications", metadata, autoload_with=engine)
 
+    assert "google_subject" in users.c
+
     user_id = _database_id(database_url)
     student_id = _database_id(database_url)
     period_id = _database_id(database_url)

@@ -20,7 +20,7 @@ Este documento especifica las funciones, reglas, datos, estados, errores y atrib
 
 El sistema objetivo administrará el padrón autorizado, recepción y validación de evidencias, normalización de credenciales, generación de indicadores y reportes. Habrá vistas privadas de administración y vistas agregadas de consulta.
 
-El prototipo vigente contiene una aplicación Next.js con datos JSON demostrativos, navegación por páginas, `RoleProvider`/`RoleGate` del lado cliente, una bandeja local de validaciones, un formulario local de estudiante, un ETL Python de prueba y una API FastAPI base. No contiene todavía API de negocio, autenticación institucional, base de datos, almacenamiento privado, auditoría persistente, importación CSV real ni exportación PDF/CSV real. Esas diferencias se registran como `Pendiente` o `Parcial` en los requisitos.
+El prototipo vigente contiene una aplicación Next.js con datos JSON demostrativos, navegación por páginas, `RoleProvider`/`RoleGate` del lado cliente, una bandeja local de validaciones, un formulario local de estudiante, un ETL Python de prueba y una API FastAPI con OIDC/RBAC base. No contiene todavía API de negocio, integración del frontend con la sesión, almacenamiento privado, auditoría persistente, importación CSV real ni exportación PDF/CSV real. Esas diferencias se registran como `Pendiente` o `Parcial` en los requisitos.
 
 ## 3 Actores de negocio
 
@@ -64,7 +64,7 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 
 | ID | Requerimiento | Prioridad | Criterio verificable | Estado en el repositorio |
 |---|---|---|---|---|
-| RF-01 | Autenticar y aplicar roles y permisos | Crítica | Solo existen `ADMIN`, `VALIDATOR` y `STUDENT`; los alcances `PADRON_MANAGE` y `ANALYTICS_READ` se verifican en backend | Parcial: `RoleProvider`/`RoleGate` solo simulan el acceso en el cliente |
+| RF-01 | Autenticar y aplicar roles y permisos | Crítica | Solo existen `ADMIN`, `VALIDATOR` y `STUDENT`; los alcances `PADRON_MANAGE` y `ANALYTICS_READ` se verifican en backend | Implementado en el backend base: Google OIDC, padrón local, sesión firmada y dependencias RBAC; el frontend demo aún no consume la sesión |
 | RF-02 | Importar padrón por periodo desde CSV | Crítica | Una cuenta `ADMIN` con `PADRON_MANAGE` obtiene filas válidas, rechazadas y duplicadas | Parcial: la pantalla muestra un botón demostrativo, sin carga CSV |
 | RF-03 | Crear clave interna por estudiante | Crítica | No expone código en analítica pública | Pendiente: no existe persistencia ni generación de `student_key` |
 | RF-04 | Registrar credencial y evidencia | Crítica | Exige emisor, nombre, fechas y URL o archivo | Parcial: formulario local sin API ni almacenamiento de evidencias |
@@ -85,7 +85,7 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 
 `Implementado` significa que existe un flujo persistente y verificable; `Parcial` significa que hay una demostración sin garantías de producción; `Pendiente` significa que aún no hay una implementación funcional en el repositorio.
 
-En la demo, el selector del encabezado permite alternar entre roles y la ruta de validaciones acepta `ADMIN` y `VALIDATOR`. Esto sirve para recorrer las pantallas, pero no es autorización de producción: la restricción objetivo de `RF-01` y `RF-05` deberá imponerse en el backend y por permisos persistentes.
+En la demo, el selector del encabezado permite alternar entre roles y la ruta de validaciones acepta `ADMIN` y `VALIDATOR`. Esto todavía sirve para recorrer las pantallas, pero no concede autorización de producción: el backend de #11 valida la sesión y los permisos persistentes; los endpoints de negocio deberán usar esas dependencias.
 
 ## 5 Requerimientos no funcionales
 
@@ -93,7 +93,7 @@ En la demo, el selector del encabezado permite alternar entre roles y la ruta de
 |---|---|---|---|---|
 | RNF-01 | Rendimiento | Alta | p95 menor a 2 segundos en consultas habituales con el volumen del piloto | Pendiente: no existe medición p95 de la API ni consultas de negocio |
 | RNF-02 | Disponibilidad | Alta | 99.5 por ciento durante la ventana de reportes acordada | Pendiente: no existe ambiente operativo |
-| RNF-03 | Seguridad | Crítica | TLS, SSO/OIDC, RBAC, validación servidor y secretos externos | Parcial: hay control visual de roles, sin autenticación ni backend |
+| RNF-03 | Seguridad | Crítica | TLS, SSO/OIDC, RBAC, validación servidor y secretos externos | Parcial: OIDC/RBAC y secretos externos están en el backend; TLS y despliegue seguro quedan pendientes |
 | RNF-04 | Privacidad | Crítica | minimización, seudonimización, retención y cero PII en vistas públicas | Parcial: algunos datos están anonimizados en la demo, sin enforcement servidor |
 | RNF-05 | Accesibilidad | Alta | WCAG 2.2 AA en flujos principales y revisión documentada | Parcial: HTML semántico básico, sin auditoría WCAG |
 | RNF-06 | Mantenibilidad | Alta | lint, tipos, pruebas automatizadas y API documentada | Parcial: lint, TypeScript y build; faltan pruebas y API |

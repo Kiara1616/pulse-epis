@@ -396,7 +396,7 @@ Las migraciones destructivas no se ejecutan en la misma promoción que el códig
 |---|---|---|---|
 | Diagramas | Mermaid en revisión y render de cada vista | Contexto, contenedores, componentes y despliegue sin referencias huérfanas | Documentado; automatización pendiente en #18 |
 | Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | `dashboard-spec.json` y OpenAPI base existen; contratos de negocio pendientes |
-| Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Demo client-side; backend pendiente |
+| Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Backend base implementado en #11; endpoints de negocio pendientes |
 | Datos | Lotes, deduplicación, fórmulas y cortes | Resultados idempotentes y reproducibles | ETL demostrativo; pruebas pendientes en #15/#16 |
 | Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Pendiente en #9/#10/#13/#14 |
 | Rendimiento | p95, lotes y consultas materializadas | Cumple metas de FD03 | Pendiente |
@@ -409,7 +409,7 @@ La secuencia recomendada mantiene la aplicación demostrativa ejecutable mientra
 1. Proteger `main`, activar CI y mantener datos sintéticos en desarrollo.
 2. Crear PostgreSQL, migraciones y contratos de datos.
 3. Inicializar FastAPI con health check, configuración por entorno y OpenAPI.
-4. Implementar OIDC/RBAC y reemplazar el selector de rol por una sesión real.
+4. Integrar en el frontend el OIDC/RBAC backend de #11 y reemplazar el selector de rol por una sesión real.
 5. Implementar padrón, `student_key`, certificaciones, evidencias y auditoría.
 6. Convertir el ETL en worker idempotente con staging y controles de calidad.
 7. Llevar KPIs, filtros, brechas y fecha de corte al backend.

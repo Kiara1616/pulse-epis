@@ -6,3 +6,5 @@ uvicorn[standard]>=0.34,<1
 sqlalchemy>=2.0,<3
 alembic>=1.14,<2
 psycopg[binary]>=3.2,<4
+google-auth>=2.35,<3
+itsdangerous>=2.2,<3

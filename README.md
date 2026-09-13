@@ -22,7 +22,7 @@ El proyecto no pretende descubrir estudiantes mediante scraping de redes profesi
 
 ## Estado del proyecto
 
-> **Prototipo en desarrollo.** El frontend y los documentos académicos ya cuentan con una base funcional. El backend dispone de una API FastAPI base con health checks, OpenAPI y configuración por entorno; los datos del dashboard todavía son demostrativos y la persistencia pertenece a los siguientes issues.
+> **Prototipo en desarrollo.** El frontend y los documentos académicos ya cuentan con una base funcional. El backend dispone de una API FastAPI con health checks, OpenAPI, Google OIDC, sesiones y RBAC; los datos del dashboard todavía son demostrativos y la persistencia de negocio pertenece a los siguientes issues.
 
 | Componente | Estado |
 |---|---|
@@ -32,7 +32,7 @@ El proyecto no pretende descubrir estudiantes mediante scraping de redes profesi
 | ETL | Prueba de concepto en Python |
 | API backend | Base FastAPI con `/health`, `/ready`, OpenAPI y errores uniformes |
 | Base de datos | Esquema PostgreSQL y migración inicial reversible; entorno pendiente |
-| Autenticación institucional | Pendiente |
+| Autenticación institucional | Google OIDC, sesión firmada y RBAC backend; frontend aún usa selector de demo |
 | CI | Workflow de PR para frontend, ETL, documentación y auditoría |
 | Docker y despliegue | Planificados en el backlog |
 | Despliegue público | Pendiente |
@@ -63,8 +63,8 @@ Consulta el [backlog del proyecto](https://github.com/Kiara1616/pulse-epis/issue
 | Estilos | Tailwind CSS 4 | Sistema visual y diseño adaptable |
 | Visualización | Recharts | Gráficos e indicadores |
 | ETL demostrativo | Python, Pandas y Requests | Transformación inicial de datos |
-| API backend | FastAPI, Pydantic y Uvicorn | Servicio REST base, health checks y OpenAPI |
-| Persistencia inicial | SQLAlchemy, Alembic y PostgreSQL | Modelo operacional/analítico y migración versionada |
+| API backend | FastAPI, Pydantic y Uvicorn | Servicio REST, health checks, OpenAPI, OIDC y RBAC |
+| Persistencia inicial | SQLAlchemy, Alembic y PostgreSQL | Modelo operacional/analítico y migraciones versionadas |
 
 ### Arquitectura objetivo
 
@@ -73,7 +73,7 @@ Consulta el [backlog del proyecto](https://github.com/Kiara1616/pulse-epis/issue
 | API | FastAPI y Pydantic | Servicios REST, validación y OpenAPI |
 | Persistencia | PostgreSQL | Datos operacionales, históricos y analíticos |
 | Acceso a datos | SQLAlchemy y Alembic | ORM y migraciones versionadas |
-| Identidad | Google OpenID Connect | Inicio de sesión institucional |
+| Identidad | Google OpenID Connect | Inicio de sesión institucional sin acceso a Gmail |
 | Evidencias | Almacenamiento compatible con S3 | Archivos privados y acceso temporal |
 | Pruebas | Pytest y Playwright | Pruebas del backend y recorridos web |
 | Contenedores | Docker y Docker Compose | Entornos reproducibles |
@@ -183,10 +183,14 @@ La API queda disponible en `http://localhost:8000`. Sus endpoints iniciales son:
 | `GET /health` | Liveness del proceso |
 | `GET /ready` | Readiness de las dependencias configuradas |
 | `GET /api/v1/` | Metadatos de la instancia |
+| `GET /api/v1/auth/google/login` | Inicia el flujo Google OIDC |
+| `GET /api/v1/auth/google/callback` | Valida el código, el padrón y crea la sesión |
+| `GET /api/v1/auth/me` | Devuelve identidad, rol y permisos de la sesión |
+| `POST /api/v1/auth/logout` | Invalida la sesión actual |
 | `GET /docs` | Swagger UI generado por FastAPI |
 | `GET /openapi.json` | Contrato OpenAPI |
 
-La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Se puede copiar [`.env.example`](backend/.env.example) a `.env` para modificar `PULSE_ENVIRONMENT`, `PULSE_API_PREFIX`, `PULSE_LOG_LEVEL` o `PULSE_DATABASE_URL`. El endpoint `/ready` comprueba por ahora la configuración de la aplicación; el repositorio de datos se conectará en los siguientes issues.
+La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Se puede copiar [`.env.example`](backend/.env.example) a `.env` para configurar la base de datos, Google OIDC y la sesión. Google solo solicita `openid email profile`; el backend además exige que la cuenta esté provisionada en `users` y, para `STUDENT`, vinculada a `students`. El dominio permitido es un filtro adicional, no prueba de pertenencia a EPIS. En producción se requiere un secreto de sesión aleatorio, cookies seguras y credenciales fuera del repositorio.
 
 ### Pruebas del backend
 

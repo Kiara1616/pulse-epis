@@ -2,7 +2,7 @@
 
 ## Pulse EPIS — esquema operacional y analítico
 
-Este modelo corresponde al issue [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10). La primera migración se encuentra en `backend/migrations/versions/0001_initial_schema.py` y se ejecuta con Alembic.
+Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10) y [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
 
 El esquema separa la operación institucional de los hechos usados para indicadores. Las tablas analíticas conservan una fecha de corte para que los reportes sean reproducibles y no copian directamente el correo o código institucional.
 
@@ -28,6 +28,7 @@ erDiagram
     USERS {
         uuid id PK
         string email UK
+        string google_subject UK,nullable
         string role
         boolean is_active
         datetime created_at
@@ -127,6 +128,8 @@ erDiagram
 ## Reglas de integridad
 
 - Los roles y estados se restringen mediante `CHECK` constraints para evitar valores fuera del contrato.
+- `google_subject` es opcional hasta el primer login autorizado y luego vincula la cuenta local con el `sub` estable de Google mediante un índice único.
+- El correo y el dominio de Google no reemplazan el padrón: una sesión solo se crea para un `users` provisionado y un `STUDENT` debe tener registro en `students`.
 - Una matrícula es única por estudiante y periodo (`student_id`, `period_id`).
 - Una certificación es única por estudiante, emisor, nombre y fecha de emisión.
 - El identificador externo de una certificación es único dentro de su emisor cuando existe.
@@ -135,4 +138,4 @@ erDiagram
 - Las tablas de hechos incluyen fecha de corte y claves compuestas para evitar snapshots duplicados.
 - Los índices cubren estados, periodos, estudiantes, emisores, validaciones, auditoría y consultas analíticas frecuentes.
 
-La migración se prueba con datos sintéticos contra PostgreSQL en CI y se revierte a `base` al finalizar la prueba. La autenticación, la conexión desde la API, el almacenamiento privado de evidencias y los respaldos pertenecen a issues posteriores.
+Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se revierten a `base` al finalizar la prueba. La conexión de identidad desde la API usa Google OIDC sin scopes de Gmail, sesiones firmadas y autorización RBAC en backend. El almacenamiento privado de evidencias y los respaldos pertenecen a issues posteriores.
