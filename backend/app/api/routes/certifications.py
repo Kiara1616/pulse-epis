@@ -208,7 +208,7 @@ def get_certification(
     "/{certification_id}",
     response_model=CertificationResponse,
     dependencies=[Depends(_CERTIFICATION_WRITE)],
-    summary="Correct a pending or observed certification",
+    summary="Correct a pending, observed or resubmitted certification",
 )
 def update_certification(
     certification_id: UUID,

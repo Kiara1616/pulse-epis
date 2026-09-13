@@ -2,7 +2,7 @@
 
 ## Pulse EPIS — esquema operacional y analítico
 
-Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10), [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11), [#12 — Implementar importación y conciliación del padrón EPIS](https://github.com/Kiara1616/pulse-epis/issues/12) y [#13 — Implementar registro de certificaciones y evidencias privadas](https://github.com/Kiara1616/pulse-epis/issues/13). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
+Este modelo corresponde a los issues [#10 — Diseñar PostgreSQL y crear migraciones reproducibles](https://github.com/Kiara1616/pulse-epis/issues/10), [#11 — Implementar autenticación Google institucional y RBAC](https://github.com/Kiara1616/pulse-epis/issues/11), [#12 — Implementar importación y conciliación del padrón EPIS](https://github.com/Kiara1616/pulse-epis/issues/12), [#13 — Implementar registro de certificaciones y evidencias privadas](https://github.com/Kiara1616/pulse-epis/issues/13) y [#14 — Implementar flujo de validación y auditoría de certificaciones](https://github.com/Kiara1616/pulse-epis/issues/14). Las migraciones se encuentran en `backend/migrations/versions/` y se ejecutan con Alembic.
 
 El esquema separa la operación institucional de los hechos usados para indicadores. Las tablas analíticas conservan una fecha de corte para que los reportes sean reproducibles y no copian directamente el correo o código institucional.
 
@@ -10,6 +10,7 @@ El esquema separa la operación institucional de los hechos usados para indicado
 erDiagram
     USERS ||--o| STUDENTS : "representa"
     USERS ||--o{ VALIDATIONS : "decide"
+    USERS ||--o{ CERTIFICATION_STATUS_HISTORY : "origina"
     USERS ||--o{ AUDIT_LOGS : "origina"
     STUDENTS ||--o{ ENROLLMENTS : "tiene"
     ACADEMIC_PERIODS ||--o{ ENROLLMENTS : "contiene"
@@ -20,6 +21,7 @@ erDiagram
     ISSUERS ||--o{ CERTIFICATIONS : "emite"
     CERTIFICATIONS ||--o{ EVIDENCES : "respalda"
     CERTIFICATIONS ||--o{ VALIDATIONS : "recibe"
+    CERTIFICATIONS ||--o{ CERTIFICATION_STATUS_HISTORY : "conserva"
     CERTIFICATIONS ||--o{ CERTIFICATION_SKILLS : "desarrolla"
     SKILLS ||--o{ CERTIFICATION_SKILLS : "clasifica"
     ACADEMIC_PERIODS ||--o{ FACT_STUDENT_PERIOD : "corta"
@@ -125,6 +127,16 @@ erDiagram
         string comment
         datetime decided_at
     }
+    CERTIFICATION_STATUS_HISTORY {
+        uuid id PK
+        uuid certification_id FK
+        uuid actor_user_id FK,nullable
+        string from_status
+        string to_status
+        string comment
+        date cutoff_date
+        datetime changed_at
+    }
     AUDIT_LOGS {
         uuid id PK
         uuid actor_user_id FK
@@ -167,9 +179,12 @@ erDiagram
 - El identificador externo de una certificación es único dentro de su emisor cuando existe.
 - Una evidencia exige una URL o una clave de objeto y evita repetir el mismo hash para una certificación.
 - Los archivos de evidencia se guardan con una clave aleatoria, metadatos de tipo/tamaño y `retention_until`; el acceso se entrega mediante tokens firmados de corta duración.
-- La corrección de una certificación observada vuelve a `PENDING` y no elimina las decisiones anteriores.
+- La corrección de una certificación observada pasa a `RESUBMITTED` y no elimina las decisiones anteriores.
+- Cada transición explícita agrega una fila en `certification_status_history`; la aplicación no ofrece actualización ni borrado de ese historial.
+- `EXPIRED` es un estado derivado al evaluar una certificación `APPROVED` cuyo `expires_on` es anterior a la fecha de corte; el registro aprobado original se conserva.
+- Solo `APPROVED` que siga vigente en la fecha de corte puede entrar en los KPI oficiales.
 - Las fechas de periodo y certificación son consistentes; los contadores analíticos no pueden ser negativos ni superar el total.
 - Las tablas de hechos incluyen fecha de corte y claves compuestas para evitar snapshots duplicados.
 - Los índices cubren estados, periodos, estudiantes, emisores, validaciones, auditoría y consultas analíticas frecuentes.
 
-Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se revierten a `base` al finalizar la prueba. La conexión de identidad desde la API usa Google OIDC sin scopes de Gmail, sesiones firmadas y autorización RBAC en backend. El padrón se carga mediante un lote atómico, con HMAC para `student_key`, historial por periodo y reporte de rechazos sin PII. La issue #13 añade el flujo privado de evidencias con acceso temporal; el adaptador de almacenamiento de producción, purga programada y respaldos pertenecen a las issues #19 y #21.
+Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se revierten a `base` al finalizar la prueba. La conexión de identidad desde la API usa Google OIDC sin scopes de Gmail, sesiones firmadas y autorización RBAC en backend. El padrón se carga mediante un lote atómico, con HMAC para `student_key`, historial por periodo y reporte de rechazos sin PII. Las issues #13 y #14 cubren evidencias privadas, decisiones del validador y trazabilidad; el adaptador de almacenamiento de producción, purga programada y respaldos pertenecen a las issues #19 y #21.

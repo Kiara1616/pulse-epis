@@ -234,12 +234,12 @@ def test_observed_certification_can_be_corrected_and_keeps_validation_history(tm
             "skills": (SkillInput(name="Cloud", level="Associate"),),
         },
     )
-    assert corrected.status == "PENDING"
+    assert corrected.status == "RESUBMITTED"
     assert corrected.credential_name.endswith("Corrected")
     assert corrected.skills[0].level == "Associate"
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(Validation)) == 1
-        assert session.get(Certification, created.id).status == "PENDING"
+        assert session.get(Certification, created.id).status == "RESUBMITTED"
     engine.dispose()
 
 

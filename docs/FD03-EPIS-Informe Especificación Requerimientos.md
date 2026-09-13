@@ -20,7 +20,7 @@ Este documento especifica las funciones, reglas, datos, estados, errores y atrib
 
 El sistema objetivo administrará el padrón autorizado, recepción y validación de evidencias, normalización de credenciales, generación de indicadores y reportes. Habrá vistas privadas de administración y vistas agregadas de consulta.
 
-El prototipo vigente contiene una aplicación Next.js con datos JSON demostrativos, navegación por páginas, `RoleProvider`/`RoleGate` del lado cliente, una bandeja local de validaciones, un formulario local de estudiante, un ETL Python de prueba y una API FastAPI con OIDC/RBAC base. No contiene todavía API de negocio, integración del frontend con la sesión, almacenamiento privado, auditoría persistente, importación CSV real ni exportación PDF/CSV real. Esas diferencias se registran como `Pendiente` o `Parcial` en los requisitos.
+El prototipo vigente contiene una aplicación Next.js con datos JSON demostrativos para las vistas analíticas, navegación por páginas, `RoleProvider`/`RoleGate` del lado cliente, formularios de estudiante, un ETL Python de prueba y una API FastAPI con OIDC/RBAC. El registro privado de certificaciones de #13 y la bandeja conectada de validaciones de #14 ya cuentan con persistencia y pruebas; la sesión real del frontend, los KPI analíticos, la importación CSV desde la interfaz y la exportación PDF/CSV siguen registrados como `Pendiente` o `Parcial`.
 
 ## 3 Actores de negocio
 
@@ -68,7 +68,7 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 | RF-02 | Importar padrón por periodo desde CSV | Crítica | Una cuenta `ADMIN` con `PADRON_MANAGE` obtiene filas válidas, rechazadas y duplicadas | Implementado en backend: plantilla, validación atómica, reporte de rechazos, idempotencia e historial por periodo |
 | RF-03 | Crear clave interna por estudiante | Crítica | No expone código en analítica pública | Implementado en backend: `student_key` HMAC estable con secreto externo |
 | RF-04 | Registrar credencial y evidencia | Crítica | Exige emisor, nombre, fechas y URL o archivo | Implementado en backend: registro propio, estado `PENDING`, validación de URL/archivo, hash y almacenamiento privado |
-| RF-05 | Validar evidencia y decisión | Crítica | Solo `VALIDATOR` conserva autor, fecha, comentario y estado | Parcial: la bandeja cambia estados en memoria y no registra auditoría |
+| RF-05 | Validar evidencia y decisión | Crítica | Solo `VALIDATOR` conserva autor, fecha, comentario y estado | Implementado en backend y conectado en la bandeja: transiciones autorizadas, decisiones, comentarios, evidencia temporal e historial |
 | RF-06 | Detectar duplicados | Alta | Marca coincidencia por alumno, credencial, emisor y fecha | Implementado en backend: restricción persistente y respuesta `409 DUPLICATE_RECORD` para credenciales y evidencias repetidas |
 | RF-07 | Normalizar proveedor, nivel y habilidades | Alta | Usa catálogos versionados | Parcial: ETL de prueba normaliza algunos proveedores y niveles |
 | RF-08 | Calcular KPIs por fecha de corte | Crítica | Fórmula y población son visibles para `ANALYTICS_READ` y permisos superiores | Parcial: KPIs estáticos desde `mock-data.json`, sin fecha de corte real |
@@ -76,16 +76,16 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 | RF-10 | Mostrar evolución y participación | Alta | Compara periodos y muestra la fecha de corte | Parcial: gráficos sobre datos estáticos |
 | RF-11 | Restringir detalle nominal | Crítica | Visitantes reciben agregados y ningún endpoint público devuelve PII | Parcial: `RoleGate` es del cliente y no existe endpoint público/backend |
 | RF-12 | Exportar CSV y PDF | Alta | Refleja filtros, fecha de corte, fuentes y fórmula | Parcial: botones simulan exportación y solo muestran una alerta |
-| RF-13 | Registrar auditoría | Crítica | Conserva principal, rol, alcance, acción y fecha | Parcial: registro, corrección y adjuntos generan `AuditLog`; las decisiones del validador quedan para #14 |
-| RF-14 | Gestionar expiraciones | Alta | Distingue vigente, próxima y vencida con fecha de corte | Pendiente: no existe cálculo conectado a datos reales |
+| RF-13 | Registrar auditoría | Crítica | Conserva principal, rol, alcance, acción y fecha | Implementado para certificaciones: los cambios de estado generan `AuditLog` e historial append-only |
+| RF-14 | Gestionar expiraciones | Alta | Distingue vigente, próxima y vencida con fecha de corte | Parcial implementado: `EXPIRED` se deriva de `APPROVED` y `expires_on` al consultar el corte; el tablero analítico queda para #16 |
 | RF-15 | Importar demanda laboral con fuente | Media | Conserva URL, consulta, ubicación y fecha | Parcial: el mock muestra demanda sin procedencia completa |
 | RF-16 | Ejecutar ETL y mostrar estado | Alta | Registra inicio, fin, filas y errores por corrida | Parcial: ETL Python escribe JSON y logs, sin API ni panel de estado |
-| RF-17 | Corregir y volver a revisar | Alta | Mantiene historial anterior y exige una nueva decisión | Parcial: `OBSERVED` vuelve a `PENDING` y conserva decisiones; el flujo completo de revisión se implementa en #14 |
+| RF-17 | Corregir y volver a revisar | Alta | Mantiene historial anterior y exige una nueva decisión | Implementado: `OBSERVED` pasa a `RESUBMITTED`, requiere `START_REVIEW` y conserva las decisiones anteriores |
 | RF-18 | Generar paquete de acreditación | Media | Incluye KPIs, metodología, calidad y referencias | Pendiente: no existe paquete institucional reproducible |
 
 `Implementado` significa que existe un flujo persistente y verificable; `Parcial` significa que hay una demostración sin garantías de producción; `Pendiente` significa que aún no hay una implementación funcional en el repositorio.
 
-En la demo, el selector del encabezado permite alternar entre roles y la ruta de validaciones acepta `ADMIN` y `VALIDATOR`. Esto todavía sirve para recorrer las pantallas, pero no concede autorización de producción: el backend de #11 valida la sesión y los permisos persistentes; los endpoints de negocio deberán usar esas dependencias.
+En la demo, el selector del encabezado permite alternar entre roles y la ruta de validaciones muestra la bandeja para `VALIDATOR`. Esto todavía sirve para recorrer las pantallas, pero no concede autorización de producción: el backend de #11 valida la sesión y los permisos persistentes; los endpoints de #14 vuelven a validar el permiso `CERTIFICATION_VALIDATE`.
 
 ## 5 Requerimientos no funcionales
 
@@ -110,13 +110,14 @@ Los estados siguientes son el contrato funcional objetivo. `Vigente`, `Próxima 
 
 | Estado | Significado | Puede entrar en KPI oficial | Transición permitida |
 |---|---|:---:|---|
-| `BORRADOR` | El estudiante aún no envió el registro | No | `PENDIENTE` |
-| `PENDIENTE` | Registro enviado y en cola de revisión | No | `VALIDADA`, `OBSERVADA` o `RECHAZADA` |
-| `OBSERVADA` | Falta información o evidencia corregible | No | `PENDIENTE` después de una corrección |
-| `VALIDADA` | El validador confirmó titularidad, emisor, fechas y evidencia | Sí, si no está duplicada y cumple el corte | `VENCIDA` solo como estado derivado |
-| `RECHAZADA` | La evidencia no satisface las reglas o no se pudo verificar | No | Nuevo registro o corrección según política |
+| `PENDING` | Registro enviado y en cola de revisión | No | `UNDER_REVIEW` |
+| `UNDER_REVIEW` | Un validador tomó el registro para revisarlo | No | `APPROVED`, `OBSERVED` o `REJECTED` |
+| `OBSERVED` | Falta información o evidencia corregible | No | `RESUBMITTED` después de una corrección |
+| `RESUBMITTED` | El estudiante corrigió una observación y espera nueva revisión | No | `UNDER_REVIEW` |
+| `APPROVED` | El validador confirmó titularidad, emisor, fechas y evidencia | Sí, si no está duplicada y cumple el corte | `EXPIRED` solo como estado derivado |
+| `REJECTED` | La evidencia no satisface las reglas o no se pudo verificar | No | Nuevo registro según política |
 | `DUPLICADA` | Coincide con otra credencial y está pendiente de resolución | No | `VALIDADA` u `OBSERVADA` después de resolver |
-| `VENCIDA` | Certificación validada cuya expiración es anterior al corte | No como vigente; sí en histórico | Estado derivado, no decisión manual |
+| `EXPIRED` | Certificación aprobada cuya expiración es anterior al corte | No como vigente; sí en histórico | Estado derivado, no decisión manual |
 
 Solo `VALIDATOR` puede registrar una decisión de aprobación, observación o rechazo. `ADMIN` puede administrar el flujo y consultar auditoría según permisos, pero no valida por defecto. Ninguna transición debe eliminar la decisión anterior: cada cambio conserva autor, fecha, comentario y estado previo.
 
@@ -188,6 +189,7 @@ Los mensajes al usuario no incluirán códigos, correos, URLs privadas ni trazas
 | Issuer | nombre canónico, alias y sitio oficial |
 | Skill | nombre y categoría |
 | Validation | certificación, validador, decisión, comentario y fecha |
+| CertificationStatusHistory | certificación, actor, estado anterior, estado nuevo, comentario, corte y fecha |
 | MarketDemand | habilidad, fuente, consulta, ubicación, periodo y conteo |
 | AuditLog | principal, rol técnico, alcance, acción, entidad, antes, después y fecha |
 | EtlRun | fuente, inicio, fin, estado, filas y errores |
@@ -204,7 +206,7 @@ El estudiante inicia sesión, completa datos, adjunta PDF o URL y acepta el trat
 
 ### CU-03 Validar certificación
 
-El validador compara evidencia con emisor, decide aprobar, observar o rechazar y deja trazabilidad. Una aprobación actualiza la analítica.
+El validador toma una certificación, revisa evidencia, decide aprobar, observar o rechazar y deja trazabilidad. Una observación exige comentario; una corrección del estudiante crea una resubmisión y exige una nueva revisión. Una aprobación elegible al corte actualiza la analítica.
 
 ### CU-04 Consultar dashboard
 
@@ -263,10 +265,10 @@ La matriz relaciona los objetivos medibles con el requisito que los habilita, el
 | T-01 | Integración | Importación de lote válido, inválido y duplicado | Totales, causas y estado de lote reproducibles | Disponible — #12 |
 | T-02 | Unitarias | Generación y no exposición de `student_key` | Clave estable, sin código/correo en analítica pública | Disponible — #12 |
 | T-03 | Integración | Registro de certificación y evidencia | Campos obligatorios, formato y estado `PENDIENTE` | Disponible — #13 |
-| T-04 | Integración | Decisiones del validador | Solo `VALIDATOR` decide; se conserva historial y auditoría | Pendiente — #14 |
+| T-04 | Integración | Decisiones del validador | Solo `VALIDATOR` decide; se conserva historial, evidencia y auditoría | Disponible — #14 |
 | T-05 | Unitarias | Fórmulas de cobertura, vigencia y duplicados | Numerador, denominador y corte coinciden con el diccionario | Pendiente — #16 |
 | T-06 | Integración | Filtros combinados | Proveedor, nivel y área no alteran indebidamente el denominador | Pendiente — #16/#17 |
-| T-07 | Unitarias | Máquina de estados | Solo transiciones permitidas; estados fuera de regla quedan excluidos | Pendiente — #14 |
+| T-07 | Unitarias | Máquina de estados | Solo transiciones permitidas; estados fuera de regla quedan excluidos y `EXPIRED` se deriva al corte | Disponible — #14 |
 | T-08 | Integración | ETL repetido y datos erróneos | Corrida idempotente, calidad medida y errores aislados | Pendiente — #15 |
 | T-09 | Integración | Evolución entre periodos | Serie reproducible con corte, filtros y periodo anterior | Pendiente — #16 |
 | T-10 | Contrato | Demanda laboral | Cada punto conserva fuente, consulta, ubicación y fecha | Pendiente — #16 |

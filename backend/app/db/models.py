@@ -227,7 +227,7 @@ class Certification(Base):
             name="uq_certification_issuer_external_id",
         ),
         CheckConstraint(
-            "status IN ('PENDING', 'APPROVED', 'OBSERVED', 'REJECTED', 'EXPIRED')",
+            "status IN ('PENDING', 'UNDER_REVIEW', 'APPROVED', 'OBSERVED', 'RESUBMITTED', 'REJECTED', 'EXPIRED')",
             name="ck_certifications_status",
         ),
         CheckConstraint(
@@ -255,6 +255,45 @@ class Certification(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class CertificationStatusHistory(Base):
+    """Append-only record of every explicit certification status transition."""
+
+    __tablename__ = "certification_status_history"
+    __table_args__ = (
+        CheckConstraint(
+            "from_status IS NULL OR from_status IN ('PENDING', 'UNDER_REVIEW', 'APPROVED', 'OBSERVED', 'RESUBMITTED', 'REJECTED', 'EXPIRED')",
+            name="ck_certification_history_from_status",
+        ),
+        CheckConstraint(
+            "to_status IN ('PENDING', 'UNDER_REVIEW', 'APPROVED', 'OBSERVED', 'RESUBMITTED', 'REJECTED', 'EXPIRED')",
+            name="ck_certification_history_to_status",
+        ),
+        Index(
+            "ix_certification_history_certification_changed",
+            "certification_id",
+            "changed_at",
+        ),
+        Index("ix_certification_history_actor", "actor_user_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    certification_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("certifications.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    actor_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    from_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    to_status: Mapped[str] = mapped_column(String(20), nullable=False)
+    comment: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    cutoff_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    changed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 

@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: Literal["development", "test", "staging", "production"] = "development"
     api_prefix: str = "/api/v1"
+    cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     log_level: str = "INFO"
     database_url: str | None = None
     google_client_id: str | None = None
@@ -62,6 +63,17 @@ class Settings(BaseSettings):
         if not value.startswith("/"):
             value = f"/{value}"
         return value.rstrip("/") or "/"
+
+    @field_validator("cors_allowed_origins")
+    @classmethod
+    def normalize_cors_allowed_origins(cls, value: str) -> str:
+        origins = [origin.strip().rstrip("/") for origin in value.split(",") if origin.strip()]
+        if not origins or any(
+            not origin.startswith(("http://", "https://")) or "/" in origin.split("://", 1)[1]
+            for origin in origins
+        ):
+            raise ValueError("cors_allowed_origins must contain absolute origins without paths")
+        return ",".join(dict.fromkeys(origins))
 
     @field_validator("log_level")
     @classmethod
@@ -200,6 +212,16 @@ class Settings(BaseSettings):
             domain.strip().lower().lstrip("@")
             for domain in self.google_allowed_domains.split(",")
             if domain.strip()
+        )
+
+    @property
+    def allowed_cors_origins(self) -> tuple[str, ...]:
+        """Return origins allowed to use the credentialed browser API."""
+
+        return tuple(
+            origin.strip()
+            for origin in self.cors_allowed_origins.split(",")
+            if origin.strip()
         )
 
     @property
