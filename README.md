@@ -31,7 +31,7 @@ El proyecto no pretende descubrir estudiantes mediante scraping de redes profesi
 | Documentos FD01–FD04 | Versionados en `docs/` |
 | ETL | Prueba de concepto en Python |
 | API backend | Base FastAPI con `/health`, `/ready`, OpenAPI y errores uniformes |
-| Base de datos | Pendiente de implementación con PostgreSQL |
+| Base de datos | Esquema PostgreSQL y migración inicial reversible; entorno pendiente |
 | Autenticación institucional | Pendiente |
 | CI | Workflow de PR para frontend, ETL, documentación y auditoría |
 | Docker y despliegue | Planificados en el backlog |
@@ -64,6 +64,7 @@ Consulta el [backlog del proyecto](https://github.com/Kiara1616/pulse-epis/issue
 | Visualización | Recharts | Gráficos e indicadores |
 | ETL demostrativo | Python, Pandas y Requests | Transformación inicial de datos |
 | API backend | FastAPI, Pydantic y Uvicorn | Servicio REST base, health checks y OpenAPI |
+| Persistencia inicial | SQLAlchemy, Alembic y PostgreSQL | Modelo operacional/analítico y migración versionada |
 
 ### Arquitectura objetivo
 
@@ -104,6 +105,8 @@ pulse-epis/
 ├── backend/
 │   ├── app/                # API FastAPI: API, dominio, servicios y repositorios
 │   ├── tests/              # Pruebas de API y ETL
+│   ├── migrations/         # Migraciones Alembic reversibles
+│   ├── alembic.ini
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── scripts_etl/        # ETL demostrativo y datos de prueba
@@ -183,7 +186,7 @@ La API queda disponible en `http://localhost:8000`. Sus endpoints iniciales son:
 | `GET /docs` | Swagger UI generado por FastAPI |
 | `GET /openapi.json` | Contrato OpenAPI |
 
-La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Se puede copiar [`.env.example`](backend/.env.example) a `.env` para modificar `PULSE_ENVIRONMENT`, `PULSE_API_PREFIX` o `PULSE_LOG_LEVEL`. El endpoint `/ready` comprueba por ahora la configuración de la aplicación; la conexión a PostgreSQL se incorporará con el issue [#10](https://github.com/Kiara1616/pulse-epis/issues/10).
+La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Se puede copiar [`.env.example`](backend/.env.example) a `.env` para modificar `PULSE_ENVIRONMENT`, `PULSE_API_PREFIX`, `PULSE_LOG_LEVEL` o `PULSE_DATABASE_URL`. El endpoint `/ready` comprueba por ahora la configuración de la aplicación; el repositorio de datos se conectará en los siguientes issues.
 
 ### Pruebas del backend
 
@@ -192,6 +195,18 @@ Desde la raíz del repositorio:
 ```bash
 python -m pytest backend/tests
 ```
+
+## Modelo y migraciones de base de datos
+
+El [modelo de datos inicial](docs/05-Modelo-de-datos.md) cubre usuarios, estudiantes, periodos, matrículas, emisores, certificaciones, evidencias, validaciones, habilidades, auditoría y hechos analíticos. Las migraciones se ejecutan con Alembic y pueden revertirse:
+
+```bash
+# Desde la raíz, con PULSE_DATABASE_URL apuntando a PostgreSQL
+alembic -c backend/alembic.ini upgrade head
+alembic -c backend/alembic.ini downgrade base
+```
+
+El test `backend/tests/test_database_migrations.py` crea el esquema desde cero, inserta datos sintéticos, verifica restricciones contra duplicados y ejecuta el rollback. En GitHub Actions se ejecuta contra un servicio PostgreSQL; localmente usa SQLite si no se define `PULSE_DATABASE_URL`.
 
 ## ETL demostrativo
 
@@ -286,6 +301,7 @@ No deben subirse credenciales, tokens, padrones reales, correos personales ni ev
 - [Contribuir al proyecto](CONTRIBUTING.md)
 - [Gobierno del repositorio](docs/REPOSITORY-GOVERNANCE.md)
 - [Especificación del dashboard](docs/schemas/dashboard-spec.json)
+- [Modelo de datos inicial](docs/05-Modelo-de-datos.md)
 
 ## Equipo
 

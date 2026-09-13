@@ -10,3 +10,5 @@ coverage/
 coverage.xml
 .coverage
 .pytest_cache/
+backend/.venv/
+*.db

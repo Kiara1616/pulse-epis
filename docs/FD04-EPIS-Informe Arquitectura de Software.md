@@ -23,7 +23,7 @@ La arquitectura convierte el prototipo Next.js y Python en una plataforma segura
 |---|---|---|
 | Frontend | Next.js, TypeScript, Recharts y JSON demostrativos | Next.js conectado a una API con contratos versionados |
 | Backend | API FastAPI base con health checks y OpenAPI | FastAPI modular con OpenAPI, validación y autorización |
-| Datos | Archivos JSON y ETL de prueba | PostgreSQL operacional, staging y modelo analítico |
+| Datos | ETL de prueba y esquema PostgreSQL inicial con migración | PostgreSQL operacional, staging y modelo analítico |
 | Evidencias | Formulario y vistas simuladas | Objetos privados, hash, URLs temporales y retención |
 | Identidad | Selector de rol para demostración | OIDC institucional, sesiones seguras y RBAC/scopes |
 | Operación | CI para calidad; no hay Docker ni ambientes | Desarrollo, staging y producción reproducibles |
@@ -350,7 +350,7 @@ flowchart LR
 | Staging | Validar migraciones, contratos, seguridad y rendimiento | Sintéticos o anonimizados | CI exitoso y revisión |
 | Producción | Piloto o servicio institucional | Datos autorizados reales | Aprobación, backup verificado y rollback preparado |
 
-La arquitectura objetivo requiere contenedores, PostgreSQL, almacenamiento privado, CI/CD y monitoreo. En el estado actual estos archivos no existen; corresponden a los issues [#8 CI](https://github.com/Kiara1616/pulse-epis/issues/8), [#9 API](https://github.com/Kiara1616/pulse-epis/issues/9), [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10), [#19 contenedores](https://github.com/Kiara1616/pulse-epis/issues/19) y [#20 staging](https://github.com/Kiara1616/pulse-epis/issues/20).
+La arquitectura objetivo requiere contenedores, un entorno PostgreSQL operativo, almacenamiento privado, CI/CD y monitoreo. El repositorio ya contiene el esquema y la migración inicial de [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10); los entornos y componentes restantes corresponden a los issues [#13 evidencias](https://github.com/Kiara1616/pulse-epis/issues/13), [#19 contenedores](https://github.com/Kiara1616/pulse-epis/issues/19) y [#20 staging](https://github.com/Kiara1616/pulse-epis/issues/20).
 
 ## 11. Respaldo, monitoreo y rollback
 
@@ -426,7 +426,7 @@ pulse-epis/
   dashboard-app/                 # Next.js actual -> apps/web en migración futura
   backend/scripts_etl/           # ETL demostrativo -> workers/etl
   backend/app/                   # FastAPI base: API, dominio, servicios y repositorios (#9)
-  database/migrations/           # PostgreSQL/Alembic pendiente (#10)
+  backend/migrations/            # PostgreSQL/Alembic inicial (#10)
   storage/                       # Contrato de objetos privados pendiente (#13/#19)
   tests/                         # Unitarias, integración y seguridad
   docs/
@@ -440,4 +440,4 @@ pulse-epis/
 
 La arquitectura es implementable con un monolito modular, PostgreSQL, almacenamiento privado, un worker ETL y una interfaz Next.js. Las fronteras de confianza, responsabilidades, contratos, respaldos, monitoreo y rollback quedan definidas para que el sistema pueda evolucionar sin exponer datos nominales ni depender de scraping.
 
-El repositorio actual sigue siendo un prototipo: contiene una base FastAPI y CI de calidad, pero no contiene PostgreSQL, OIDC, Docker ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.
+El repositorio actual sigue siendo un prototipo: contiene una base FastAPI, un esquema PostgreSQL migrable y CI de calidad, pero no contiene un entorno PostgreSQL operativo, OIDC, Docker ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.
