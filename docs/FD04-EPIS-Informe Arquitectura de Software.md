@@ -22,11 +22,11 @@ La arquitectura convierte el prototipo Next.js y Python en una plataforma segura
 | Área | Estado actual del repositorio | Arquitectura objetivo |
 |---|---|---|
 | Frontend | Next.js, TypeScript, Recharts y JSON demostrativos | Next.js conectado a una API con contratos versionados |
-| Backend | No existe API de producción | FastAPI modular con OpenAPI, validación y autorización |
+| Backend | API FastAPI base con health checks y OpenAPI | FastAPI modular con OpenAPI, validación y autorización |
 | Datos | Archivos JSON y ETL de prueba | PostgreSQL operacional, staging y modelo analítico |
 | Evidencias | Formulario y vistas simuladas | Objetos privados, hash, URLs temporales y retención |
 | Identidad | Selector de rol para demostración | OIDC institucional, sesiones seguras y RBAC/scopes |
-| Operación | No hay Docker, CI/CD ni ambientes | Desarrollo, staging y producción reproducibles |
+| Operación | CI para calidad; no hay Docker ni ambientes | Desarrollo, staging y producción reproducibles |
 | Resiliencia | No hay backups ni monitoreo | RPO/RTO definidos, alertas, restauración y rollback |
 
 El prototipo no se presentará como producción. Las decisiones de este documento son el contrato técnico para los issues de construcción; cada componente pendiente conserva su issue de implementación y criterio de salida.
@@ -395,7 +395,7 @@ Las migraciones destructivas no se ejecutan en la misma promoción que el códig
 | Nivel | Prueba | Criterio de salida | Estado actual |
 |---|---|---|---|
 | Diagramas | Mermaid en revisión y render de cada vista | Contexto, contenedores, componentes y despliegue sin referencias huérfanas | Documentado; automatización pendiente en #18 |
-| Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | `dashboard-spec.json` existe; API pendiente |
+| Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | `dashboard-spec.json` y OpenAPI base existen; contratos de negocio pendientes |
 | Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Demo client-side; backend pendiente |
 | Datos | Lotes, deduplicación, fórmulas y cortes | Resultados idempotentes y reproducibles | ETL demostrativo; pruebas pendientes en #15/#16 |
 | Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Pendiente en #9/#10/#13/#14 |
@@ -425,7 +425,7 @@ La estructura objetivo se alinea con las carpetas actuales y los issues pendient
 pulse-epis/
   dashboard-app/                 # Next.js actual -> apps/web en migración futura
   backend/scripts_etl/           # ETL demostrativo -> workers/etl
-  services/api/                  # FastAPI pendiente (#9)
+  backend/app/                   # FastAPI base: API, dominio, servicios y repositorios (#9)
   database/migrations/           # PostgreSQL/Alembic pendiente (#10)
   storage/                       # Contrato de objetos privados pendiente (#13/#19)
   tests/                         # Unitarias, integración y seguridad
@@ -440,4 +440,4 @@ pulse-epis/
 
 La arquitectura es implementable con un monolito modular, PostgreSQL, almacenamiento privado, un worker ETL y una interfaz Next.js. Las fronteras de confianza, responsabilidades, contratos, respaldos, monitoreo y rollback quedan definidas para que el sistema pueda evolucionar sin exponer datos nominales ni depender de scraping.
 
-El repositorio actual sigue siendo un prototipo: no contiene FastAPI, PostgreSQL, OIDC, Docker, CI/CD ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.
+El repositorio actual sigue siendo un prototipo: contiene una base FastAPI y CI de calidad, pero no contiene PostgreSQL, OIDC, Docker ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.
