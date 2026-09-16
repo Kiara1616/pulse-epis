@@ -1,0 +1,67 @@
+name: pulse-epis
+
+services:
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PULSE_POSTGRES_DB:?Define PULSE_POSTGRES_DB}
+      POSTGRES_USER: ${PULSE_POSTGRES_USER:?Define PULSE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PULSE_POSTGRES_PASSWORD:?Define PULSE_POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - private
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      PULSE_ENVIRONMENT: development
+      PULSE_DATABASE_URL: postgresql+psycopg://${PULSE_POSTGRES_USER}:${PULSE_POSTGRES_PASSWORD}@database:5432/${PULSE_POSTGRES_DB}
+      PULSE_AUTH_SESSION_SECRET: ${PULSE_AUTH_SESSION_SECRET:?Define PULSE_AUTH_SESSION_SECRET}
+      PULSE_ROSTER_PSEUDONYM_SECRET: ${PULSE_ROSTER_PSEUDONYM_SECRET:?Define PULSE_ROSTER_PSEUDONYM_SECRET}
+      PULSE_EVIDENCE_ACCESS_SECRET: ${PULSE_EVIDENCE_ACCESS_SECRET:?Define PULSE_EVIDENCE_ACCESS_SECRET}
+      PULSE_EVIDENCE_STORAGE_PATH: /app/.data/evidence
+      PULSE_RUN_MIGRATIONS: "true"
+    volumes:
+      - evidence-data:/app/.data/evidence
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - private
+      - public
+
+  frontend:
+    build:
+      context: dashboard-app
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - public
+
+volumes:
+  postgres-data:
+  evidence-data:
+
+networks:
+  private:
+    internal: true
+  public:

@@ -272,7 +272,22 @@ Cuando se complete la [contenerización](https://github.com/Kiara1616/pulse-epis
 docker compose up --build
 ```
 
-Actualmente este comando aún no está disponible porque los archivos Docker forman parte del trabajo pendiente.
+Para desarrollo local, copie `.env.compose.example` a `.env`, reemplace todos los secretos de ejemplo y ejecute:
+
+```bash
+docker compose up --build -d
+docker compose ps
+```
+
+El frontend queda en `http://localhost:3000` y la API en `http://localhost:8000`. PostgreSQL permanece únicamente en la red privada de Compose y no publica puertos al host. El backend espera la disponibilidad de PostgreSQL, aplica las migraciones Alembic y después inicia sin privilegios. Los datos de PostgreSQL y las evidencias utilizan volúmenes separados.
+
+Para detener el stack sin borrar datos:
+
+```bash
+docker compose down
+```
+
+La eliminación de volúmenes (`docker compose down -v`) destruye la base y las evidencias locales y debe usarse solamente cuando se desea reiniciar el entorno de desarrollo.
 
 ## Automatización y despliegue
 
