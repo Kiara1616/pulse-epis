@@ -1,6 +1,6 @@
 # EPIS Certifications Dashboard
 
-**EPIS Certifications Dashboard** es una herramienta de Inteligencia de Negocios (BI) diseñada para el Comité de Calidad y la Dirección de la Escuela Profesional de Ingeniería de Sistemas (EPIS). Su propósito es medir y visualizar la **adquisición de certificaciones tecnológicas de la industria** por parte de los estudiantes (AWS, Cisco, Microsoft, Huawei, etc.).
+**EPIS Certifications Dashboard** es una herramienta de Inteligencia de Negocios (BI) diseñada para el Comité de Calidad y la Dirección de la Escuela Profesional de Ingeniería de Sistemas (EPIS). Su propósito es consultar indicadores agregados de certificaciones tecnológicas validadas mediante la API institucional.
 
 Este dashboard es fundamental para sustentar informes de acreditación internacional (ej. ICACIT, ABET) y nacional (SUNEDU), demostrando con métricas cuantitativas que los egresados cumplen con estándares globales.
 
@@ -9,8 +9,8 @@ Este dashboard es fundamental para sustentar informes de acreditación internaci
 El sistema está diseñado para:
 
 1. **Acreditaciones y Calidad:** Probar mediante métricas que los estudiantes tienen competencias validadas por la industria global.
-2. **Identificación de Talento:** Ubicar a los alumnos con mayor número de certificaciones para recomendarlos en oportunidades de prácticas y empleo.
-3. **Cierre de Brechas Laborales:** Comparar las certificaciones obtenidas frente a lo que las empresas regionales y nacionales están demandando (ej. Faltan certificados en Ciberseguridad).
+2. **Seguimiento académico:** Observar cobertura, evolución y distribución por proveedor, nivel, cohorte y ciclo sin exponer datos nominales.
+3. **Cierre de brechas:** Identificar habilidades con menor cobertura dentro de la población activa del snapshot publicado.
 
 ## 📊 Parámetros Evaluados (KPIs)
 
@@ -22,22 +22,18 @@ El dashboard divide el análisis en secciones especializadas con los siguientes 
 - **Evolución Temporal:** Crecimiento histórico de certificaciones semestre a semestre.
 
 ### 2. Módulo de Proveedores IT
-- **Participación por Vendor (Market Share):** Dominio de tecnologías en la escuela (AWS vs Cisco vs Microsoft).
+- **Distribución por proveedor:** Cantidad de certificaciones aprobadas por entidad emisora.
 - **Niveles de Certificación:** Distribución de dificultad (Fundamentals, Associate, Professional).
 
 ### 3. Módulo de Alumnado
-- **Top 5 Estudiantes:** Ranking de alumnos destacados como talento universitario.
-- **Distribución por Semestre:** Identificación de en qué ciclo los alumnos deciden certificarse más.
+- **Cifras agregadas:** Distribución de certificaciones por cohorte y ciclo, sin rankings nominales.
 
 ### 4. Módulo de Brechas de Habilidades
-- **Alumnos vs Mercado (Radar):** Comparativa que muestra si la escuela está sobre-certificando en áreas con baja demanda y sub-certificando en áreas críticas (Ciberseguridad, Data).
+- **Cobertura por habilidad:** Diferencia estimada entre estudiantes activos y estudiantes certificados en cada habilidad.
 
 ## 🔌 Estrategia de Obtención de Datos (Semanas 4-6)
 
-Este proyecto está diseñado para extraer datos automatizados desde múltiples fuentes:
-1. **API de Credly:** Scraping automatizado/API para extraer *Digital Badges* públicos emitidos por AWS, IBM y Cisco.
-2. **Google Sheets API:** Consumo de una base de datos centralizada de secretaría académica alimentada por Formularios de Google donde los estudiantes reportan certificaciones externas (Udemy, Coursera, Huawei).
-3. **Plataformas de Convenio:** Exportación de reportes desde academias universitarias (Cisco NetAcad, AWS Academy).
+El dashboard no realiza scraping de redes profesionales ni inventa fuentes externas. La API expone certificaciones declaradas por estudiantes, evidencias privadas y snapshots ETL construidos desde fuentes institucionales autorizadas.
 
 ## 🚀 Tecnologías Utilizadas
 
@@ -59,4 +55,14 @@ npm install
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver el dashboard. El sistema utiliza datos simulados alojados en `src/shared/api/mock-data.json`.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador. El frontend consulta la API en `NEXT_PUBLIC_API_URL` (por defecto `http://localhost:8000/api/v1`) y solicita una sesión institucional mediante Google OIDC.
+
+### Comprobaciones
+
+```bash
+npm run lint
+npm run build
+npm run test:e2e
+```
+
+Los recorridos E2E levantan Next.js y simulan únicamente las respuestas de la API para comprobar la navegación de `ADMIN`, `VALIDATOR` y `STUDENT`. En una máquina nueva, instala el navegador una vez con `npx playwright install chromium`.

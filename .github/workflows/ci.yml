@@ -45,6 +45,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run role E2E flows
+        run: npm run test:e2e
+
       - name: Audit npm dependencies
         run: npm audit --audit-level=high
 

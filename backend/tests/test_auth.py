@@ -302,3 +302,26 @@ def test_sqlalchemy_directory_resolves_students_and_binds_google_subject():
     assert after.google_subject == "google-student-123"
     assert directory.find_by_google_subject("google-student-123").id == user_id
     engine.dispose()
+
+
+def test_callback_redirects_to_the_configured_frontend_origin():
+    student = make_user(
+        Role.STUDENT,
+        "student@virtual.upt.pe",
+        student_id=uuid4(),
+    )
+    identity = GoogleIdentity("google-student-redirect", student.email, True)
+    app, _, _ = make_app(identity, [student])
+    app.state.settings = make_settings(auth_success_redirect="http://localhost:3000/")
+
+    with TestClient(app) as client:
+        login = client.get("/api/v1/auth/google/login", follow_redirects=False)
+        state = parse_qs(urlparse(login.headers["location"]).query)["state"][0]
+        callback = client.get(
+            "/api/v1/auth/google/callback",
+            params={"code": "one-time-code", "state": state},
+            follow_redirects=False,
+        )
+
+    assert callback.status_code == 302
+    assert callback.headers["location"] == "http://localhost:3000/"

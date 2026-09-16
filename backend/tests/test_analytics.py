@@ -177,9 +177,13 @@ def test_indicator_endpoints_require_permission_and_never_return_student_keys():
     app.dependency_overrides[get_current_user] = lambda: admin
 
     with TestClient(app) as client:
+        periods = client.get("/api/v1/indicators/periods")
         overview = client.get("/api/v1/indicators/overview", params={"period_code": "2026-II"})
         dictionary = client.get("/api/v1/indicators/dictionary")
 
+    assert periods.status_code == 200
+    assert periods.json()[0]["code"] == "2026-II"
+    assert periods.json()[0]["latest_cutoff_date"] == "2026-09-13"
     assert overview.status_code == 200
     assert dictionary.status_code == 200
     assert "anonymous-" not in overview.text

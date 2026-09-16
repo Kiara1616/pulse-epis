@@ -19,6 +19,13 @@ class AnalyticsFilters(BaseModel):
     level: str | None = None
 
 
+class AnalyticsPeriod(BaseModel):
+    code: str
+    starts_on: date
+    ends_on: date
+    latest_cutoff_date: date
+
+
 class AnalyticsKpis(BaseModel):
     active_students: int = Field(ge=0)
     certified_students: int = Field(ge=0)
@@ -64,6 +71,7 @@ __all__ = [
     "AnalyticsFilters",
     "AnalyticsKpis",
     "AnalyticsOverview",
+    "AnalyticsPeriod",
     "EvolutionPoint",
     "MetricDefinition",
     "MetricValue",

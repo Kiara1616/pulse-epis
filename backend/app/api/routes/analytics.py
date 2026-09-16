@@ -4,7 +4,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from ...analytics.schemas import AnalyticsOverview, MetricDefinition
+from ...analytics.schemas import AnalyticsOverview, AnalyticsPeriod, MetricDefinition
 from ...analytics.service import (
     AnalyticsPeriodNotFound,
     AnalyticsServiceProtocol,
@@ -40,6 +40,15 @@ def overview(
         raise _error(status.HTTP_404_NOT_FOUND, "PERIOD_NOT_FOUND", "Academic period was not found") from exc
     except AnalyticsSnapshotNotFound as exc:
         raise _error(status.HTTP_404_NOT_FOUND, "SNAPSHOT_NOT_FOUND", "No published snapshot matches the filters") from exc
+    except AnalyticsUnavailable as exc:
+        raise _error(status.HTTP_503_SERVICE_UNAVAILABLE, "ANALYTICS_UNAVAILABLE", "Analytics are unavailable") from exc
+
+
+@router.get("/periods", response_model=list[AnalyticsPeriod], dependencies=[Depends(_ANALYTICS_READ)])
+def periods(request: Request) -> list[AnalyticsPeriod]:
+    service: AnalyticsServiceProtocol = request.app.state.analytics_service
+    try:
+        return list(service.periods())
     except AnalyticsUnavailable as exc:
         raise _error(status.HTTP_503_SERVICE_UNAVAILABLE, "ANALYTICS_UNAVAILABLE", "Analytics are unavailable") from exc
 

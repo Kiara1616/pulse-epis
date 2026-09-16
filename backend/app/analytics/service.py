@@ -22,6 +22,7 @@ from .schemas import (
     AnalyticsFilters,
     AnalyticsKpis,
     AnalyticsOverview,
+    AnalyticsPeriod,
     EvolutionPoint,
     MetricDefinition,
     MetricValue,
@@ -46,6 +47,8 @@ class AnalyticsUnavailable(AnalyticsError):
 
 
 class AnalyticsServiceProtocol(Protocol):
+    def periods(self) -> tuple[AnalyticsPeriod, ...]: ...
+
     def overview(self, **filters: object) -> AnalyticsOverview: ...
 
     def dictionary(self) -> tuple[MetricDefinition, ...]: ...
@@ -61,6 +64,33 @@ def _series(counter: Counter[str]) -> list[MetricValue]:
 class AnalyticsService:
     def __init__(self, session_factory: sessionmaker[Session]):
         self._session_factory = session_factory
+
+    def periods(self) -> tuple[AnalyticsPeriod, ...]:
+        """Return academic periods with at least one published snapshot."""
+
+        latest_cutoffs = (
+            select(
+                FactStudentPeriod.period_id.label("period_id"),
+                func.max(FactStudentPeriod.cutoff_date).label("latest_cutoff_date"),
+            )
+            .group_by(FactStudentPeriod.period_id)
+            .subquery()
+        )
+        with self._session_factory() as session:
+            rows = session.execute(
+                select(AcademicPeriod, latest_cutoffs.c.latest_cutoff_date)
+                .join(latest_cutoffs, latest_cutoffs.c.period_id == AcademicPeriod.id)
+                .order_by(AcademicPeriod.starts_on.desc(), AcademicPeriod.code.desc())
+            ).all()
+        return tuple(
+            AnalyticsPeriod(
+                code=period.code,
+                starts_on=period.starts_on,
+                ends_on=period.ends_on,
+                latest_cutoff_date=latest_cutoff_date,
+            )
+            for period, latest_cutoff_date in rows
+        )
 
     def overview(
         self,
@@ -255,6 +285,9 @@ class AnalyticsService:
 
 
 class UnavailableAnalyticsService:
+    def periods(self) -> tuple[AnalyticsPeriod, ...]:
+        raise AnalyticsUnavailable("analytics database is unavailable")
+
     def overview(self, **filters: object) -> AnalyticsOverview:
         raise AnalyticsUnavailable("analytics database is unavailable")
 
