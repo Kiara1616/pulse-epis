@@ -200,6 +200,8 @@ La API queda disponible en `http://localhost:8000`. Para consumirla desde el das
 | `POST /api/v1/validations/{id}` | Ejecuta una transición autorizada de validación |
 | `GET /api/v1/validations/{id}/history` | Consulta el historial inmutable de estados |
 | `POST /api/v1/validations/{id}/evidence/{evidence_id}/access` | Genera un enlace temporal para revisar evidencia |
+| `GET /api/v1/indicators/overview?period_code=...` | Devuelve KPIs y desgloses agregados desde un snapshot ETL aprobado |
+| `GET /api/v1/indicators/dictionary` | Expone fórmulas, fuentes y notas del diccionario de métricas |
 | `GET /docs` | Swagger UI generado por FastAPI |
 | `GET /openapi.json` | Contrato OpenAPI |
 
@@ -246,6 +248,10 @@ python -m backend.scripts_etl.main --period-code 2026-II --cutoff-date 2026-09-1
 
 La ejecución programada está declarada en `.github/workflows/etl-scheduled.yml`. Requiere configurar el secreto `PULSE_DATABASE_URL` y las variables `ETL_PERIOD_CODE` y `ETL_CUTOFF_DATE`; también puede iniciarse manualmente desde GitHub Actions.
 
+## API de indicadores
+
+La API analítica consulta únicamente snapshots publicados por el ETL y contabiliza certificaciones en estado `APPROVED`. Permite filtrar por periodo, fecha de corte, cohorte, ciclo, proveedor y nivel. Si no se indica un corte, selecciona el último disponible para el periodo. Las respuestas son agregadas y nunca incluyen correos, códigos ni claves de estudiantes. Las fórmulas se documentan en el [diccionario de indicadores](docs/09-Diccionario-indicadores.md).
+
 ## Estrategia Docker
 
 Docker será el mecanismo estándar para reproducir la solución completa en desarrollo, pruebas y despliegue. No sustituye las tecnologías del proyecto: empaqueta el frontend, la API y sus dependencias.
@@ -284,6 +290,18 @@ docker compose down
 La eliminación de volúmenes (`docker compose down -v`) destruye la base y las evidencias locales y debe usarse solamente cuando se desea reiniciar el entorno de desarrollo.
 
 ## Automatización y despliegue
+
+La documentación técnica se genera con un único comando desde la raíz:
+
+```bash
+pip install -r backend/requirements-dev.txt
+cd docs/tooling && npm ci && cd ../..
+python scripts/build_docs.py
+```
+
+El resultado queda en `artifacts/docs`: manuales HTML/PDF, diagramas Mermaid SVG, OpenAPI JSON/HTML y un manifiesto con el commit de origen. CI publica el directorio como el artefacto `project-manuals`.
+
+En GitHub Actions, Chromium se ejecuta sin sandbox únicamente dentro del runner efímero y sin contenido externo; la ejecución local conserva el sandbox predeterminado.
 
 El flujo objetivo del repositorio es:
 
@@ -339,6 +357,8 @@ No deben subirse credenciales, tokens, padrones reales, correos personales ni ev
 - [Gobierno del repositorio](docs/REPOSITORY-GOVERNANCE.md)
 - [Especificación del dashboard](docs/schemas/dashboard-spec.json)
 - [Modelo de datos inicial](docs/05-Modelo-de-datos.md)
+- [Diccionario de indicadores](docs/09-Diccionario-indicadores.md)
+- [Manual de usuario por roles](docs/10-Manual-de-usuario.md)
 
 ## Equipo
 
