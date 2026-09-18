@@ -63,7 +63,7 @@ services:
     image: caddy:2.10-alpine
     restart: unless-stopped
     environment:
-      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?Define PUBLIC_DOMAIN}
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-localhost}
     ports:
       - "80:80"
       - "443:443"
