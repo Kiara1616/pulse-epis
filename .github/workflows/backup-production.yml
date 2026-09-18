@@ -1,0 +1,39 @@
+name: Backup production database
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$PRODUCTION_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ vars.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Create and retain compressed backup
+        run: |
+          ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" <<'REMOTE'
+          set -eu
+          cd '${{ vars.PRODUCTION_PATH }}'
+          set -a
+          . ./.env
+          set +a
+          mkdir -p backups
+          docker compose --env-file .env --profile staging exec -T database pg_dump -U "$PULSE_POSTGRES_USER" -d "$PULSE_POSTGRES_DB" | gzip > "backups/pulse-$(date -u +%Y%m%d%H%M%S).sql.gz"
+          find backups -type f -name '*.sql.gz' -mtime +30 -delete
+          REMOTE
