@@ -58,9 +58,32 @@ services:
     networks:
       - public
 
+  caddy:
+    profiles: [staging]
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?Define PUBLIC_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - public
+
 volumes:
   postgres-data:
   evidence-data:
+  caddy-data:
+  caddy-config:
 
 networks:
   private:

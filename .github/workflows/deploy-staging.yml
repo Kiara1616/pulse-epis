@@ -1,0 +1,59 @@
+name: Deploy staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to staging host
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://${{ vars.STAGING_DOMAIN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$STAGING_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ vars.STAGING_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Copy deployment files
+        run: |
+          ssh "${{ vars.STAGING_USER }}@${{ vars.STAGING_HOST }}" "mkdir -p '${{ vars.STAGING_PATH }}'"
+          tar -czf /tmp/pulse-epis-staging.tar.gz compose.yaml backend dashboard-app deploy .dockerignore .env.compose.example
+          scp /tmp/pulse-epis-staging.tar.gz "${{ vars.STAGING_USER }}@${{ vars.STAGING_HOST }}:${{ vars.STAGING_PATH }}/release.tar.gz"
+
+      - name: Start or update staging stack
+        env:
+          STAGING_ENV_FILE: ${{ secrets.STAGING_ENV_FILE }}
+        run: |
+          printf '%s\n' "$STAGING_ENV_FILE" | ssh "${{ vars.STAGING_USER }}@${{ vars.STAGING_HOST }}" "cat > '${{ vars.STAGING_PATH }}/.env'"
+          ssh "${{ vars.STAGING_USER }}@${{ vars.STAGING_HOST }}" <<'REMOTE'
+          set -eu
+          cd '${{ vars.STAGING_PATH }}'
+          mkdir -p release
+          tar -xzf release.tar.gz -C release
+          cd release
+          docker compose --env-file ../.env --profile staging up -d --build --remove-orphans
+          docker compose --env-file ../.env --profile staging exec -T backend alembic -c /app/backend/alembic.ini upgrade head
+          REMOTE
+
+      - name: HTTPS smoke tests
+        run: |
+          curl --fail --retry 10 --retry-delay 5 --retry-all-errors "https://${{ vars.STAGING_DOMAIN }}/"
+          curl --fail --retry 10 --retry-delay 5 --retry-all-errors "https://${{ vars.STAGING_DOMAIN }}/ready"
