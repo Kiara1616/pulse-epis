@@ -22,19 +22,19 @@ El proyecto no pretende descubrir estudiantes mediante scraping de redes profesi
 
 ## Estado del proyecto
 
-> **Prototipo en desarrollo.** El frontend y los documentos académicos ya cuentan con una base funcional. El backend dispone de una API FastAPI con health checks, OpenAPI, Google OIDC, sesiones y RBAC; los datos del dashboard todavía son demostrativos y la persistencia de negocio pertenece a los siguientes issues.
+> **Prototipo en desarrollo.** El frontend consume la API FastAPI con Google OIDC, sesiones y RBAC; los indicadores se leen desde snapshots ETL publicados y las vistas operativas usan los endpoints de certificaciones y padrón.
 
 | Componente | Estado |
 |---|---|
-| Dashboard y navegación | Prototipo funcional con datos simulados |
+| Dashboard y navegación | Vistas conectadas a la API, con filtros, estados UX y exportación trazable |
 | Roles principales | Interfaz para administrador, validador y estudiante |
 | Documentos FD01–FD04 | Versionados en `docs/` |
 | ETL | Pipeline reproducible desde la base operacional, con calidad e idempotencia |
 | API backend | Base FastAPI con `/health`, `/ready`, OpenAPI y errores uniformes |
 | Base de datos | Esquema PostgreSQL y migración inicial reversible; entorno pendiente |
-| Autenticación institucional | Google OIDC, sesión firmada y RBAC backend; frontend aún usa selector de demo |
-| CI | Workflow de PR para frontend, ETL, documentación y auditoría |
-| Docker y despliegue | Planificados en el backlog |
+| Autenticación institucional | Google OIDC, sesión firmada y RBAC en backend y frontend |
+| CI | Workflow de PR para frontend, ETL, documentación, contenedores y auditoría |
+| Docker y despliegue | Compose local con frontend, API y PostgreSQL |
 | Despliegue público | Pendiente |
 
 Consulta el [backlog del proyecto](https://github.com/Kiara1616/pulse-epis/issues) para conocer el avance y los criterios de aceptación.
@@ -201,6 +201,7 @@ La API queda disponible en `http://localhost:8000`. Para consumirla desde el das
 | `GET /api/v1/validations/{id}/history` | Consulta el historial inmutable de estados |
 | `POST /api/v1/validations/{id}/evidence/{evidence_id}/access` | Genera un enlace temporal para revisar evidencia |
 | `GET /api/v1/indicators/overview?period_code=...` | Devuelve KPIs y desgloses agregados desde un snapshot ETL aprobado |
+| `GET /api/v1/indicators/periods` | Lista periodos que tienen snapshots publicados |
 | `GET /api/v1/indicators/dictionary` | Expone fórmulas, fuentes y notas del diccionario de métricas |
 | `GET /docs` | Swagger UI generado por FastAPI |
 | `GET /openapi.json` | Contrato OpenAPI |

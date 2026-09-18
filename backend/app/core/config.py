@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -122,8 +123,17 @@ class Settings(BaseSettings):
     @classmethod
     def validate_success_redirect(cls, value: str) -> str:
         value = value.strip()
-        if not value.startswith("/") or value.startswith("//"):
-            raise ValueError("auth_success_redirect must be a relative path")
+        if value.startswith("/") and not value.startswith("//"):
+            return value
+        parsed = urlsplit(value)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.fragment
+        ):
+            raise ValueError("auth_success_redirect must be a relative path or HTTP(S) URL")
         return value
 
     @field_validator("roster_allowed_schools", "roster_allowed_statuses")

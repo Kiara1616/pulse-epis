@@ -1,42 +1,27 @@
 "use client";
 
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import mockData from "@/shared/api/mock-data.json";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { RoleGate } from "@/features/access/RoleGate";
+import { AnalyticsFilters } from "@/features/analytics/AnalyticsFilters";
+import { useAnalytics } from "@/features/analytics/useAnalytics";
+import { AsyncState } from "@/shared/ui/AsyncState";
 import { ExportButton } from "@/shared/ui/ExportButton";
 
-export default function BrechasPage() {
-  return (
-    <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Brechas de Habilidades Laborales</h2>
-          <p className="text-gray-500 mt-1">Comparativa entre certificaciones de la escuela y demandas del mercado local</p>
-        </div>
-        <ExportButton />
-      </div>
+function GapsContent() {
+  const analytics = useAnalytics();
+  const data = analytics.data;
+  const options = { issuers: data?.by_issuer ?? [], levels: data?.by_level ?? [], cohorts: data?.by_cohort ?? [], cycles: data?.by_cycle ?? [] };
+  const rows = data?.skill_gaps.map((item) => ({ habilidad: item.skill, estudiantes_certificados: item.certified_students, brecha_estimada: item.gap_students, cobertura: `${item.coverage_percent}%` })) ?? [];
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Radar Chart for Skill Gaps */}
-        <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 lg:col-span-2">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Alineación de Habilidades (Alumnos vs Mercado)</h3>
-          <p className="text-sm text-gray-500 mb-6">Muestra qué áreas están sobre-certificadas y en cuáles hay escasez de talento certificado frente a lo que piden las empresas en Tacna.</p>
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={mockData.skillGaps}>
-                <PolarGrid stroke="#374151" opacity={0.3} />
-                <PolarAngleAxis dataKey="subject" stroke="#6b7280" />
-                <PolarRadiusAxis angle={30} domain={[0, 150]} stroke="#9ca3af" />
-                
-                <Radar name="Alumnos Certificados" dataKey="students" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
-                <Radar name="Demanda del Mercado (Puestos)" dataKey="marketDemand" stroke="#ef4444" fill="#ef4444" fillOpacity={0.4} />
-                
-                <Tooltip />
-                <Legend />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="flex w-full flex-col gap-6">
+    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-bold uppercase tracking-wider text-blue-600">Cobertura por habilidad</p><h1 className="mt-1 text-3xl font-bold text-gray-900">Brechas de habilidades</h1><p className="mt-1 text-gray-500">La brecha se estima contra estudiantes activos del snapshot, sin inventar una demanda externa no disponible en la API.</p></div>{data && <ExportButton filename={`pulse-epis-brechas-${data.filters.period_code}.csv`} rows={rows} metadata={["Fuente: GET /api/v1/indicators/overview", `Corte: ${data.filters.cutoff_date}`]}/>}</div>
+    <AnalyticsFilters periods={analytics.periods} filters={analytics.filters} options={options} onChange={analytics.setFilter}/>
+    <AsyncState loading={analytics.loading} error={analytics.error} empty={!data && !analytics.loading && !analytics.error} onRetry={analytics.retry}>
+      {data && <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"><h2 className="text-lg font-semibold text-gray-800">Estudiantes certificados y brecha estimada</h2><p className="mb-6 mt-2 text-sm text-gray-500">Una brecha alta indica que pocos estudiantes activos cuentan con certificación en esa habilidad.</p><div className="h-[420px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={data.skill_gaps} margin={{ bottom: 45 }}><CartesianGrid strokeDasharray="3 3" vertical={false}/><XAxis dataKey="skill" angle={-25} textAnchor="end" height={70}/><YAxis allowDecimals={false}/><Tooltip/><Bar dataKey="certified_students" name="Certificados" fill="#2563eb" radius={[4,4,0,0]}/><Bar dataKey="gap_students" name="Brecha estimada" fill="#f59e0b" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div></section>}
+    </AsyncState>
+  </div>;
+}
+
+export default function BrechasPage() {
+  return <RoleGate allow={["ADMIN"]}><GapsContent/></RoleGate>;
 }

@@ -1,8 +1,10 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext } from "react";
+import { useAuth } from "./AuthProvider";
+import type { AppRole } from "@/shared/api/types";
 
-export type AppRole = "ADMIN" | "VALIDATOR" | "STUDENT";
+export type { AppRole } from "@/shared/api/types";
 
 export const roleLabels: Record<AppRole, string> = {
   ADMIN: "Administrador",
@@ -10,17 +12,14 @@ export const roleLabels: Record<AppRole, string> = {
   STUDENT: "Estudiante",
 };
 
-type RoleContextValue = { role: AppRole; setRole: (role: AppRole) => void };
+type RoleContextValue = { role: AppRole; email: string };
 const RoleContext = createContext<RoleContextValue | null>(null);
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRoleState] = useState<AppRole>("ADMIN");
+  const { user } = useAuth();
+  if (!user) return null;
 
-  const setRole = (nextRole: AppRole) => {
-    setRoleState(nextRole);
-  };
-
-  return <RoleContext.Provider value={{ role, setRole }}>{children}</RoleContext.Provider>;
+  return <RoleContext.Provider value={{ role: user.role, email: user.email }}>{children}</RoleContext.Provider>;
 }
 
 export function useRole() {
