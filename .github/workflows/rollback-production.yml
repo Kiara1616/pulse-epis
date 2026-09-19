@@ -1,0 +1,51 @@
+name: Rollback production
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Release directory name to restore"
+        required: true
+      confirm:
+        description: "Write ROLLBACK to confirm"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    if: inputs.confirm == 'ROLLBACK'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ vars.PRODUCTION_DOMAIN }}
+    steps:
+      - name: Configure SSH
+        env:
+          PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$PRODUCTION_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ vars.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Restore selected release
+        run: |
+          ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" <<'REMOTE'
+          set -eu
+          cd '${{ vars.PRODUCTION_PATH }}'
+          test -d "releases/${{ inputs.release }}"
+          rm -rf current.rollback
+          mv current current.rollback
+          cp -a "releases/${{ inputs.release }}" current
+          cd current
+          docker compose --env-file ../.env --profile staging up -d --remove-orphans
+          REMOTE
+
+      - name: Verify rollback
+        run: curl --fail --retry 10 --retry-delay 5 --retry-all-errors "https://${{ vars.PRODUCTION_DOMAIN }}/ready"
