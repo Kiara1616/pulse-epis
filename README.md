@@ -326,6 +326,7 @@ El workflow `Deploy staging` publica `main` en un host Linux administrado por el
 
 La producción usa el environment protegido `production`: `Deploy production` solo se ejecuta desde `main`, tags `vX.Y.Z` o una ejecución manual aprobada, y conserva la versión anterior en `releases/`. `Rollback production` exige confirmación explícita y restaura una release existente. `Monitor production` comprueba HTTPS y readiness cada 15 minutos, mientras `Backup production` crea respaldos diarios de PostgreSQL y conserva 30 días. Los workflows requieren las variables `PRODUCTION_DOMAIN`, `PRODUCTION_HOST`, `PRODUCTION_USER` y `PRODUCTION_PATH`, y los secretos `PRODUCTION_SSH_KEY` y `PRODUCTION_ENV_FILE` separados de staging.
 
+La release `v1.0.0` se publica al crear un tag `vX.Y.Z`. Antes de publicarla, `scripts/validate_release.py` exige evidencia de conciliación mínima de 95 %, contabilización completa de credenciales aprobadas, contraste de KPIs, demostración de los tres roles, URL HTTPS y limitaciones documentadas. La evidencia se conserva en `pilot/acceptance.json` junto con las notas de release.
 8. Publicación de reportes, diagramas y manuales como artefactos.
 
 Consulta los issues de [integración continua](https://github.com/Kiara1616/pulse-epis/issues/8), [documentación automática](https://github.com/Kiara1616/pulse-epis/issues/18) y [despliegue público](https://github.com/Kiara1616/pulse-epis/issues/20).
