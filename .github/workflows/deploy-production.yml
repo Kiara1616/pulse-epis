@@ -1,0 +1,68 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit or tag to deploy"
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Approved production deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ vars.PRODUCTION_DOMAIN }}
+    steps:
+      - name: Checkout selected revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Configure SSH
+        env:
+          PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$PRODUCTION_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ vars.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Copy release
+        run: |
+          ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" "mkdir -p '${{ vars.PRODUCTION_PATH }}'"
+          tar -czf /tmp/pulse-epis-production.tar.gz compose.yaml backend dashboard-app deploy .dockerignore .env.compose.example
+          scp /tmp/pulse-epis-production.tar.gz "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}:${{ vars.PRODUCTION_PATH }}/release.tar.gz"
+
+      - name: Deploy and retain rollback release
+        env:
+          PRODUCTION_ENV_FILE: ${{ secrets.PRODUCTION_ENV_FILE }}
+        run: |
+          printf '%s\n' "$PRODUCTION_ENV_FILE" | ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" "cat > '${{ vars.PRODUCTION_PATH }}/.env'"
+          ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" <<'REMOTE'
+          set -eu
+          cd '${{ vars.PRODUCTION_PATH }}'
+          if [ -d current ]; then mv current "releases/previous-$(date -u +%Y%m%d%H%M%S)"; fi
+          mkdir -p releases current
+          tar -xzf release.tar.gz -C current
+          cd current
+          docker compose --env-file ../.env --profile staging up -d --build --remove-orphans
+          docker compose --env-file ../.env --profile staging exec -T backend alembic -c /app/backend/alembic.ini upgrade head
+          REMOTE
+
+      - name: Production smoke tests
+        run: |
+          curl --fail --retry 10 --retry-delay 5 --retry-all-errors "https://${{ vars.PRODUCTION_DOMAIN }}/"
+          curl --fail --retry 10 --retry-delay 5 --retry-all-errors "https://${{ vars.PRODUCTION_DOMAIN }}/ready"

@@ -319,6 +319,13 @@ GitHub Actions deberá automatizar:
 5. Generación de OpenAPI y manuales técnicos.
 6. Construcción de imágenes de contenedor.
 7. Despliegue a staging y, con aprobación, a producción.
+
+### Staging público
+
+El workflow `Deploy staging` publica `main` en un host Linux administrado por el equipo. Configura un environment `staging` con las variables `STAGING_DOMAIN`, `STAGING_HOST`, `STAGING_USER` y `STAGING_PATH`, además del secreto multilinea `STAGING_SSH_KEY` y el archivo `.env` de Compose en `STAGING_ENV_FILE`; ese archivo debe incluir `PUBLIC_DOMAIN` con el mismo valor de `STAGING_DOMAIN`, `PULSE_ENVIRONMENT=staging`, `PULSE_AUTH_COOKIE_SECURE=true` y `PULSE_AUTH_COOKIE_SAMESITE=lax`. El DNS del dominio debe apuntar al host y permitir los puertos 80 y 443. Caddy termina TLS automáticamente; PostgreSQL permanece en la red privada de Compose y el workflow valida la portada y `/ready` por HTTPS.
+
+La producción usa el environment protegido `production`: `Deploy production` solo se ejecuta desde `main`, tags `vX.Y.Z` o una ejecución manual aprobada, y conserva la versión anterior en `releases/`. `Rollback production` exige confirmación explícita y restaura una release existente. `Monitor production` comprueba HTTPS y readiness cada 15 minutos, mientras `Backup production` crea respaldos diarios de PostgreSQL y conserva 30 días. Los workflows requieren las variables `PRODUCTION_DOMAIN`, `PRODUCTION_HOST`, `PRODUCTION_USER` y `PRODUCTION_PATH`, y los secretos `PRODUCTION_SSH_KEY` y `PRODUCTION_ENV_FILE` separados de staging.
+
 8. Publicación de reportes, diagramas y manuales como artefactos.
 
 Consulta los issues de [integración continua](https://github.com/Kiara1616/pulse-epis/issues/8), [documentación automática](https://github.com/Kiara1616/pulse-epis/issues/18) y [despliegue público](https://github.com/Kiara1616/pulse-epis/issues/20).

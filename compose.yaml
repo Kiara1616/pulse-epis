@@ -24,9 +24,11 @@ services:
       dockerfile: backend/Dockerfile
     restart: unless-stopped
     environment:
-      PULSE_ENVIRONMENT: development
+      PULSE_ENVIRONMENT: ${PULSE_ENVIRONMENT:-development}
       PULSE_DATABASE_URL: postgresql+psycopg://${PULSE_POSTGRES_USER}:${PULSE_POSTGRES_PASSWORD}@database:5432/${PULSE_POSTGRES_DB}
       PULSE_AUTH_SESSION_SECRET: ${PULSE_AUTH_SESSION_SECRET:?Define PULSE_AUTH_SESSION_SECRET}
+      PULSE_AUTH_COOKIE_SECURE: ${PULSE_AUTH_COOKIE_SECURE:-false}
+      PULSE_AUTH_COOKIE_SAMESITE: ${PULSE_AUTH_COOKIE_SAMESITE:-lax}
       PULSE_ROSTER_PSEUDONYM_SECRET: ${PULSE_ROSTER_PSEUDONYM_SECRET:?Define PULSE_ROSTER_PSEUDONYM_SECRET}
       PULSE_EVIDENCE_ACCESS_SECRET: ${PULSE_EVIDENCE_ACCESS_SECRET:?Define PULSE_EVIDENCE_ACCESS_SECRET}
       PULSE_EVIDENCE_STORAGE_PATH: /app/.data/evidence
@@ -58,9 +60,32 @@ services:
     networks:
       - public
 
+  caddy:
+    profiles: [staging]
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - public
+
 volumes:
   postgres-data:
   evidence-data:
+  caddy-data:
+  caddy-config:
 
 networks:
   private:
