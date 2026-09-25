@@ -20,10 +20,19 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release publishing requires a vX.Y.Z tag; received: $RELEASE_TAG"
+            exit 1
+          fi
+
       - name: Checkout release
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
 
       - name: Setup Python
@@ -33,7 +42,7 @@ jobs:
 
       - name: Validate pilot and documentation
         run: |
-          python scripts/validate_release.py
+          python scripts/validate_release.py --strict
           python scripts/validate_docs.py
           python -m json.tool pilot/acceptance.json > /dev/null
 

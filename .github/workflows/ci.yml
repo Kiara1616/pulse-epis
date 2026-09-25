@@ -149,6 +149,9 @@ jobs:
       - name: Validate dashboard contract JSON
         run: python -m json.tool docs/schemas/dashboard-spec.json > /dev/null
 
+      - name: Validate pilot evidence contract
+        run: python scripts/validate_release.py
+
       - name: Build diagrams, OpenAPI and manuals
         run: python scripts/build_docs.py
 
