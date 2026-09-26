@@ -31,6 +31,7 @@ from .analytics.service import (
     UnavailableAnalyticsService,
 )
 from .auth.oidc import GoogleOidcClient, OidcClient
+from .auth.local_seed import seed_local_users
 from .auth.service import AuthService
 from .auth.store import (
     SqlAlchemyUserDirectory,
@@ -110,6 +111,9 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        if settings.local_auth_enabled and settings.local_auth_seed:
+            created_demo_users = seed_local_users(session_factory, settings)
+            logger.info("Local auth seed completed created_users=%s", created_demo_users)
         logger.info(
             "Starting %s version=%s environment=%s",
             settings.app_name,

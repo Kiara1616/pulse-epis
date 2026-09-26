@@ -55,7 +55,7 @@ npm install
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador. El frontend consulta la API en `NEXT_PUBLIC_API_URL` (por defecto `http://localhost:8000/api/v1`) y solicita una sesión institucional mediante Google OIDC.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador. El frontend consulta la API en `NEXT_PUBLIC_API_URL` (por defecto `http://localhost:8000/api/v1`) y obtiene desde `/auth/config` si debe mostrar el login local de desarrollo o el flujo institucional OIDC.
 
 ### Comprobaciones
 

@@ -7,13 +7,16 @@ from uuid import UUID, uuid4
 
 from fastapi import Depends
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.auth.dependencies import require_permissions, require_student_access
+from backend.app.auth.local_seed import seed_local_users
 from backend.app.auth.models import AuthenticatedUser, GoogleIdentity, Permission, Role
 from backend.app.auth.oidc import GOOGLE_SCOPE, GoogleOidcClient
+from backend.app.auth.passwords import hash_password
 from backend.app.auth.store import InMemoryUserDirectory, SqlAlchemyUserDirectory
 from backend.app.core.config import Settings
 from backend.app.db.base import Base
@@ -58,12 +61,19 @@ def make_settings(**overrides: Any) -> Settings:
     return Settings(**values)
 
 
-def make_user(role: Role, email: str, *, student_id: UUID | None = None) -> AuthenticatedUser:
+def make_user(
+    role: Role,
+    email: str,
+    *,
+    student_id: UUID | None = None,
+    password_hash: str | None = None,
+) -> AuthenticatedUser:
     return AuthenticatedUser(
         id=uuid4(),
         email=email,
         role=role,
         student_id=student_id,
+        password_hash=password_hash,
     )
 
 
@@ -120,6 +130,102 @@ def test_google_login_requires_server_configuration():
 
     assert response.status_code == 503
     assert response.json()["code"] == "AUTH_NOT_CONFIGURED"
+
+
+def test_local_login_is_available_only_in_development_and_rehydrates_session():
+    student = make_user(
+        Role.STUDENT,
+        "student@local.pulse-epis.test",
+        student_id=uuid4(),
+        password_hash=hash_password("local-password"),
+    )
+    app = create_app(
+        settings=make_settings(
+            auth_provider="local",
+            local_auth_password="local-password",
+        ),
+        user_directory=InMemoryUserDirectory([student]),
+    )
+
+    with TestClient(app) as client:
+        configuration = client.get("/api/v1/auth/config")
+        invalid = client.post(
+            "/api/v1/auth/local/login",
+            json={"email": student.email, "password": "wrong"},
+        )
+        login = client.post(
+            "/api/v1/auth/local/login",
+            json={"email": student.email, "password": "local-password"},
+        )
+        current_user = client.get("/api/v1/auth/me")
+
+    assert configuration.status_code == 200
+    assert configuration.json() == {"provider": "local"}
+    assert invalid.status_code == 401
+    assert invalid.json()["code"] == "INVALID_CREDENTIALS"
+    assert login.status_code == 200
+    assert login.json()["role"] == "STUDENT"
+    assert current_user.status_code == 200
+    assert current_user.json()["id"] == str(student.id)
+
+
+def test_local_seed_rotates_demo_password_and_login_uses_the_new_value():
+    engine = create_engine(
+        "sqlite+pysqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    session_factory = sessionmaker(bind=engine, expire_on_commit=False)
+    first_settings = make_settings(
+        auth_provider="local",
+        local_auth_seed=True,
+        local_auth_password="first-local-password",
+    )
+    second_settings = make_settings(
+        auth_provider="local",
+        local_auth_seed=True,
+        local_auth_password="second-local-password",
+    )
+
+    assert seed_local_users(session_factory, first_settings) == 3
+    assert seed_local_users(session_factory, second_settings) == 0
+
+    login_settings = make_settings(
+        auth_provider="local",
+        database_url=None,
+        local_auth_seed=False,
+        local_auth_password="second-local-password",
+    )
+    app = create_app(
+        settings=login_settings,
+        user_directory=SqlAlchemyUserDirectory(session_factory),
+    )
+    with TestClient(app) as client:
+        old_password = client.post(
+            "/api/v1/auth/local/login",
+            json={
+                "email": "admin@local.pulse-epis.test",
+                "password": "first-local-password",
+            },
+        )
+        new_password = client.post(
+            "/api/v1/auth/local/login",
+            json={
+                "email": "admin@local.pulse-epis.test",
+                "password": "second-local-password",
+            },
+        )
+
+    assert old_password.status_code == 401
+    assert new_password.status_code == 200
+    assert new_password.json()["role"] == "ADMIN"
+    engine.dispose()
+
+
+def test_local_login_cannot_be_enabled_outside_development():
+    with pytest.raises(ValueError, match="local auth is only available"):
+        make_settings(auth_provider="local", environment="staging")
 
 
 def test_student_oidc_login_uses_padrón_and_rehydrates_server_role():

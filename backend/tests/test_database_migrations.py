@@ -70,6 +70,7 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
     status_history = Table("certification_status_history", metadata, autoload_with=engine)
 
     assert "google_subject" in users.c
+    assert "password_hash" in users.c
     assert {"school", "study_plan"}.issubset(set(enrollments.c.keys()))
     evidences = Table("evidences", metadata, autoload_with=engine)
     assert {
