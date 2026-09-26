@@ -191,8 +191,14 @@ def test_local_seed_rotates_demo_password_and_login_uses_the_new_value():
     assert seed_local_users(session_factory, first_settings) == 3
     assert seed_local_users(session_factory, second_settings) == 0
 
+    login_settings = make_settings(
+        auth_provider="local",
+        database_url=None,
+        local_auth_seed=False,
+        local_auth_password="second-local-password",
+    )
     app = create_app(
-        settings=second_settings,
+        settings=login_settings,
         user_directory=SqlAlchemyUserDirectory(session_factory),
     )
     with TestClient(app) as client:
