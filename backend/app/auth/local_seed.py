@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from ..core.config import Settings
 from ..db.models import Student, User
 from .models import Role
-from .passwords import hash_password
+from .passwords import hash_password, verify_password
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +45,11 @@ def seed_local_users(
         for demo_user in DEMO_USERS:
             user = session.scalar(select(User).where(User.email == demo_user.email))
             if user is not None:
+                if not verify_password(
+                    settings.local_auth_password.get_secret_value(),
+                    user.password_hash,
+                ):
+                    user.password_hash = password_hash
                 continue
 
             user = User(

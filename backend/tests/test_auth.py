@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app.auth.dependencies import require_permissions, require_student_access
+from backend.app.auth.local_seed import seed_local_users
 from backend.app.auth.models import AuthenticatedUser, GoogleIdentity, Permission, Role
 from backend.app.auth.oidc import GOOGLE_SCOPE, GoogleOidcClient
 from backend.app.auth.passwords import hash_password
@@ -166,6 +167,54 @@ def test_local_login_is_available_only_in_development_and_rehydrates_session():
     assert login.json()["role"] == "STUDENT"
     assert current_user.status_code == 200
     assert current_user.json()["id"] == str(student.id)
+
+
+def test_local_seed_rotates_demo_password_and_login_uses_the_new_value():
+    engine = create_engine(
+        "sqlite+pysqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    session_factory = sessionmaker(bind=engine, expire_on_commit=False)
+    first_settings = make_settings(
+        auth_provider="local",
+        local_auth_seed=True,
+        local_auth_password="first-local-password",
+    )
+    second_settings = make_settings(
+        auth_provider="local",
+        local_auth_seed=True,
+        local_auth_password="second-local-password",
+    )
+
+    assert seed_local_users(session_factory, first_settings) == 3
+    assert seed_local_users(session_factory, second_settings) == 0
+
+    app = create_app(
+        settings=second_settings,
+        user_directory=SqlAlchemyUserDirectory(session_factory),
+    )
+    with TestClient(app) as client:
+        old_password = client.post(
+            "/api/v1/auth/local/login",
+            json={
+                "email": "admin@local.pulse-epis.test",
+                "password": "first-local-password",
+            },
+        )
+        new_password = client.post(
+            "/api/v1/auth/local/login",
+            json={
+                "email": "admin@local.pulse-epis.test",
+                "password": "second-local-password",
+            },
+        )
+
+    assert old_password.status_code == 401
+    assert new_password.status_code == 200
+    assert new_password.json()["role"] == "ADMIN"
+    engine.dispose()
 
 
 def test_local_login_cannot_be_enabled_outside_development():
