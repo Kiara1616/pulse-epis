@@ -1,0 +1,13 @@
+{
+  "reconciliation_percent": 95.0,
+  "approved_credential_accounting_percent": 100.0,
+  "kpis_contrasted": true,
+  "roles_demonstrated": ["ADMIN", "VALIDATOR", "STUDENT"],
+  "public_url": "https://staging.example.org",
+  "limitations": [
+    "La evidencia usa datos sintéticos o anonimizados hasta que EPIS apruebe el padrón.",
+    "La URL debe reemplazarse por el dominio real del environment de staging.",
+    "La aprobación institucional y legal del tratamiento de datos queda fuera del código."
+  ],
+  "evidence_notes": "Completar con el reporte de conciliación, comparación manual de KPIs y enlaces de ejecución antes de etiquetar v1.0.0."
+}
