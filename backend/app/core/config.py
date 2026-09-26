@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     app_name: str = "Pulse EPIS API"
     app_version: str = "0.1.0"
     environment: Literal["development", "test", "staging", "production"] = "development"
+    auth_provider: Literal["google", "local"] = "google"
     api_prefix: str = "/api/v1"
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     log_level: str = "INFO"
@@ -29,6 +30,8 @@ class Settings(BaseSettings):
     google_client_secret: SecretStr | None = None
     google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
     google_allowed_domains: str = "virtual.upt.pe,upt.edu.pe"
+    local_auth_seed: bool = False
+    local_auth_password: SecretStr = SecretStr("pulse-local-demo")
     auth_session_secret: SecretStr = SecretStr(_DEVELOPMENT_SESSION_SECRET)
     auth_session_cookie: str = "pulse_session"
     auth_session_max_age: int = 3600
@@ -197,9 +200,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_auth_configuration(self) -> "Settings":
+        if self.auth_provider == "local" and self.environment not in {"development", "test"}:
+            raise ValueError("local auth is only available in development or test")
+        if self.auth_provider == "local" and not self.local_auth_password.get_secret_value().strip():
+            raise ValueError("local_auth_password cannot be empty when local auth is enabled")
         if self.auth_cookie_samesite == "none" and not self.auth_cookie_secure:
             raise ValueError("auth_cookie_secure must be true when SameSite is 'none'")
         if self.environment == "production":
+            if self.auth_provider != "google":
+                raise ValueError("production must use the configured OIDC provider")
             if self.auth_session_secret.get_secret_value() == _DEVELOPMENT_SESSION_SECRET:
                 raise ValueError("auth_session_secret must be changed in production")
             if not self.google_client_id or not self.google_client_secret:
@@ -243,6 +252,12 @@ class Settings(BaseSettings):
             and self.google_client_secret
             and self.google_client_secret.get_secret_value().strip()
         )
+
+    @property
+    def local_auth_enabled(self) -> bool:
+        """Whether the development-only local login flow is active."""
+
+        return self.auth_provider == "local"
 
     @property
     def allowed_roster_schools(self) -> tuple[str, ...]:

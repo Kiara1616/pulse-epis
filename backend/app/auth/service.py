@@ -6,11 +6,16 @@ from dataclasses import dataclass
 
 from ..core.config import Settings
 from .models import AuthenticatedUser, GoogleIdentity, Role
+from .passwords import verify_password
 from .store import UserDirectory, UserDirectoryUnavailable, UserIdentityConflict
 
 
 class InvalidIdentity(RuntimeError):
     """The provider returned claims that cannot be used for a session."""
+
+
+class InvalidLocalCredentials(RuntimeError):
+    """The development-only local credentials are not valid."""
 
 
 class UserNotProvisioned(RuntimeError):
@@ -27,6 +32,23 @@ class AuthService:
 
     settings: Settings
     directory: UserDirectory
+
+    def authenticate_local(self, email: str, password: str) -> AuthenticatedUser:
+        """Authenticate a development user without contacting an identity provider."""
+
+        if not self.settings.local_auth_enabled:
+            raise InvalidLocalCredentials("Local authentication is disabled")
+
+        normalized_email = email.strip().casefold()
+        user = self.directory.find_by_email(normalized_email)
+        if (
+            user is None
+            or not user.is_active
+            or not verify_password(password, user.password_hash)
+            or (user.role == Role.STUDENT and user.student_id is None)
+        ):
+            raise InvalidLocalCredentials("Invalid local credentials")
+        return user
 
     def authenticate_google(self, identity: GoogleIdentity) -> AuthenticatedUser:
         email = identity.email.strip().casefold()
@@ -59,6 +81,7 @@ __all__ = [
     "AuthService",
     "InactiveUser",
     "InvalidIdentity",
+    "InvalidLocalCredentials",
     "UserDirectoryUnavailable",
     "UserIdentityConflict",
     "UserNotProvisioned",

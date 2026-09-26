@@ -31,7 +31,7 @@ class Permission(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class AuthenticatedUser:
-    """The minimum identity needed after the OIDC subject is authorized."""
+    """The minimum identity needed after authentication is authorized."""
 
     id: UUID
     email: str
@@ -39,6 +39,7 @@ class AuthenticatedUser:
     student_id: UUID | None = None
     is_active: bool = True
     google_subject: str | None = None
+    password_hash: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

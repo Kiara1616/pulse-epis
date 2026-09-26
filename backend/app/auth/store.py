@@ -50,6 +50,7 @@ def _principal_from_model(
         student_id=student_id,
         is_active=user.is_active,
         google_subject=user.google_subject,
+        password_hash=user.password_hash,
     )
 
 

@@ -185,6 +185,8 @@ La API queda disponible en `http://localhost:8000`. Para consumirla desde el das
 | `GET /health` | Liveness del proceso |
 | `GET /ready` | Readiness de las dependencias configuradas |
 | `GET /api/v1/` | Metadatos de la instancia |
+| `GET /api/v1/auth/config` | Indica si el login local u OIDC está activo |
+| `POST /api/v1/auth/local/login` | Inicia sesión con una cuenta demo; solo desarrollo/test |
 | `GET /api/v1/auth/google/login` | Inicia el flujo Google OIDC |
 | `GET /api/v1/auth/google/callback` | Valida el código, el padrón y crea la sesión |
 | `GET /api/v1/auth/me` | Devuelve identidad, rol y permisos de la sesión |
@@ -206,7 +208,7 @@ La API queda disponible en `http://localhost:8000`. Para consumirla desde el das
 | `GET /docs` | Swagger UI generado por FastAPI |
 | `GET /openapi.json` | Contrato OpenAPI |
 
-La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Se puede copiar [`.env.example`](backend/.env.example) a `.env` para configurar la base de datos, Google OIDC, la sesión y las evidencias privadas. Google solo solicita `openid email profile`; el backend además exige que la cuenta esté provisionada en `users` y, para `STUDENT`, vinculada a `students`. El dominio permitido es un filtro adicional, no prueba de pertenencia a EPIS. En producción se requiere un secreto de sesión y de acceso a evidencias aleatorios, cookies seguras y credenciales fuera del repositorio. La política de evidencias está en [`docs/07-Certificaciones-evidencias.md`](docs/07-Certificaciones-evidencias.md).
+La configuración no contiene secretos y usa variables con prefijo `PULSE_`. Para una demo local, `PULSE_AUTH_PROVIDER=local` y `PULSE_LOCAL_AUTH_SEED=true` crean cuentas sintéticas idempotentes: `admin@local.pulse-epis.test`, `validator@local.pulse-epis.test` y `student@local.pulse-epis.test`; las tres usan el valor de `PULSE_LOCAL_AUTH_PASSWORD`. Este proveedor solo funciona en `development` o `test` y usa hashes Argon2id; no debe habilitarse en staging ni producción. Para staging/producción se mantiene `PULSE_AUTH_PROVIDER=google`: Google solo solicita `openid email profile`, el backend exige que la cuenta esté provisionada en `users` y, para `STUDENT`, vinculada a `students`. El dominio permitido es un filtro adicional, no prueba de pertenencia a EPIS. En producción se requiere un secreto de sesión y de acceso a evidencias aleatorios, cookies seguras y credenciales fuera del repositorio. La política de evidencias está en [`docs/07-Certificaciones-evidencias.md`](docs/07-Certificaciones-evidencias.md).
 
 ### Pruebas del backend
 
@@ -273,7 +275,7 @@ Cuando se complete la [contenerización](https://github.com/Kiara1616/pulse-epis
 docker compose up --build
 ```
 
-Para desarrollo local, copie `.env.compose.example` a `.env`, reemplace todos los secretos de ejemplo y ejecute:
+Para desarrollo local, copie `.env.compose.example` a `.env`, reemplace los secretos locales de ejemplo y ejecute:
 
 ```bash
 docker compose up --build -d

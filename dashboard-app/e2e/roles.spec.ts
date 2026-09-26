@@ -28,6 +28,11 @@ const overview = {
 };
 
 async function mockApi(page: Page, role: Role) {
+  await page.route("**/api/v1/auth/config", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ provider: "google" }),
+  }));
   await page.route("**/api/v1/auth/me", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",

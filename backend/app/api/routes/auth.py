@@ -17,11 +17,16 @@ from ...auth.oidc import (
     OidcVerificationError,
 )
 from ...auth.rbac import permissions_for
-from ...auth.schemas import CurrentUserResponse
+from ...auth.schemas import (
+    AuthConfigurationResponse,
+    CurrentUserResponse,
+    LocalLoginRequest,
+)
 from ...auth.service import (
     AuthService,
     InactiveUser,
     InvalidIdentity,
+    InvalidLocalCredentials,
     UserNotProvisioned,
 )
 from ...auth.store import UserDirectoryUnavailable, UserIdentityConflict
@@ -45,6 +50,53 @@ def _current_user_response(user: AuthenticatedUser) -> CurrentUserResponse:
         student_id=user.student_id,
         permissions=sorted(permissions_for(user.role), key=lambda permission: permission.value),
     )
+
+
+def _start_session(request: Request, user: AuthenticatedUser) -> None:
+    """Store only the internal user identifier in the signed session cookie."""
+
+    request.session.clear()
+    request.session["user_id"] = str(user.id)
+    request.session["authenticated_at"] = datetime.now(timezone.utc).isoformat()
+
+
+@router.get(
+    "/config",
+    response_model=AuthConfigurationResponse,
+    summary="Describe the configured login mode",
+)
+def auth_config(request: Request) -> AuthConfigurationResponse:
+    """Expose only the non-secret provider choice needed by the login UI."""
+
+    return AuthConfigurationResponse(provider=request.app.state.settings.auth_provider)
+
+
+@router.post(
+    "/local/login",
+    response_model=CurrentUserResponse,
+    summary="Sign in with a development-only local account",
+)
+def local_login(request: Request, payload: LocalLoginRequest) -> CurrentUserResponse:
+    settings = request.app.state.settings
+    if not settings.local_auth_enabled:
+        raise _http_error(
+            status.HTTP_404_NOT_FOUND,
+            "AUTH_NOT_CONFIGURED",
+            "Local authentication is not configured",
+        )
+
+    auth_service: AuthService = request.app.state.auth_service
+    try:
+        user = auth_service.authenticate_local(payload.email, payload.password)
+    except InvalidLocalCredentials as exc:
+        raise _http_error(
+            status.HTTP_401_UNAUTHORIZED,
+            "INVALID_CREDENTIALS",
+            "The email or password is invalid",
+        ) from exc
+
+    _start_session(request, user)
+    return _current_user_response(user)
 
 
 @router.get(
@@ -145,9 +197,7 @@ def google_callback(
 
     # Only an internal identifier and timestamp are kept in the signed cookie;
     # role and active status are reloaded from the directory on every request.
-    request.session.clear()
-    request.session["user_id"] = str(user.id)
-    request.session["authenticated_at"] = datetime.now(timezone.utc).isoformat()
+    _start_session(request, user)
     return RedirectResponse(
         url=request.app.state.settings.auth_success_redirect,
         status_code=status.HTTP_302_FOUND,
