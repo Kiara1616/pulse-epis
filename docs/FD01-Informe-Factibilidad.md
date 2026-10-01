@@ -24,16 +24,17 @@
 |---|---|---|---|
 | 2.0 | Kiara Zapana y Vincenzo Lllanos | 09/09/2026 | Adaptación integral al proyecto Pulse EPIS |
 | 2.1 | Kiara Zapana y Vincenzo Lllanos | 11/09/2026 | Completar supuestos, riesgos, plan temporal y reproducción del entregable |
+| 3.0 | Kiara Zapana y Vincenzo Lllanos | 01/10/2026 | Actualizar el estado verificable del repositorio y preparar la entrega académica |
 
 ## Resumen ejecutivo y decisión
 
-La solución es **viable de forma condicionada para un piloto institucional**. El prototipo actual demuestra la navegación, los indicadores y el flujo visual, pero usa datos sintéticos y no debe presentarse como un sistema de producción. El paso a un piloto requiere un padrón autorizado, responsables de validación, reglas de tratamiento de datos y una infraestructura mínima con respaldos.
+La solución es **viable de forma condicionada para un piloto institucional**. El repositorio actual demuestra la navegación, el flujo visual y capacidades parciales de backend —sesión local de desarrollo, Google OIDC, persistencia de certificaciones, validación, ETL, Compose y CI/CD—, pero varias vistas todavía usan datos sintéticos y no debe presentarse como un sistema de producción. El paso a un piloto requiere un padrón autorizado, responsables de validación, reglas de tratamiento de datos y una infraestructura mínima con respaldos probados.
 
 La decisión de producción queda condicionada a superar los siguientes hitos:
 
 1. EPIS entrega un padrón oficial con fecha de corte y autoriza su uso.
 2. Se aprueban el diccionario de datos, las reglas de certificación válida y la retención de evidencias.
-3. Se implementan autenticación, permisos, persistencia, auditoría y respaldo.
+3. Se verifican autenticación, permisos, persistencia y auditoría, y se cierran las brechas de respaldo y recuperación.
 4. Un piloto demuestra las metas de [Objetivos e indicadores medibles](01-Objetivos-medibles.md) sin exponer datos personales en las vistas públicas.
 
 ## 1. Descripción del proyecto
@@ -99,28 +100,28 @@ En el MVP se usarán tres roles técnicos (`ADMIN`, `VALIDATOR` y `STUDENT`). Lo
 
 ### 3.1 Qué demuestra el prototipo actual
 
-El repositorio demuestra viabilidad visual con Next.js, TypeScript, Tailwind CSS y Recharts. También contiene un ETL reproducible en Python y pantallas para dashboard, estudiantes, tecnologías, validaciones y administración.
+El repositorio demuestra viabilidad visual con Next.js, TypeScript, Tailwind CSS y Recharts. También contiene un ETL reproducible en Python, una API FastAPI, migraciones PostgreSQL, persistencia de certificaciones y validaciones, autenticación OIDC/RBAC, login local para desarrollo, Compose y workflows de calidad/despliegue.
 
 Los siguientes archivos contienen datos de demostración o de prueba y **no representan la línea base institucional**:
 
 - `dashboard-app/src/shared/api/mock-data.json`.
 - `dashboard-app/src/shared/api/etl_data.json`.
 
-En consecuencia, el prototipo permite revisar la experiencia y la lógica de presentación, pero todavía no ofrece persistencia multiusuario, autenticación institucional, autorización real, auditoría completa, almacenamiento privado de evidencias ni una integración validada con el padrón de EPIS.
+En consecuencia, el prototipo permite revisar la experiencia y la lógica de presentación, y ya ofrece una base persistente y segura para el backend. Todavía varias vistas analíticas dependen de datos estáticos; además, faltan la integración operativa con un padrón real autorizado, respaldos/restauración probados y la validación de un ambiente institucional.
 
 ### 3.2 Diferencia entre prototipo y producción
 
 | Capacidad | Prototipo del repositorio | Requisito para piloto/producción |
 |---|---|---|
-| Identidad | JSON de demostración | Padrón autorizado, `student_key` y conciliación por corte |
-| Certificaciones | Datos preparados para visualización | Registro persistente con estado, emisor, fechas y evidencia |
-| Validación | Flujo visual | Reglas, decisiones, observaciones y bitácora auditable |
-| Acceso | Roles simulados en frontend | Autenticación institucional y RBAC en backend |
-| Almacenamiento | Archivos locales del repositorio | Base de datos y evidencias privadas con respaldo |
-| Indicadores | Cálculo sobre datos estáticos | Consultas reproducibles por periodo y fecha de corte |
-| Integraciones | ETL reproducible y fuentes de prueba | Importación autorizada, límites documentados y reintentos |
-| Publicación | Vistas del dashboard | Separación entre vistas nominales restringidas y agregadas públicas |
-| Operación | Ejecución manual | Monitoreo, logs, restauración y responsable de soporte |
+| Identidad | Sesión local de desarrollo, Google OIDC/RBAC y padrón sintético | Padrón autorizado, `student_key` y conciliación por corte |
+| Certificaciones | Registro persistente con estado, emisor, fechas y evidencia | Operación institucional y políticas de retención verificadas |
+| Validación | Reglas, decisiones, observaciones, historial y auditoría en backend | Flujo operativo con responsables y evidencias autorizadas |
+| Acceso | AuthBoundary/RoleGate en frontend y autorización server-side | Autenticación institucional y RBAC aplicado a todos los flujos |
+| Almacenamiento | PostgreSQL/migraciones y almacenamiento local privado | Evidencias privadas con respaldo y restauración probados |
+| Indicadores | Parte de las vistas usa datos estáticos; ETL y contratos ya existen | Consultas reproducibles por periodo y fecha de corte |
+| Integraciones | ETL reproducible, validación de calidad y Compose | Importación autorizada, límites documentados y reintentos |
+| Publicación | Vistas restringidas y agregadas en evolución | Separación comprobada entre vistas nominales y públicas |
+| Operación | CI/CD y Compose disponibles; staging/prod requieren host y secretos | Monitoreo, logs, restauración y responsable de soporte |
 
 ### 3.3 Arquitectura objetivo
 
