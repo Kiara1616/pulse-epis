@@ -3,8 +3,8 @@
 ## Pulse EPIS Dashboard de acreditaciones y certificaciones de estudiantes de la EPIS
 
 **Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
-**Versión:** 2.2<br>
-**Fecha:** 11/09/2026
+**Versión:** 3.0<br>
+**Fecha:** 01/10/2026
 
 **Issue:** [#5 — Completar FD03: Especificación de Requisitos SRS](https://github.com/Kiara1616/pulse-epis/issues/5)
 
@@ -20,7 +20,7 @@ Este documento especifica las funciones, reglas, datos, estados, errores y atrib
 
 El sistema objetivo administrará el padrón autorizado, recepción y validación de evidencias, normalización de credenciales, generación de indicadores y reportes. Habrá vistas privadas de administración y vistas agregadas de consulta.
 
-El prototipo vigente contiene una aplicación Next.js con datos JSON demostrativos para las vistas analíticas, navegación por páginas, `RoleProvider`/`RoleGate` del lado cliente, formularios de estudiante, un ETL Python de prueba y una API FastAPI con OIDC/RBAC. El registro privado de certificaciones de #13 y la bandeja conectada de validaciones de #14 ya cuentan con persistencia y pruebas; la sesión real del frontend, los KPI analíticos, la importación CSV desde la interfaz y la exportación PDF/CSV siguen registrados como `Pendiente` o `Parcial`.
+El repositorio contiene una aplicación Next.js con datos JSON demostrativos para varias vistas analíticas, navegación por páginas, `AuthBoundary`, `RoleProvider`/`RoleGate`, formularios de estudiante, un ETL Python reproducible y una API FastAPI con OIDC/RBAC y login local para desarrollo. El registro privado de certificaciones de #13, la bandeja conectada de validaciones de #14 y la sesión del frontend ya cuentan con persistencia y pruebas; los KPI analíticos sobre datos reales, la importación CSV desde la interfaz y la exportación PDF/CSV siguen registrados como `Pendiente` o `Parcial`.
 
 ## 3 Actores de negocio
 
@@ -64,7 +64,7 @@ La selección de rol no estará disponible en el frontend. El backend verificar�
 
 | ID | Requerimiento | Prioridad | Criterio verificable | Estado en el repositorio |
 |---|---|---|---|---|
-| RF-01 | Autenticar y aplicar roles y permisos | Crítica | Solo existen `ADMIN`, `VALIDATOR` y `STUDENT`; los alcances `PADRON_MANAGE` y `ANALYTICS_READ` se verifican en backend | Implementado en el backend base: Google OIDC, padrón local, sesión firmada y dependencias RBAC; el frontend demo aún no consume la sesión |
+| RF-01 | Autenticar y aplicar roles y permisos | Crítica | Solo existen `ADMIN`, `VALIDATOR` y `STUDENT`; los alcances `PADRON_MANAGE` y `ANALYTICS_READ` se verifican en backend | Implementado en backend y frontend: Google OIDC, login local solo para desarrollo, sesión firmada, `AuthBoundary` y dependencias RBAC; la provisión institucional continúa siendo responsabilidad operativa |
 | RF-02 | Importar padrón por periodo desde CSV | Crítica | Una cuenta `ADMIN` con `PADRON_MANAGE` obtiene filas válidas, rechazadas y duplicadas | Implementado en backend: plantilla, validación atómica, reporte de rechazos, idempotencia e historial por periodo |
 | RF-03 | Crear clave interna por estudiante | Crítica | No expone código en analítica pública | Implementado en backend: `student_key` HMAC estable con secreto externo |
 | RF-04 | Registrar credencial y evidencia | Crítica | Exige emisor, nombre, fechas y URL o archivo | Implementado en backend: registro propio, estado `PENDING`, validación de URL/archivo, hash y almacenamiento privado |
@@ -99,7 +99,7 @@ En la demo, el selector del encabezado permite alternar entre roles y la ruta de
 | RNF-06 | Mantenibilidad | Alta | lint, tipos, pruebas automatizadas y API documentada | Parcial: lint, TypeScript y build; faltan pruebas y API |
 | RNF-07 | Recuperación | Alta | respaldo diario y restauración trimestral probada | Pendiente: no existe base de datos ni respaldo |
 | RNF-08 | Observabilidad | Media | logs estructurados, métricas y alertas con responsable | Parcial: cada corrida deja trazabilidad y calidad persistente; monitoreo y alertas quedan para #21 |
-| RNF-09 | Portabilidad | Media | despliegue reproducible en contenedores | Pendiente: Docker forma parte de un issue posterior |
+| RNF-09 | Portabilidad | Media | despliegue reproducible en contenedores | Implementado en el repositorio: Compose para frontend, API y PostgreSQL, más validación en CI; el despliegue real requiere host y secretos externos |
 | RNF-10 | Calidad de datos | Crítica | completitud, unicidad, validez y consistencia medibles por corrida | Implementado en ETL: validación previa, duplicados, causas por fila, hash e informe persistente |
 
 ## 6 Estados, errores y contratos

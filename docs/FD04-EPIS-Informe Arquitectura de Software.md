@@ -6,8 +6,8 @@
 **Facultad de Ingeniería — Escuela Profesional de Ingeniería de Sistemas**<br>
 **Curso:** Inteligencia de Negocios<br>
 **Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
-**Versión:** 2.2<br>
-**Fecha:** 12/09/2026
+**Versión:** 3.0<br>
+**Fecha:** 01/10/2026
 
 **Issue:** [#6 — Completar FD04: Documento de Arquitectura SAD](https://github.com/Kiara1616/pulse-epis/issues/6)
 
@@ -21,13 +21,13 @@ La arquitectura convierte el prototipo Next.js y Python en una plataforma segura
 
 | Área | Estado actual del repositorio | Arquitectura objetivo |
 |---|---|---|
-| Frontend | Next.js, TypeScript, Recharts y JSON demostrativos | Next.js conectado a una API con contratos versionados |
-| Backend | API FastAPI base con health checks y OpenAPI | FastAPI modular con OpenAPI, validación y autorización |
+| Frontend | Next.js, TypeScript, Recharts, AuthBoundary/RoleGate y JSON demostrativos | Next.js conectado a una API con contratos versionados |
+| Backend | FastAPI con health checks, OpenAPI, OIDC/RBAC y sesión local de desarrollo | FastAPI modular con OpenAPI, validación y autorización |
 | Datos | ETL reproducible y esquema PostgreSQL versionado | PostgreSQL operacional, staging y modelo analítico |
-| Evidencias | Formulario y vistas simuladas | Objetos privados, hash, URLs temporales y retención |
-| Identidad | Selector de rol para demostración | OIDC institucional, sesiones seguras y RBAC/scopes |
-| Operación | CI para calidad; no hay Docker ni ambientes | Desarrollo, staging y producción reproducibles |
-| Resiliencia | No hay backups ni monitoreo | RPO/RTO definidos, alertas, restauración y rollback |
+| Evidencias | Persistencia privada, hash, URLs temporales y validación | Objetos privados, hash, URLs temporales y retención |
+| Identidad | Google OIDC, login local de desarrollo, sesiones firmadas y RBAC | OIDC institucional, sesiones seguras y RBAC/scopes |
+| Operación | Compose local, CI y workflows de despliegue; la infraestructura requiere host y secretos | Desarrollo, staging y producción reproducibles |
+| Resiliencia | Workflows de backup, monitoreo y rollback definidos; pruebas operativas pendientes | RPO/RTO definidos, alertas, restauración y rollback |
 
 El prototipo no se presentará como producción. Las decisiones de este documento son el contrato técnico para los issues de construcción; cada componente pendiente conserva su issue de implementación y criterio de salida.
 
@@ -357,7 +357,7 @@ flowchart LR
 | Staging | Validar migraciones, contratos, seguridad y rendimiento | Sintéticos o anonimizados | CI exitoso y revisión |
 | Producción | Piloto o servicio institucional | Datos autorizados reales | Aprobación, backup verificado y rollback preparado |
 
-La arquitectura objetivo requiere contenedores, un entorno PostgreSQL operativo, almacenamiento privado, CI/CD y monitoreo. El repositorio ya contiene el esquema, la migración inicial de [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10), el flujo privado de [#13 evidencias](https://github.com/Kiara1616/pulse-epis/issues/13) y la máquina de validación de [#14](https://github.com/Kiara1616/pulse-epis/issues/14); los adaptadores productivos y entornos restantes corresponden a [#19 contenedores](https://github.com/Kiara1616/pulse-epis/issues/19) y [#20 staging](https://github.com/Kiara1616/pulse-epis/issues/20).
+La arquitectura objetivo requiere contenedores, un entorno PostgreSQL operativo, almacenamiento privado, CI/CD y monitoreo. El repositorio ya contiene el esquema, la migración inicial de [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10), el flujo privado de [#13 evidencias](https://github.com/Kiara1616/pulse-epis/issues/13), la máquina de validación de [#14](https://github.com/Kiara1616/pulse-epis/issues/14), Compose y workflows de despliegue. La ejecución de staging o producción todavía depende de un host, DNS, secretos y configuración de GitHub Environments fuera del repositorio.
 
 ## 11. Respaldo, monitoreo y rollback
 
@@ -416,12 +416,12 @@ La secuencia recomendada mantiene la aplicación demostrativa ejecutable mientra
 1. Proteger `main`, activar CI y mantener datos sintéticos en desarrollo.
 2. Crear PostgreSQL, migraciones y contratos de datos.
 3. Inicializar FastAPI con health check, configuración por entorno y OpenAPI.
-4. Integrar en el frontend el OIDC/RBAC backend de #11 y reemplazar el selector de rol por una sesión real.
+4. Consolidar en todos los flujos del frontend la sesión real y los permisos OIDC/RBAC de #11, retirando cualquier selector de rol demostrativo residual.
 5. Implementar certificaciones, evidencias, validación y auditoría sobre el padrón de #12 (registro privado en #13 y máquina de estados en #14).
 6. Convertir el ETL en worker idempotente con staging y controles de calidad.
 7. Llevar KPIs, filtros, brechas y fecha de corte al backend.
 8. Conectar Next.js a la API y retirar JSON duplicados de producción.
-9. Contenerizar, desplegar staging, probar restauración y preparar rollback.
+9. Validar Compose, desplegar staging, probar restauración y ejecutar un rollback controlado.
 10. Ejecutar el piloto, conciliar indicadores y decidir la publicación institucional.
 
 ## 14. Estructura recomendada
@@ -440,11 +440,11 @@ pulse-epis/
     architecture/                # Diagramas y decisiones como código
     schemas/                     # Contratos JSON/OpenAPI
   infrastructure/                # Docker, ambientes y despliegue
-  .github/workflows/             # CI/CD pendiente (#8/#20)
+  .github/workflows/             # CI/CD, despliegue, backup, monitoreo y rollback
 ```
 
 ## 15. Conclusión
 
 La arquitectura es implementable con un monolito modular, PostgreSQL, almacenamiento privado, un worker ETL y una interfaz Next.js. Las fronteras de confianza, responsabilidades, contratos, respaldos, monitoreo y rollback quedan definidas para que el sistema pueda evolucionar sin exponer datos nominales ni depender de scraping.
 
-El repositorio actual sigue siendo un prototipo: contiene una base FastAPI, un esquema PostgreSQL migrable, OIDC/RBAC, carga controlada del padrón y registro privado de certificaciones/evidencias con enlaces temporales, pero no contiene un entorno PostgreSQL operativo, Docker, purga programada ni observabilidad productiva. Por ello, la arquitectura solo se considera lista para implementación cuando los issues de infraestructura, seguridad, datos e integración cierren sus criterios y un staging demuestre el flujo completo con datos sintéticos antes de recibir el padrón real.
+El repositorio actual sigue siendo un prototipo ampliado: contiene una base FastAPI, un esquema PostgreSQL migrable, OIDC/RBAC, login local de desarrollo, carga controlada del padrón, registro privado de certificaciones/evidencias, Compose y workflows operativos. Aún no constituye un ambiente institucional operativo: faltan host, DNS, secretos administrados, pruebas de restauración y validación de observabilidad con datos sintéticos. Por ello, la arquitectura solo se considera lista para piloto cuando el staging real demuestre el flujo completo antes de recibir el padrón real.

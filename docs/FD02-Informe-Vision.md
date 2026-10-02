@@ -4,8 +4,8 @@
 
 **Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
 **Curso:** Inteligencia de Negocios<br>
-**Versión:** 2.1<br>
-**Fecha:** 11/09/2026
+**Versión:** 3.0<br>
+**Fecha:** 01/10/2026
 
 **Issue:** [#4 — Completar FD02: actores, capacidades y visión](https://github.com/Kiara1616/pulse-epis/issues/4)
 
