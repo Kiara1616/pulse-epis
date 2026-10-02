@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "documents": [
+    {
+      "source": "docs/academico/FD01-Informe-Factibilidad.md",
+      "group": "academico"
+    },
+    {
+      "source": "docs/academico/FD02-Informe-Vision.md",
+      "group": "academico"
+    },
+    {
+      "source": "docs/academico/FD03-Especificacion-Requerimientos.md",
+      "group": "academico"
+    },
+    {
+      "source": "docs/academico/FD04-Arquitectura-Software.md",
+      "group": "academico"
+    },
+    {
+      "source": "docs/academico/FD05-Informe-Final.md",
+      "group": "academico"
+    },
+    {
+      "source": "docs/academico/Matriz-de-cobertura.md",
+      "group": "academico"
+    },
+    {
+      "source": "docs/academico/README.md",
+      "group": "academico"
+    },
+    {
+      "source": "docs/proyecto/00-Problema-y-linea-base.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/01-Objetivos-medibles.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/05-Modelo-de-datos.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/06-Plantilla-padron.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/07-Certificaciones-evidencias.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/08-Validacion-certificaciones.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/09-Diccionario-indicadores.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/10-Manual-de-usuario.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/11-Arquitectura-tecnica.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/12-Desarrollo-local.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/13-Autenticacion-y-seguridad.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/14-ETL-y-calidad.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/15-API-y-contratos.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/16-Despliegue-y-recuperacion.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/17-Pruebas-y-aceptacion.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/18-Generacion-documental.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/19-Registro-de-validacion.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/README.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/REPOSITORY-GOVERNANCE.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/README.md",
+      "group": "indice"
+    },
+    {
+      "source": "docs/recursos/README.md",
+      "group": "indice"
+    },
+    {
+      "source": "README.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "CHANGELOG.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "pilot/RELEASE-NOTES.md",
+      "group": "proyecto"
+    }
+  ]
+}

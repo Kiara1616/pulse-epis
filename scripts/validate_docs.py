@@ -1,44 +1,19 @@
-"""Validate relative Markdown links used by the repository documentation."""
-
-from pathlib import Path
-import re
+"""Validate complete sources and optional generated documentation artifacts."""
+import argparse
 import sys
-from urllib.parse import unquote
+from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
-MARKDOWN_FILES = [ROOT / "README.md", ROOT / "CONTRIBUTING.md"] + sorted(
-    (ROOT / "docs").glob("*.md")
-)
-LINK_PATTERN = re.compile(r"\]\(([^)]+)\)")
-
-
-def validate_links() -> list[str]:
-    errors: list[str] = []
-    for markdown_file in MARKDOWN_FILES:
-        content = markdown_file.read_text(encoding="utf-8")
-        for target in LINK_PATTERN.findall(content):
-            target = target.split("#", 1)[0].strip()
-            if not target or target.startswith(("http://", "https://", "mailto:")):
-                continue
-
-            target = unquote(target).strip("<>")
-            resolved = (markdown_file.parent / target).resolve()
-            if not resolved.exists():
-                errors.append(f"{markdown_file.relative_to(ROOT)} -> {target}")
-    return errors
-
-
-def main() -> int:
-    errors = validate_links()
-    if errors:
-        print("Broken local Markdown links:")
-        print("\n".join(f"- {error}" for error in errors))
-        return 1
-
-    print(f"Validated {len(MARKDOWN_FILES)} Markdown files and all local links.")
-    return 0
-
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from documentation_validation import source_errors, artifact_errors, entries
 
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--artifacts", action="store_true")
+    args = parser.parse_args()
+    errors = source_errors()
+    if args.artifacts:
+        errors.extend(artifact_errors())
+    if errors:
+        print("\n".join("- " + error for error in errors))
+        raise SystemExit(1)
+    print(f"Validated {len(entries())} source documents, recursive links, migrations, requirements and contracts" + (" and generated artifacts." if args.artifacts else "."))

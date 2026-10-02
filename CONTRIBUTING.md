@@ -92,4 +92,4 @@ Usa datos sintéticos o anonimizados. El padrón EPIS, códigos, correos, docume
 
 ## Reglas de `main`
 
-`main` debe recibir cambios únicamente mediante PR. La configuración exacta de protección, revisiones, CODEOWNERS y checks se encuentra en [Gobierno del repositorio](docs/REPOSITORY-GOVERNANCE.md). La protección de la rama requiere permisos de administrador de GitHub y no puede activarse desde una cuenta sin ese permiso.
+`main` debe recibir cambios únicamente mediante PR. La configuración exacta de protección, revisiones, CODEOWNERS y checks se encuentra en [Gobierno del repositorio](docs/proyecto/REPOSITORY-GOVERNANCE.md). La protección de la rama requiere permisos de administrador de GitHub y no puede activarse desde una cuenta sin ese permiso.

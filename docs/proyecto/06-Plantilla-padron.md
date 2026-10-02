@@ -1,6 +1,6 @@
 # Plantilla de padrón EPIS
 
-La plantilla [`padron.csv`](templates/padron.csv) es el contrato mínimo para cargar estudiantes activos o históricos de Sistemas. La carga debe provenir de una fuente autorizada por EPIS; este archivo no contiene datos reales.
+La plantilla [`padron.csv`](../recursos/templates/padron.csv) es el contrato mínimo para cargar estudiantes activos o históricos de Sistemas. La carga debe provenir de una fuente autorizada por EPIS; este archivo no contiene datos reales.
 
 ## Columnas
 

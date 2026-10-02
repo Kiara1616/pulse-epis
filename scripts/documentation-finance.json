@@ -1,0 +1,13 @@
+{
+  "classification": "hypothetical_academic_scenario_not_observed",
+  "currency": "PEN",
+  "initial_investment": 4800,
+  "annual_benefit": 7200,
+  "annual_cost": 4740,
+  "discount_rate": 0.1,
+  "years": 3,
+  "reduced_annual_benefit": 4800,
+  "expected_npv": 1317.66,
+  "expected_irr_percent": 25.03,
+  "expected_benefit_cost": 1.0794
+}
