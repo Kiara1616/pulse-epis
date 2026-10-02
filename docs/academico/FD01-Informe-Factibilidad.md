@@ -5,7 +5,7 @@
 **Curso:** Inteligencia de Negocios<br>
 **Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
 **Código:** FD01<br>
-**Versión:** 3.1<br>
+**Versión:** 3.2<br>
 **Fecha:** 02/10/2026<br>
 **Base técnica:** main cf7ab75 y documentación del PR 51 a618c3e
 
@@ -16,6 +16,7 @@
 | 2.x | Septiembre 2026 | Kiara Zapana y Vincenzo Lllanos | Desarrollo de las fuentes del proyecto |
 | 3.0 | 01/10/2026 | Vincenzo Lllanos | Generación académica FD01 a FD04 en PR 51 |
 | 3.1 | 02/10/2026 | Equipo del proyecto | Organización documental y actualización contra el código |
+| 3.2 | 02/10/2026 | Equipo del proyecto | Alineación del índice FD01 con la estructura académica indicada |
 
 Revisión y aprobación académica: sin acta registrada. La versión del documento no certifica una aprobación ni un despliegue institucional.
 
@@ -23,13 +24,17 @@ Revisión y aprobación académica: sin acta registrada. La versión del documen
 
 Pulse EPIS es viable de forma condicionada para un piloto. Existen frontend, API, autenticación, persistencia, validación, ETL, indicadores y contenedores; la disponibilidad institucional depende de padrón autorizado, responsables, configuración de ambientes y recuperación probada. No hay cifras institucionales de cobertura ni beneficios económicos medidos.
 
-## 1 Descripción del proyecto
+## 1. DESCRIPCIÓN DEL PROYECTO
 
-### 1.1 Nombre
+### 1.1. NOMBRE DEL PROYECTO
 
 **Pulse EPIS Dashboard de acreditaciones y certificaciones de estudiantes de la EPIS**.
 
-### 1.2 Problema y propuesta
+### 1.2. DURACIÓN DEL PROYECTO
+
+La planificación del piloto comprende 16 semanas de trabajo, sujeta a disponibilidad de responsables y autorización de datos. El cronograma de ejecución se desarrolla en el Anexo A; no constituye una fecha contractual de entrega.
+
+### 1.3. DESCRIPCIÓN
 
 La EPIS necesita demostrar, para sus procesos de mejora continua y acreditación, qué proporción de sus estudiantes activos posee certificaciones tecnológicas válidas, cómo evoluciona el indicador y qué brechas existen frente al mercado laboral. La información puede encontrarse dispersa entre formularios, hojas de cálculo, certificados PDF, plataformas de insignias y registros académicos. Una cifra agregada publicada en el portal institucional permite conocer el contexto, pero no identifica de forma confiable a cada estudiante ni prueba que una credencial le pertenezca.
 
@@ -37,11 +42,21 @@ Pulse EPIS centralizará el padrón académico autorizado y las evidencias de ce
 
 La definición operativa es deliberadamente estricta: el padrón oficial determina el denominador; una certificación solo entra en los KPI después de conciliar titularidad, emisor, fechas, evidencia, estado aprobado y duplicidad. La línea base actual es sintética y sirve únicamente para demostrar el prototipo; la línea base institucional se levantará durante el piloto con fecha de corte aprobada por EPIS.
 
-### 1.3 Objetivo general
+**Alcance de la solución:**
+
+Incluye autenticación institucional, carga del padrón, registro de certificaciones, evidencias, validación administrativa, ETL, almacén analítico, dashboard, filtros, exportación y auditoría. El MVP atenderá a la EPIS y podrá ampliarse a otras escuelas.
+
+No incluye acceso no autorizado al sistema académico, extracción de perfiles privados, verificación biométrica, scraping de identidades, ni rankings nominales públicos. Las integraciones con proveedores solo se habilitarán después de verificar sus términos, permisos y límites técnicos.
+
+### 1.4. OBJETIVOS
+
+Los objetivos guían el desarrollo y la evaluación del piloto; su cumplimiento requiere las mediciones y autorizaciones identificadas en este informe.
+
+#### 1.4.1. OBJETIVO GENERAL
 
 Diseñar e implementar una plataforma de inteligencia de negocios que consolide, valide y visualice las certificaciones de los estudiantes de la EPIS para apoyar la acreditación, la mejora curricular y la identificación de talento.
 
-### 1.4 Objetivos específicos
+#### 1.4.2. OBJETIVOS ESPECÍFICOS
 
 1. Integrar el padrón oficial con certificaciones reportadas y credenciales digitales verificables.
 2. Calcular indicadores por periodo, cohorte, ciclo, proveedor, nivel y área tecnológica.
@@ -50,17 +65,7 @@ Diseñar e implementar una plataforma de inteligencia de negocios que consolide,
 5. Comparar competencias certificadas con señales documentadas de demanda laboral.
 6. Generar reportes exportables para calidad y acreditación.
 
-### 1.5 Alcance
-
-Incluye autenticación institucional, carga del padrón, registro de certificaciones, evidencias, validación administrativa, ETL, almacén analítico, dashboard, filtros, exportación y auditoría. El MVP atenderá a la EPIS y podrá ampliarse a otras escuelas.
-
-No incluye acceso no autorizado al sistema académico, extracción de perfiles privados, verificación biométrica, scraping de identidades, ni rankings nominales públicos. Las integraciones con proveedores solo se habilitarán después de verificar sus términos, permisos y límites técnicos.
-
-### 1.6 Duración del proyecto
-
-La planificación del piloto comprende 16 semanas de trabajo, sujeta a disponibilidad de responsables y autorización de datos. El cronograma de ejecución se desarrolla en el apartado 6; no constituye una fecha contractual de entrega.
-
-## 2 Riesgos
+## 2. RIESGOS
 
 Escala: **Probabilidad** = baja, media o alta; **Impacto** = bajo, medio, alto o crítico. El riesgo residual supone que las acciones preventivas ya fueron implementadas.
 
@@ -79,13 +84,13 @@ Escala: **Probabilidad** = baja, media o alta; **Impacto** = bajo, medio, alto o
 
 La matriz se revisará en cada hito y ante un cambio de proveedor, fuente, finalidad o alcance. Los riesgos R-01, R-04 y R-05 son bloqueantes para publicar datos nominales aunque el dashboard técnico funcione.
 
-## 3 Análisis de la situación actual
+## 3. ANÁLISIS DE LA SITUACIÓN ACTUAL
 
-### 3.1 Planteamiento del problema
+### 3.1. PLANTEAMIENTO DEL PROBLEMA
 
 La consolidación de certificaciones debe conciliar población, evidencias, estados y fechas para producir un reporte reproducible. El problema y la línea base se documentan en [Problema y línea base](../proyecto/00-Problema-y-linea-base.md). No se afirma que existan entrevistas, actas ni indicadores institucionales que no estén respaldados por una fuente.
 
-### 3.2 Consideraciones de hardware y software
+### 3.2. CONSIDERACIONES DE HARDWARE Y SOFTWARE
 
 | Recurso | Uso | Criterio para el piloto |
 |---|---|---|
@@ -97,9 +102,9 @@ La consolidación de certificaciones debe conciliar población, evidencias, esta
 
 Los requisitos de CPU, memoria y almacenamiento deben medirse antes de contratar; no se presenta una estimación como infraestructura ya disponible.
 
-## 4 Estudio de factibilidad
+## 4. ESTUDIO DE FACTIBILIDAD
 
-### 4.1 Factibilidad técnica
+### 4.1. FACTIBILIDAD TÉCNICA
 
 #### 4.1.1 Qué demuestra el prototipo actual
 
@@ -133,7 +138,7 @@ La API pública de Credly no debe asumirse capaz de buscar libremente por correo
 
 No se recomienda declarar producción mientras falte cualquiera de estos controles: autenticación, autorización del lado servidor, validación de entradas, cifrado en tránsito y reposo cuando corresponda, copia de respaldo probada, trazabilidad de decisiones y pruebas de restauración. El piloto puede iniciar con servicios administrados de bajo costo si los datos nominales permanecen restringidos y el responsable institucional aprueba la configuración.
 
-### 4.2 Factibilidad económica
+### 4.2. FACTIBILIDAD ECONÓMICA
 
 #### 4.2.1 Supuestos de estimación
 
@@ -165,7 +170,7 @@ Con las alternativas iniciales, el costo técnico recurrente de referencia es **
 
 El beneficio esperado es reducir consolidación manual, reprocesos y tiempo de preparación de evidencias para acreditación. La medición de ese beneficio se realizará en el piloto comparando horas y errores del proceso actual contra el proceso con Pulse EPIS; no se asigna un ahorro monetario sin datos observados.
 
-### 4.3 Factibilidad operativa
+### 4.3. FACTIBILIDAD OPERATIVA
 
 #### 4.3.1 Responsabilidades mínimas
 
@@ -186,37 +191,25 @@ El tratamiento debe diseñarse conforme a la Ley peruana 29733 y su Reglamento a
 
 El padrón y las evidencias nominales permanecerán restringidos. Las vistas públicas usarán agregados, umbrales de publicación cuando sean necesarios y una fecha de corte visible. Nombres, correos, códigos, enlaces privados y rankings nominales no se publicarán sin autorización y finalidad académica explícita. Las métricas de demanda laboral se presentarán como señales documentadas, no como una garantía de empleabilidad ni como criterio automático de evaluación de estudiantes.
 
-### 4.4 Factibilidad legal
+### 4.4. FACTIBILIDAD LEGAL
 
 La finalidad, acceso, conservación y eliminación de datos deben acordarse con la Universidad. Se toman como marco la Ley 29733 y el [Reglamento D.S. 016-2024-JUS](https://www.gob.pe/institucion/anpd/normas-legales/6554453-n-016-2024-jus). Las sesiones y permisos ayudan a aplicar restricciones técnicas, pero no certifican cumplimiento legal. La autorización del padrón y la política de retención son condiciones previas al piloto real.
 
-### 4.5 Factibilidad social
+### 4.5. FACTIBILIDAD SOCIAL
 
 La solución puede facilitar evidencia para acreditación y el seguimiento de logros. Su adopción requiere capacitación y participación voluntaria conforme a la política institucional. No se publican rankings nominales ni se usa la cobertura como evaluación automática de una persona.
 
-### 4.6 Factibilidad ambiental
+### 4.6. FACTIBILIDAD AMBIENTAL
 
 La gestión digital puede reducir copias impresas y traslados de documentos. A la vez, los contenedores, respaldos y almacenamiento consumen energía y recursos. Se propone retener solo lo necesario, evitar duplicación de binarios y medir consumo; no se cuantifica una reducción ambiental sin evidencia.
 
-## 5 Análisis financiero
+## 5. ANÁLISIS FINANCIERO
 
-
-### 5.1 Justificación de la inversión
+### 5.1. JUSTIFICACIÓN DE LA INVERSIÓN
 
 El propósito económico es reducir consolidación manual y reprocesos, sin confundir el costo de caja de un trabajo académico con el valor de las horas del equipo. La decisión de contratar infraestructura requiere cotizaciones y volumen del piloto. La siguiente evaluación es un escenario didáctico explícito para comprobar el método financiero; no representa beneficios medidos ni un presupuesto aprobado por EPIS.
 
-### 5.2 Beneficios tangibles e intangibles
-
-| Tipo | Beneficio | Cómo medirlo |
-|---|---|---|
-| Tangible | Menor tiempo de consolidación | Horas antes y después de cada cierre |
-| Tangible | Menos reprocesos | Número de correcciones y tiempo dedicado |
-| Intangible | Trazabilidad para acreditación | Reportes reproducibles y decisiones con evidencia |
-| Intangible | Confianza y continuidad | Responsables definidos, manuales y pruebas de recuperación |
-
-No hay ingresos comerciales demostrados. Se denomina beneficio monetizado al tiempo ahorrado, sin registrarlo como venta ni efectivo recibido.
-
-### 5.3 Supuestos del escenario financiero
+**Supuestos del escenario financiero:**
 
 | Variable | Valor supuesto | Base del supuesto |
 |---|---|---|
@@ -229,20 +222,54 @@ No hay ingresos comerciales demostrados. Se denomina beneficio monetizado al tie
 | Horizonte | 3 años | Hipótesis para comparación académica |
 | Tasa de descuento r | 10% anual | Hipótesis, sin atribuirla a la Universidad |
 
-### 5.4 Tabla de egresos e ingresos equivalentes anuales
+### 5.2. BENEFICIOS DEL PROYECTO
 
-| Concepto | Año 0 | Año 1 | Año 2 | Año 3 |
+Los beneficios se separan en resultados que pueden monetizarse con mediciones del piloto y mejoras cualitativas. No hay ingresos comerciales demostrados; el ahorro de tiempo no se registra como venta ni como efectivo recibido.
+
+#### 5.2.1. BENEFICIOS TANGIBLES
+
+| Beneficio | Indicador de medición | Tratamiento económico |
+|---|---|---|
+| Menor tiempo de consolidación | Horas por cierre antes y después del sistema | Escenario: 360 horas/año por S/ 20/hora = S/ 7 200/año |
+| Menos reprocesos | Correcciones y horas dedicadas a resolverlas | Medir por separado; no sumar nuevamente horas incluidas en el ahorro de consolidación |
+
+El valor de S/ 7 200 es una hipótesis didáctica, pendiente de medición y validación institucional.
+
+#### 5.2.2. BENEFICIOS INTANGIBLES
+
+| Beneficio | Evidencia para evaluarlo |
+|---|---|
+| Trazabilidad para acreditación | Reportes reproducibles y decisiones vinculadas con evidencia |
+| Confianza en los indicadores | Definiciones, fuentes y fecha de corte visibles |
+| Continuidad del conocimiento | Responsables definidos, manuales y pruebas de recuperación |
+| Apoyo a mejora curricular | Análisis de cobertura y brechas con sus límites metodológicos |
+
+No se asigna un monto monetario a estos beneficios para evitar inflar la evaluación.
+
+### 5.3. TABLA DE EGRESOS OPERATIVOS ANUALES
+
+| Concepto | Base de cálculo | Año 1 (S/) | Año 2 (S/) | Año 3 (S/) |
 |---|---|---|---|---|
-| Beneficio monetizado | 0 | 7 200 | 7 200 | 7 200 |
-| Desarrollo valorizado | 4 800 | 0 | 0 | 0 |
-| Egresos operativos | 0 | 4 740 | 4 740 | 4 740 |
-| Flujo económico neto | -4 800 | 2 460 | 2 460 | 2 460 |
+| Infraestructura | S/ 200/mes por 12 meses | 2 400 | 2 400 | 2 400 |
+| Validación | 96 horas/año por S/ 15/hora | 1 440 | 1 440 | 1 440 |
+| Soporte | 60 horas/año por S/ 15/hora | 900 | 900 | 900 |
+| Total de egresos operativos | Infraestructura más validación y soporte | 4 740 | 4 740 | 4 740 |
 
-Montos expresados en soles; sin impuestos, inflación ni valor residual en este escenario. El flujo económico incorpora horas valorizadas, por lo que no debe presentarse como flujo bancario del equipo.
+La inversión inicial de S/ 4 800 corresponde al año 0 y se registra en el flujo neto, separada de los egresos recurrentes. Los costos son supuestos constantes, sin inflación ni impuestos; la infraestructura está dentro del rango de planificación de 4.2.
 
-### 5.5 Matriz del flujo de caja neto y criterios de inversión
+### 5.4. TABLA DE INGRESOS ANUALES
 
-`VAN = -I0 + suma(Ft / (1 + r)^t)` para t de 1 a 3.
+| Concepto | Año 1 (S/) | Año 2 (S/) | Año 3 (S/) | Naturaleza |
+|---|---|---|---|---|
+| Ingresos comerciales o cobros | 0 | 0 | 0 | No hay ventas o cobros previstos en este escenario académico |
+| Beneficio económico equivalente | 7 200 | 7 200 | 7 200 | Ahorro hipotético de 360 horas/año por S/ 20/hora |
+| Total considerado para evaluación económica | 7 200 | 7 200 | 7 200 | Beneficio monetizado; no constituye ingreso de caja |
+
+Se conserva el título académico «ingresos anuales», distinguiendo el efectivo de los beneficios equivalentes. La evaluación es económica y no acredita recursos recibidos por la Universidad.
+
+### 5.5. MATRIZ DEL FLUJO DE CAJA NETO
+
+El flujo neto utilizado para la evaluación es de naturaleza económica: incorpora trabajo valorizado y ahorro de tiempo. Para cada año operativo, Ft = S/ 7 200 - S/ 4 740 = S/ 2 460; el año 0 registra -S/ 4 800.
 
 | Periodo | Flujo económico | Factor al 10% | Flujo descontado |
 |---|---|---|---|
@@ -251,14 +278,37 @@ Montos expresados en soles; sin impuestos, inflación ni valor residual en este 
 | 2 | 2 460.00 | 0.826446 | 2 033.06 |
 | 3 | 2 460.00 | 0.751315 | 1 848.23 |
 
-El VAN del escenario es S/ 1317.66. La TIR es 25.03%, calculada por bisección sobre esos mismos flujos. La relación B/C es 1.0794: valor presente de beneficios dividido entre la inversión inicial más el valor presente de egresos. Los valores exactos reproducibles se verifican con `scripts/validate_docs.py`; el cálculo no sustituye mediciones ni cotizaciones.
+Montos en soles, sin inflación, impuestos ni valor residual. No se presenta este flujo económico como un flujo bancario del equipo.
 
-### 5.6 Sensibilidad y criterio de decisión
+### 5.6. CRITERIOS DE INVERSIÓN
+
+Se aplica una tasa de descuento hipotética de 10% anual y un horizonte de tres años al mismo escenario de 5.1 a 5.5. Los valores reproducibles se contrastan con scripts/documentation-finance.json mediante scripts/validate_docs.py.
+
+#### 5.6.1. VALOR ACTUAL NETO (VAN)
+
+`VAN = -I0 + suma(Ft / (1 + r)^t)` para t de 1 a 3.
+
+El VAN del escenario es **S/ 1317.66**. Un VAN mayor que cero indica que los beneficios netos supuestos superan la inversión económica al descuento elegido. No confirma ahorro real sin mediciones del piloto.
+
+#### 5.6.2. TASA INTERNA DE RETORNO
+
+La TIR es la tasa que hace VAN = 0 para los flujos -4 800, 2 460, 2 460 y 2 460. Calculada mediante bisección, resulta **25.03%**. Supera el descuento supuesto de 10%; esta comparación solo vale para el escenario planteado.
+
+#### 5.6.3. RELACIÓN BENEFICIO/COSTO (B/C)
+
+`B/C = valor presente de beneficios / (inversión inicial + valor presente de egresos operativos)`.
+
+La relación B/C es **1.0794**. Por cada sol de costo económico descontado se supone aproximadamente S/ 1,08 de beneficio descontado. El denominador incluye la inversión inicial para evitar sobreestimar el resultado.
+
+**Sensibilidad y decisión:**
 
 Si el ahorro anual es de 240 horas, el beneficio supuesto baja a S/ 4 800 y el neto anual a S/ 60: el VAN es negativo. El escenario depende fuertemente del ahorro observado. Antes de decidir inversión, EPIS debe medir horas actuales y futuras, aprobar la valorización de personal, obtener cotizaciones y revisar costos de respaldo, seguridad y soporte. El resultado didáctico positivo por sí solo no confirma rentabilidad institucional.
 
+## 6. CONCLUSIONES
 
-## 6 Plan de ejecución
+El sistema dispone de una base implementada para un piloto, incluyendo persistencia y autorización del lado servidor. Las condiciones abiertas son autorización de datos, provisión institucional, mediciones y restauración probada. La evaluación financiera presentada es un escenario didáctico sensible a sus supuestos; la factibilidad económica definitiva requiere un cierre observado. La ampliación institucional depende de las puertas de control y responsables descritos.
+
+## Anexo A. Plan de ejecución
 
 El plan de 16 semanas supone disponibilidad del responsable de datos y de los validadores. Las semanas son una secuencia de trabajo para el piloto, no una promesa de despliegue institucional.
 
@@ -271,13 +321,13 @@ El plan de 16 semanas supone disponibilidad del responsable de datos y de los va
 | Calidad y seguridad | 12–13 | Flujo integrado | Pruebas, revisión de permisos, respaldo y restauración |
 | Piloto y decisión | 14–16 | Puertas anteriores aprobadas | Capacitación, medición de metas y decisión de producción |
 
-### 6.1 Camino crítico
+### A.1. Camino crítico
 
 `Autorización del padrón → Diccionario y reglas → Modelo persistente → Ingesta y validación → KPI trazables → Seguridad y restauración → Piloto`.
 
 Si se retrasa la autorización del padrón, se puede continuar con datos sintéticos para probar la interfaz, pero no se puede declarar éxito institucional ni cerrar la factibilidad de producción. La aprobación de cada puerta debe quedar registrada en el repositorio o en el acta institucional correspondiente.
 
-## 7 Criterios de éxito del piloto
+## Anexo B. Criterios de éxito del piloto
 
 Los objetivos y fórmulas completas se encuentran en [Objetivos e indicadores medibles](../proyecto/01-Objetivos-medibles.md). Para la decisión del piloto se verificará como mínimo:
 
@@ -292,7 +342,7 @@ Los objetivos y fórmulas completas se encuentran en [Objetivos e indicadores me
 
 No se considerará logrado un indicador si solo se cumple con los JSON sintéticos del prototipo.
 
-## 8 Gobierno de datos
+## Anexo C. Gobierno de datos
 
 La identificación utilizará un **identificador interno estable**. El código universitario será la clave natural de ingreso, pero en analítica se reemplazará por `student_key`, sin significado externo.
 
@@ -305,7 +355,7 @@ La identificación utilizará un **identificador interno estable**. El código u
 
 El correo puede ayudar a validar el código, pero inferir el ciclo desde el año contenido en él es aproximado y no sustituye la matrícula. El flujo será: importar padrón, crear `student_key`, registrar evidencia, verificar emisor y fechas, resolver duplicados y cargar solo atributos necesarios al almacén analítico.
 
-### 8.1 Flujo operativo del piloto
+### C.1. Flujo operativo del piloto
 
 | Paso | Actividad | Resultado verificable | Responsable principal |
 |---:|---|---|---|
@@ -318,15 +368,11 @@ El correo puede ayudar a validar el código, pero inferir el ciclo desde el año
 
 En el MVP se usarán tres roles técnicos (`ADMIN`, `VALIDATOR` y `STUDENT`). Los actores de negocio adicionales —responsable de datos, analista, visitante, Dirección o Comité— se atenderán mediante permisos y vistas específicas, sin multiplicar roles técnicos antes de contar con una necesidad demostrada.
 
-## 9 Reproducción del entregable
+## Anexo D. Reproducción del entregable
 
 El comando `python scripts/build_docs.py` genera los documentos académicos y técnicos desde sus fuentes, con diagramas, OpenAPI e índice. `python scripts/build_academic_pdfs.py` genera únicamente los cinco FD. Las instrucciones completas se encuentran en [Generación documental](../proyecto/18-Generacion-documental.md).
 
-## 10 Conclusiones
-
-El sistema dispone de una base implementada para un piloto, incluyendo persistencia y autorización del lado servidor. Las condiciones abiertas son autorización de datos, provisión institucional, mediciones y restauración probada. La evaluación financiera presentada es un escenario didáctico sensible a sus supuestos; la factibilidad económica definitiva requiere un cierre observado. La ampliación institucional depende de las puertas de control y responsables descritos.
-
-## 11 Referencias
+## Referencias
 
 - [Repositorio Pulse EPIS](https://github.com/Kiara1616/pulse-epis).
 - [Portal institucional de la EPIS](http://epis.upt.edu.pe/acreditacion/index.php/inicio/concursoproyectos).

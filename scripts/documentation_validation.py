@@ -82,6 +82,36 @@ def source_errors() -> list[str]:
         for field in ("Actor principal", "Precondiciones", "Disparador", "Flujo principal", "Flujos alternativos", "Excepciones y errores", "Postcondiciones", "Verificación"):
             if f"**{field}" not in block:
                 errors.append(f"CU-{i:02d} lacks {field}")
+    fd01 = (DOCS / "academico/FD01-Informe-Factibilidad.md").read_text(encoding="utf-8")
+    required_index = [
+        "1. DESCRIPCIÓN DEL PROYECTO", "1.1. NOMBRE DEL PROYECTO",
+        "1.2. DURACIÓN DEL PROYECTO", "1.3. DESCRIPCIÓN", "1.4. OBJETIVOS",
+        "1.4.1. OBJETIVO GENERAL", "1.4.2. OBJETIVOS ESPECÍFICOS",
+        "2. RIESGOS", "3. ANÁLISIS DE LA SITUACIÓN ACTUAL",
+        "3.1. PLANTEAMIENTO DEL PROBLEMA", "3.2. CONSIDERACIONES DE HARDWARE Y SOFTWARE",
+        "4. ESTUDIO DE FACTIBILIDAD", "4.1. FACTIBILIDAD TÉCNICA",
+        "4.2. FACTIBILIDAD ECONÓMICA", "4.3. FACTIBILIDAD OPERATIVA",
+        "4.4. FACTIBILIDAD LEGAL", "4.5. FACTIBILIDAD SOCIAL",
+        "4.6. FACTIBILIDAD AMBIENTAL", "5. ANÁLISIS FINANCIERO",
+        "5.1. JUSTIFICACIÓN DE LA INVERSIÓN", "5.2. BENEFICIOS DEL PROYECTO",
+        "5.2.1. BENEFICIOS TANGIBLES", "5.2.2. BENEFICIOS INTANGIBLES",
+        "5.3. TABLA DE EGRESOS OPERATIVOS ANUALES", "5.4. TABLA DE INGRESOS ANUALES",
+        "5.5. MATRIZ DEL FLUJO DE CAJA NETO", "5.6. CRITERIOS DE INVERSIÓN",
+        "5.6.1. VALOR ACTUAL NETO (VAN)", "5.6.2. TASA INTERNA DE RETORNO",
+        "5.6.3. RELACIÓN BENEFICIO/COSTO (B/C)", "6. CONCLUSIONES",
+    ]
+    headings = list(re.finditer(r"^#{2,4} (.+)$", fd01, re.M))
+    actual = [h.group(1) for h in headings if h.group(1) in required_index]
+    if actual != required_index:
+        errors.append("FD01: required academic index is missing, duplicated or out of order")
+    for i, heading in enumerate(headings):
+        if heading.group(1) in required_index:
+            depth = len(heading.group(0).split(" ", 1)[0])
+            end = next((h.start() for h in headings[i+1:]
+                        if len(h.group(0).split(" ", 1)[0]) <= depth), len(fd01))
+            content = re.sub(r"^#{2,4} .+$", "", fd01[heading.end():end], flags=re.M)
+            if not content.strip():
+                errors.append(f"FD01: empty section {heading.group(1)}")
     financial = json.loads((ROOT / "scripts/documentation-finance.json").read_text(encoding="utf-8"))
     net = financial["annual_benefit"]-financial["annual_cost"]
     initial, years, rate = financial["initial_investment"],financial["years"],financial["discount_rate"]

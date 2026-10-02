@@ -6,7 +6,7 @@ Las referencias DOCX de FD01 a FD05 corresponden a NODIEX y se usan como ejemplo
 |---|---|---|
 | FD01 | Descripción, duración, objetivos, riesgos y situación actual | Apartados 1 a 3 y plan de 16 semanas |
 | FD01 | Factibilidad técnica económica operativa legal social ambiental | Apartado 4 con seis dimensiones |
-| FD01 | Beneficios, egresos, ingresos, flujo, VAN, TIR, B/C y conclusión | Apartados 5 y 10; escenario explícito y cálculo reproducible |
+| FD01 | Beneficios, egresos, ingresos, flujo, VAN, TIR, B/C y conclusión | Apartados 5 y 6; escenario explícito y cálculo reproducible |
 | FD02 | Introducción, siglas, referencias, posicionamiento y problema | Propósito y apartados de contexto/posicionamiento |
 | FD02 | Interesados, usuarios, perfiles, entorno y necesidades | Actores, matriz y perfiles de responsables |
 | FD02 | Perspectiva, capacidades, supuestos, costos y licenciamiento | Vista general y capacidades con estado |
