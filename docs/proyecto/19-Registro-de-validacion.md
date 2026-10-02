@@ -24,4 +24,9 @@ La tabla final registra comando, entorno, resultado y limitación. La aceptació
 
 Python y Node del runtime local; dependencias de desarrollo instaladas en entorno aislado. Los diagramas se preparan localmente con Mermaid y Chromium; los PDF conservan las figuras como PNG de alta resolución y los HTML usan SVG. CI y release incluyen la construcción y validación completa; sus ejecuciones remotas requieren el PR.
 
-No se ejecutó la suite del frontend ni despliegue, restauración, auditoría legal, carga o evaluación con usuarios institucionales en este cambio documental. La aceptación piloto, población oficial, misión/visión institucional certificada, presupuesto aprobado, autorización de tratamiento y acta siguen identificados como evidencia externa pendiente. No se inventan valores o aprobaciones para llenar las plantillas.
+Localmente no se ejecutó la suite del frontend ni despliegue, restauración, auditoría legal, carga o evaluación con usuarios institucionales en este cambio documental. La aceptación piloto, población oficial, misión/visión institucional certificada, presupuesto aprobado, autorización de tratamiento y acta siguen identificados como evidencia externa pendiente. No se inventan valores o aprobaciones para llenar las plantillas.
+
+
+## CI del PR 52
+
+En la [ejecución 36970865333](https://github.com/Kiara1616/pulse-epis/actions/runs/36970865333), correspondiente al commit c822735, pasaron docs, backend con PostgreSQL y containers. Frontend pasó lint, tipos, build y tres E2E; falló `npm audit --audit-level=high` por dependencias ya presentes: Next.js 16.3.3 y brace-expansion. El reporte identifica severidad crítica y alta, respectivamente. Este cambio documental no actualiza esas dependencias; requieren corrección y nueva validación antes de considerar CI completamente aprobado. Los resultados remotos se distinguen de las pruebas locales de la tabla.
