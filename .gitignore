@@ -16,3 +16,7 @@ backend/.venv/
 artifacts/
 dashboard-app/test-results/
 dashboard-app/playwright-report/
+
+.venv-docs/
+.tmp-docs/
+output/

@@ -30,8 +30,8 @@ El endpoint de evidencia recibe `multipart/form-data`: se debe enviar exactament
 
 ## Privacidad y retención
 
-El directorio configurado en `PULSE_EVIDENCE_STORAGE_PATH` es privado y no debe publicarse como contenido estático. El MVP usa almacenamiento local detrás de una interfaz reemplazable por S3 compatible cuando se implemente la infraestructura de la issue #19.
+El directorio configurado en `PULSE_EVIDENCE_STORAGE_PATH` es privado y no debe publicarse como contenido estático. El MVP usa almacenamiento local detrás de una interfaz reemplazable por S3 compatible como evolución futura; Compose actual conserva un volumen privado local.
 
-La retención por defecto es de **1.825 días (5 años)**, registrada en `evidences.retention_until`. El valor se configura con `PULSE_EVIDENCE_RETENTION_DAYS`. La eliminación física y del registro debe ejecutarse mediante un job institucional con backup y aprobación; ese job pertenece al trabajo operativo de las issues #19 y #21. Hasta entonces, una evidencia vencida no debe entregarse en nuevas URLs temporales.
+La retención por defecto es de **1.825 días (5 años)**, registrada en `evidences.retention_until`. El valor se configura con `PULSE_EVIDENCE_RETENTION_DAYS`. La eliminación física y del registro debe ejecutarse mediante un job institucional con backup y aprobación; ese job todavía no está implementado y requiere diseño y validación operativa. Hasta entonces, una evidencia vencida no debe entregarse en nuevas URLs temporales.
 
 Los secretos `PULSE_EVIDENCE_ACCESS_SECRET` y `PULSE_AUTH_SESSION_SECRET` deben ser aleatorios y gestionarse fuera del repositorio. El CSV, los archivos reales, URLs privadas y credenciales no deben subirse a Git.

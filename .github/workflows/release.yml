@@ -40,16 +40,29 @@ jobs:
         with:
           python-version: 3.12
 
+      - name: Install documentation dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+
       - name: Validate pilot and documentation
         run: |
           python scripts/validate_release.py --strict
           python scripts/validate_docs.py
           python -m json.tool pilot/acceptance.json > /dev/null
 
+      - name: Setup Node.js for Mermaid
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: docs/tooling/package-lock.json
+
+      - name: Install Mermaid CLI
+        run: npm ci --prefix docs/tooling
+
       - name: Build manuals and diagrams
         run: |
-          python -m pip install -r backend/requirements-dev.txt
           python scripts/build_docs.py
+          python scripts/validate_docs.py --artifacts
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2

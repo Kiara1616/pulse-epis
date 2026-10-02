@@ -1,7 +1,7 @@
 # Pulse EPIS: problema, población y línea base
 
-**Versión:** 1.0  
-**Fecha:** 11/09/2026  
+**Versión:** 1.1<br>
+**Fecha:** 02/10/2026<br>
 **Issue:** [#1 — Formular título, problema y línea base del proyecto](https://github.com/Kiara1616/pulse-epis/issues/1)
 
 ## 1. Título del proyecto
@@ -44,8 +44,8 @@ La población objetivo está formada por estudiantes matriculados en la EPIS dur
 |---|---|
 | Estudiante EPIS activo | Persona que aparece en el padrón oficial de la EPIS para el periodo consultado, con estado académico activo o matriculado al momento de la fecha de corte. Un estudiante retirado, egresado o no matriculado no integra el denominador corriente, aunque puede conservarse en el histórico. |
 | `student_key` | Identificador interno estable generado a partir del padrón. No contiene el código universitario ni el correo y es el identificador usado en el modelo analítico. |
-| Certificación registrada | Declaración de una credencial asociada a un estudiante del padrón, con emisor, nombre, fecha de emisión y una URL, archivo o identificador de evidencia. Su estado inicial es `PENDIENTE`. |
-| Certificación válida | Certificación cuya titularidad fue conciliada con el padrón, cuya evidencia identifica al emisor y la credencial, cuya fecha de emisión no es posterior al corte, y cuya revisión terminó en `APROBADA`. Los duplicados, rechazados y observados no cuentan en los KPIs oficiales. |
+| Certificación registrada | Declaración de una credencial asociada a un estudiante del padrón, con emisor, nombre, fecha de emisión y una URL, archivo o identificador de evidencia. Su estado inicial es `PENDING`. |
+| Certificación válida | Certificación cuya titularidad fue conciliada con el padrón, cuya evidencia identifica al emisor y la credencial, cuya fecha de emisión no es posterior al corte, y cuya revisión terminó en `APPROVED`. El ETL deriva `EXPIRED` si expiró antes del corte; la API corriente excluye ese estado del KPI aprobado vigente. Los duplicados, rechazados y observados no cuentan en los KPIs oficiales. |
 | Certificación vigente | Certificación válida cuya fecha de expiración es nula o igual o posterior a la fecha de corte. Una certificación válida vencida permanece en el histórico, pero no cuenta como vigente. |
 | Fecha de corte | Fecha y hora que fijan la fotografía reproducible de matrícula, validación, emisión y vigencia. Toda métrica publicada debe conservarla. |
 
@@ -61,18 +61,15 @@ El mismo estudiante puede tener varias certificaciones y una certificación pued
 
 ### 4.1 Estado actual
 
-La línea base operacional todavía no está disponible: el repositorio no contiene un padrón EPIS autorizado ni certificaciones reales validadas. Los archivos frontend `mock-data.json` y `etl_data.json` siguen siendo datos sintéticos o de demostración y no deben usarse para reportes oficiales; el ETL backend ya no depende de un archivo `output_data.json`.
+No se dispone en el repositorio de un padrón institucional autorizado ni de un cierre aprobado con evidencias reales. La línea base institucional permanece sin medir. El frontend obtiene los indicadores desde la API; los archivos históricos de demostración ya no están presentes en la rama revisada.
 
-El prototipo contiene una línea base técnica mínima para comprobar la interfaz:
-
-| Elemento | Valor del prototipo | Tratamiento |
-|---|---:|---|
-| Certificaciones del KPI visual | 342 | Sintético; no oficial |
-| Registros transformados por el ETL demostrativo | 3 | Sintético; sirve para probar el pipeline |
-| Periodo más reciente disponible en los datos visuales | 2026-II | Referencia de demo; debe ser confirmado por EPIS |
-| Última actualización del snapshot ETL | 2026-09-03 | Fecha técnica del archivo, no fecha oficial de corte |
-| Padrón oficial conciliado | No disponible | Bloquea el cálculo institucional de cobertura |
-| Certificaciones aprobadas con evidencia real | No disponible | No deben alimentar indicadores oficiales |
+| Elemento | Estado verificable | Fuente |
+|---|---|---|
+| Padrón institucional conciliado | Sin evidencia institucional publicada | Autorización y cierre requeridos para el piloto |
+| Certificaciones institucionales aprobadas | Sin cifra oficial disponible | Evidencias y decisiones de validación requeridas |
+| API y dashboard | Implementados y conectados | Rutas de indicadores y hook useAnalytics |
+| Datos de demostración | Semilla local y fixtures sintéticos de pruebas | No representan población EPIS |
+| Fecha de corte | Parámetro de snapshots ETL | Debe fijarse y aprobarse para el piloto |
 
 ### 4.2 Línea base que debe levantarse en el piloto
 
@@ -93,7 +90,7 @@ Cobertura (%) = estudiantes activos con al menos una certificación válida
                 / estudiantes activos del padrón × 100
 ```
 
-El periodo piloto propuesto es `2026-II`, sujeto a confirmación de EPIS. La fecha `2026-09-03` solo identifica el snapshot sintético que acompaña al prototipo; no sustituye la fecha de corte que deberá aprobar el responsable institucional.
+El periodo piloto propuesto es `2026-II`, sujeto a confirmación de EPIS. La fecha de corte se aprueba antes del cierre y queda registrada en el snapshot; las fechas de fixtures no sustituyen ese acuerdo.
 
 ## 5. Fuentes y autoridad de los datos
 
@@ -119,7 +116,7 @@ Ayudan a interpretar o contrastar el resultado, pero no reemplazan el padrón ni
 | Ley peruana de protección de datos personales | Restricciones de tratamiento y publicación | No es una fuente de métricas |
 | Estándares 1EdTech Open Badges | Criterios técnicos para credenciales verificables | No prueba por sí solo la matrícula EPIS |
 | Demanda laboral documentada | Comparación de brechas por habilidad | Debe conservar fuente, consulta, ubicación y fecha |
-| JSON del repositorio | Demostración de interfaz y contratos | No tiene validez académica ni operacional |
+| Semilla y fixtures sintéticos | Demostración y pruebas de contratos | No son cifras institucionales |
 
 ## 6. Referencias verificables
 
