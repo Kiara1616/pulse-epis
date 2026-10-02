@@ -24,7 +24,7 @@ La tabla final registra comando, entorno, resultado y limitación. La aceptació
 
 Python y Node del runtime local; dependencias de desarrollo instaladas en entorno aislado. Los diagramas se preparan localmente con Mermaid y Chromium; los PDF conservan las figuras como PNG de alta resolución y los HTML usan SVG. CI y release incluyen la construcción y validación completa; sus ejecuciones remotas requieren el PR.
 
-Localmente no se ejecutó la suite del frontend ni despliegue, restauración, auditoría legal, carga o evaluación con usuarios institucionales en este cambio documental. La aceptación piloto, población oficial, misión/visión institucional certificada, presupuesto aprobado, autorización de tratamiento y acta siguen identificados como evidencia externa pendiente. No se inventan valores o aprobaciones para llenar las plantillas.
+Localmente no se ejecutó la suite del frontend ni despliegue, restauración, auditoría legal, carga o evaluación con usuarios institucionales en este cambio documental. La aceptación piloto, población oficial, misión/visión institucional certificada, presupuesto aprobado, autorización de tratamiento y acta siguen identificados como evidencia externa pendiente.
 
 
 ## CI del PR 52
