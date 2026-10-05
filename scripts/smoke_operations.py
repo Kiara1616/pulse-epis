@@ -1,5 +1,6 @@
 """Exercise backup, isolated restore and rollback against disposable Docker data."""
 from pathlib import Path
+import os
 import shutil
 import subprocess
 import tempfile
@@ -59,13 +60,18 @@ def main():
             live_count = run(compose + ['exec', '-T', 'database', 'psql', '-U', 'pulse', '-d', 'pulse', '-tAc', 'SELECT count(*) FROM users'])
             assert live_count == '1'
             print('Rollback selected the previous revision and preserved live data.')
-            dump = directory / 'backups' / backup / 'database.dump'
-            dump.write_bytes(b'corrupted backup')
+            # The helper owns these mode-600 files on Linux; corrupt only this
+            # disposable fixture as that same owner, preserving production modes.
+            run(helper + [f"printf 'corrupted backup' > /ops/backups/{backup}/database.dump"])
             result = subprocess.run(helper + [f'apk add --no-cache bash util-linux >/dev/null && bash /scripts/operations.sh verify-backup /ops {backup}'], capture_output=True)
             assert result.returncode != 0
             print('Corrupted backup rejected before restoration.')
         finally:
             subprocess.run(compose + ['down', '--volumes', '--remove-orphans'], check=False, capture_output=True)
+            if hasattr(os, 'getuid'):
+                # Return ownership of our disposable fixture to the runner so
+                # TemporaryDirectory can clean it, without loosening permissions.
+                run(helper + [f'chown -R {os.getuid()}:{os.getgid()} /ops'])
 
 
 if __name__ == '__main__':
