@@ -69,12 +69,13 @@ jobs:
         env:
           PRODUCTION_ENV_FILE: ${{ secrets.PRODUCTION_ENV_FILE }}
         run: |
-          printf '%s\n' "$PRODUCTION_ENV_FILE" | ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" "umask 077; cat > '${{ vars.PRODUCTION_PATH }}/.env'"
+          printf '%s\n' "$PRODUCTION_ENV_FILE" | ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" "umask 077; cat > '${{ vars.PRODUCTION_PATH }}/.env.next'"
           ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" <<'REMOTE'
           set -eu
           cd '${{ vars.PRODUCTION_PATH }}'
           exec 9>.operations.lock
           flock -w 300 9
+          mv .env.next .env
           mkdir -p releases
           if [ -d current ]; then mv current "releases/previous-$(date -u +%Y%m%d%H%M%S)"; fi
           mkdir -p current

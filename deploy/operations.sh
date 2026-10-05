@@ -8,6 +8,7 @@ project=${PULSE_COMPOSE_PROJECT:-pulse-epis}
 [[ "$root" = /* && "$root" != / ]] || { echo 'Invalid deployment directory' >&2; exit 1; }
 cd "$root"
 root=$(pwd -P)
+[[ "$root" != / ]] || { echo 'Refusing the filesystem root' >&2; exit 1; }
 exec 9>"$root/.operations.lock"
 flock -w 300 9
 compose() { docker compose --project-name "$project" --env-file "$root/.env" -f "$root/current/compose.yaml" --profile staging "$@"; }
