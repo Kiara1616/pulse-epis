@@ -14,14 +14,21 @@ demuestra autorización institucional, login real ni disponibilidad pública.
 
 El archivo [`render.yaml`](../render.yaml) crea un servicio Docker que aloja
 Next.js, FastAPI y Nginx en un mismo origen HTTPS, PostgreSQL administrado y un
-disco privado para evidencias. Render asigna el subdominio `onrender.com`;
+almacenamiento temporal para evidencias. Ambos servicios usan `plan: free`.
+Render asigna el subdominio `onrender.com`;
 se debe copiar la URL realmente asignada, sin asumir un nombre disponible.
 
 1. En Render, conectar GitHub y seleccionar **New → Blueprint** con este
    repositorio, rama `main` y archivo `render.yaml`, después del merge del PR.
-2. Revisar el costo mostrado: esta configuración utiliza recursos **de pago**.
-   El plan gratis no conserva archivos locales y su PostgreSQL expira a los
-   30 días; no satisface la operación durable requerida por la issue #21.
+2. Comprobar que el servicio web y PostgreSQL muestran **Free**, sin disco
+   persistente. Esta es una demo temporal: los archivos subidos desaparecen
+   al reiniciar, redesplegar o suspenderse el servicio y PostgreSQL expira
+   a los 30 días. Usar solo datos sintéticos; no satisface la operación durable
+   requerida por la issue #21. El servicio se suspende tras 15 minutos inactivo
+   y la siguiente visita puede tardar aproximadamente un minuto en cargar.
+   La configuración de pago se conserva en
+   [`deploy/render/render.production.yaml`](../deploy/render/render.production.yaml)
+   como alternativa futura; no aplicarla para esta demo.
 3. Proporcionar `PULSE_GOOGLE_CLIENT_ID` y `PULSE_GOOGLE_CLIENT_SECRET` mediante
    los campos secretos del proveedor. Los secretos de sesión, pseudónimos y
    evidencia se generan automáticamente. Nunca copiarlos en issues o commits.
@@ -66,6 +73,10 @@ El health check `/ready` forma parte del Blueprint. Tras publicar, guardar la
 URL en la variable del repositorio `PRODUCTION_PUBLIC_URL` y habilitar
 `PRODUCTION_MONITOR_ENABLED=true` para el monitor externo de GitHub Actions.
 No activar los workflows SSH si se utiliza Render.
+
+Los siguientes simulacros requieren la alternativa de producción con disco
+persistente y PostgreSQL de pago; no están disponibles en la demo gratuita.
+No registrar la demo como evidencia de respaldo o durabilidad.
 
 PostgreSQL de pago incluye recuperación a un punto en el tiempo. Para el
 simulacro, crear una instancia recuperada, contrastar las cantidades y el

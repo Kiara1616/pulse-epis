@@ -1,15 +1,19 @@
-# Temporary free demo. Database expires after 30 days; uploaded files are ephemeral.
+# Production resources incur charges. Review Render's estimate before creating.
 services:
   - type: web
     name: pulse-epis
     runtime: docker
-    plan: free
+    plan: 0.5c-512mb
     region: oregon
     branch: main
     dockerfilePath: ./deploy/render/Dockerfile
     dockerContext: .
     autoDeployTrigger: 'off'
     healthCheckPath: /ready
+    disk:
+      name: private-evidence
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: PORT
         value: '10000'
@@ -30,14 +34,14 @@ services:
       - key: PULSE_EVIDENCE_ACCESS_SECRET
         generateValue: true
       - key: PULSE_EVIDENCE_STORAGE_PATH
-        value: /tmp/pulse-evidence
+        value: /var/data/evidence
       - key: PULSE_GOOGLE_CLIENT_ID
         sync: false
       - key: PULSE_GOOGLE_CLIENT_SECRET
         sync: false
 databases:
   - name: pulse-epis-db
-    plan: free
+    plan: basic-256mb
     region: oregon
     databaseName: pulse_epis
     user: pulse
