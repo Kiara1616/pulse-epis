@@ -111,6 +111,17 @@ restauración destructiva sobre producción para demostrar el simulacro.
 
 ## Verificación reproducible
 
+La auditoría bloquea vulnerabilidades high/critical de producción y avisos
+nuevos en herramientas. Existe una excepción temporal de desarrollo para
+`GHSA-vfj7-8cjw-p6xm` (braces), que upstream declara sin versión corregida:
+se limita a patrones internos de ESLint, exige que todas las rutas afectadas
+estén marcadas `dev` en el lockfile y expira el 4 de noviembre de 2026.
+La excepción se registra en
+[`security/npm-audit-exceptions.json`](../security/npm-audit-exceptions.json).
+Los tests verifican que el mismo aviso siga bloqueando si llega a producción
+y que avisos desconocidos o vencidos no se acepten. No se declara que esta
+dependencia esté corregida.
+
 ```bash
 python -m pytest backend/tests
 docker build -f deploy/render/Dockerfile -t pulse-epis-completion:verify .
