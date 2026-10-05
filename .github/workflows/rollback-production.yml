@@ -28,24 +28,29 @@ jobs:
       - name: Configure SSH
         env:
           PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          PRODUCTION_KNOWN_HOSTS: ${{ secrets.PRODUCTION_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$PRODUCTION_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ vars.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
+          test -n "$PRODUCTION_KNOWN_HOSTS" || { echo 'Configure pinned PRODUCTION_KNOWN_HOSTS.'; exit 1; }
+          printf '%s\n' "$PRODUCTION_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Checkout operation scripts
+        uses: actions/checkout@v4
 
       - name: Restore selected release
+        env:
+          RELEASE_NAME: ${{ inputs.release }}
+          DEPLOY_HOST: ${{ vars.PRODUCTION_HOST }}
+          DEPLOY_USER: ${{ vars.PRODUCTION_USER }}
+          DEPLOY_PATH: ${{ vars.PRODUCTION_PATH }}
         run: |
-          ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" <<'REMOTE'
-          set -eu
-          cd '${{ vars.PRODUCTION_PATH }}'
-          test -d "releases/${{ inputs.release }}"
-          rm -rf current.rollback
-          mv current current.rollback
-          cp -a "releases/${{ inputs.release }}" current
-          cd current
-          docker compose --env-file ../.env --profile staging up -d --remove-orphans
-          REMOTE
+          [[ "$RELEASE_NAME" =~ ^previous-[0-9]{14}$ ]]
+          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_./-]+$ ]] && [[ "$DEPLOY_PATH" != / ]]
+          scp deploy/operations.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/operations.sh"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "bash '$DEPLOY_PATH/operations.sh' rollback '$DEPLOY_PATH' '$RELEASE_NAME'"
 
       - name: Verify rollback
         run: curl --fail --retry 10 --retry-delay 5 --retry-all-errors "https://${{ vars.PRODUCTION_DOMAIN }}/ready"

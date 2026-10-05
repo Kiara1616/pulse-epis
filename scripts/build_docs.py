@@ -37,6 +37,7 @@ MANUAL_SOURCES = (
     DOCS / "07-Certificaciones-evidencias.md",
     DOCS / "08-Validacion-certificaciones.md",
     DOCS / "10-Manual-de-usuario.md",
+    DOCS / "12-Produccion-y-aceptacion.md",
 )
 PDF_SOURCES = MANUAL_SOURCES[1:5]
 

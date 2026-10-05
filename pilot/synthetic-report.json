@@ -1,0 +1,23 @@
+{
+  "mode": "synthetic",
+  "reconciliation_percent": 100.0,
+  "approved_credential_accounting_percent": 100.0,
+  "kpis_contrasted": true,
+  "roles_demonstrated": [
+    "ADMIN",
+    "STUDENT",
+    "VALIDATOR"
+  ],
+  "kpis": {
+    "active_students": 20,
+    "certified_students": 1,
+    "coverage_percent": 5.0,
+    "approved_certifications": 2,
+    "expiring_soon": 0
+  },
+  "roster_rows": 20,
+  "approved_credentials": 2,
+  "rejected_credentials": 1,
+  "oidc_provider": "test double; real Google authorization pending",
+  "public_deployment_verified": false
+}

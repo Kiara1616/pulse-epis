@@ -1,0 +1,48 @@
+# Production resources incur charges. Review Render's estimate before creating.
+services:
+  - type: web
+    name: pulse-epis
+    runtime: docker
+    plan: 0.5c-512mb
+    region: oregon
+    branch: main
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: off
+    healthCheckPath: /ready
+    disk:
+      name: private-evidence
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: '10000'
+      - key: PULSE_ENVIRONMENT
+        value: production
+      - key: PULSE_DATABASE_URL
+        fromDatabase:
+          name: pulse-epis-db
+          property: connectionString
+      - key: PULSE_AUTH_PROVIDER
+        value: google
+      - key: PULSE_AUTH_COOKIE_SECURE
+        value: 'true'
+      - key: PULSE_AUTH_SESSION_SECRET
+        generateValue: true
+      - key: PULSE_ROSTER_PSEUDONYM_SECRET
+        generateValue: true
+      - key: PULSE_EVIDENCE_ACCESS_SECRET
+        generateValue: true
+      - key: PULSE_EVIDENCE_STORAGE_PATH
+        value: /var/data/evidence
+      - key: PULSE_GOOGLE_CLIENT_ID
+        sync: false
+      - key: PULSE_GOOGLE_CLIENT_SECRET
+        sync: false
+databases:
+  - name: pulse-epis-db
+    plan: basic-256mb
+    region: oregon
+    databaseName: pulse_epis
+    user: pulse
+    ipAllowList: []

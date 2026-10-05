@@ -9,34 +9,45 @@ permissions:
   contents: read
 
 concurrency:
-  group: production-backup
+  group: production-deploy
   cancel-in-progress: false
 
 jobs:
   backup:
+    if: github.event_name != 'schedule' || vars.PRODUCTION_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment:
       name: production
       url: https://${{ vars.PRODUCTION_DOMAIN }}
     steps:
+      - name: Validate production configuration
+        env:
+          DOMAIN: ${{ vars.PRODUCTION_DOMAIN }}
+        run: |
+          test -n "$DOMAIN" || { echo 'Configure PRODUCTION_DOMAIN and enable production after deployment.'; exit 1; }
       - name: Configure SSH
         env:
           PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          PRODUCTION_KNOWN_HOSTS: ${{ secrets.PRODUCTION_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$PRODUCTION_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ vars.PRODUCTION_HOST }}" >> ~/.ssh/known_hosts
+          test -n "$PRODUCTION_KNOWN_HOSTS" || { echo 'Configure pinned PRODUCTION_KNOWN_HOSTS.'; exit 1; }
+          printf '%s\n' "$PRODUCTION_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-      - name: Create and retain compressed backup
+      - name: Checkout operation scripts
+        uses: actions/checkout@v4
+
+      - name: Backup database and evidence, then verify restoration
+        env:
+          DEPLOY_HOST: ${{ vars.PRODUCTION_HOST }}
+          DEPLOY_USER: ${{ vars.PRODUCTION_USER }}
+          DEPLOY_PATH: ${{ vars.PRODUCTION_PATH }}
         run: |
-          ssh "${{ vars.PRODUCTION_USER }}@${{ vars.PRODUCTION_HOST }}" <<'REMOTE'
-          set -eu
-          cd '${{ vars.PRODUCTION_PATH }}'
-          set -a
-          . ./.env
-          set +a
-          mkdir -p backups
-          docker compose --env-file .env --profile staging exec -T database pg_dump -U "$PULSE_POSTGRES_USER" -d "$PULSE_POSTGRES_DB" | gzip > "backups/pulse-$(date -u +%Y%m%d%H%M%S).sql.gz"
-          find backups -type f -name '*.sql.gz' -mtime +30 -delete
-          REMOTE
+          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_./-]+$ ]] && [[ "$DEPLOY_PATH" != / ]]
+          scp deploy/operations.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/operations.sh"
+          backup=$(ssh "$DEPLOY_USER@$DEPLOY_HOST" "bash '$DEPLOY_PATH/operations.sh' backup '$DEPLOY_PATH'")
+          [[ "$backup" =~ ^pulse-[0-9]{8}T[0-9]{6}Z-[0-9]+$ ]]
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "bash '$DEPLOY_PATH/operations.sh' verify-backup '$DEPLOY_PATH' '$backup'"
