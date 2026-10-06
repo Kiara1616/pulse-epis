@@ -321,7 +321,7 @@ def body_flows(text: str, source: str, output: Path, revision: dict, st: dict) -
                 raise ValueError(f"Image escapes repository: {source}")
             with PILImage.open(path) as raster:
                 width, height = raster.size
-            scale = min(40*mm/width, 40*mm/height)
+            scale = min(32*mm/width, 32*mm/height)
             drawing = Image(str(path), width=width*scale, height=height*scale)
             drawing.hAlign = "CENTER"
             story.extend([drawing, Spacer(1,5*mm)])
@@ -382,7 +382,12 @@ def build_pdf(entry: dict, revision: dict) -> tuple[Path, int]:
     output = target_for(source,".pdf")
     output.parent.mkdir(parents=True,exist_ok=True)
     academic = entry["group"] == "academico" and Path(source).name.startswith("FD")
-    st = styles(academic or Path(source).name == "README.md")
+    is_index = Path(source).name == "README.md"
+    st = styles(academic or is_index)
+    if is_index:
+        for key in ("body", "list"):
+            st[key].fontSize = 11
+            st[key].leading = 15
     document = DocumentTemplate(output,title,revision,academic)
     story = []
     if academic:
@@ -406,6 +411,13 @@ def build_pdf(entry: dict, revision: dict) -> tuple[Path, int]:
         text=text[marker.start():]
     else:
         story.append(Paragraph(html.escape(title),st["title"]))
+        if is_index and len(text.splitlines()) > 65:
+            # Present the logo and institutional identity before the contents.
+            marker = re.search(r"^## ", text, re.M)
+            if marker:
+                story.extend(body_flows(text[:marker.start()],source,output,revision,st))
+                story.append(PageBreak())
+                text = text[marker.start():]
     toc=TableOfContents()
     toc.levelStyles=[ParagraphStyle(f"TOC{i}",fontName=("Times-Bold" if i==0 else "Times-Roman") if academic else ("Helvetica-Bold" if i==0 else "Helvetica"),fontSize=8.5 if academic else (9 if i<2 else 8),leading=11 if academic else 13,leftIndent=12*i,spaceBefore=2 if academic else 3) for i in range(4)]
     if academic or len(text.splitlines())>65:
