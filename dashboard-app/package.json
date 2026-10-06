@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:audit": "node --test scripts/audit-dependencies.test.mjs",
+    "audit:security": "npm run test:audit && node scripts/audit-dependencies.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.38.0",

@@ -53,7 +53,7 @@ jobs:
         run: |
           node --test ../scripts/audit_frontend.test.mjs
           npm audit --omit=dev --audit-level=high
-          node ../scripts/audit_frontend.mjs
+          npm run audit:security
 
   backend:
     name: backend
