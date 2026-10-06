@@ -9,12 +9,29 @@ permissions:
   contents: read
 
 jobs:
+  render-healthcheck:
+    if: vars.PRODUCTION_PUBLIC_URL != '' && (github.event_name != 'schedule' || vars.PRODUCTION_MONITOR_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public Render service
+        env:
+          PUBLIC_URL: ${{ vars.PRODUCTION_PUBLIC_URL }}
+        run: |
+          python -c 'import os; from urllib.parse import urlparse; u=urlparse(os.environ["PUBLIC_URL"]); assert u.scheme == "https" and u.hostname and not u.username and not u.password and not u.query and not u.fragment, "Configure an HTTPS public origin"'
+          curl --fail --silent --output /dev/null --retry 3 --retry-delay 5 --max-time 30 "$PUBLIC_URL/"
+          curl --fail --silent --output /dev/null --retry 3 --retry-delay 5 --max-time 30 "$PUBLIC_URL/ready"
   healthcheck:
+    if: vars.PRODUCTION_ENABLED == 'true' && vars.PRODUCTION_PUBLIC_URL == ''
     runs-on: ubuntu-latest
     environment:
       name: production
       url: https://${{ vars.PRODUCTION_DOMAIN }}
     steps:
+      - name: Validate production configuration
+        env:
+          DOMAIN: ${{ vars.PRODUCTION_DOMAIN }}
+        run: |
+          test -n "$DOMAIN" || { echo 'Configure PRODUCTION_DOMAIN and enable production after deployment.'; exit 1; }
       - name: Check HTTPS and readiness
         run: |
           curl --fail --silent --show-error --retry 3 --retry-delay 5 "https://${{ vars.PRODUCTION_DOMAIN }}/"

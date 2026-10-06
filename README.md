@@ -63,6 +63,19 @@ python scripts/build_docs.py
 python scripts/validate_docs.py --artifacts
 ```
 
+### Hosting administrado en Render
+
+[Preparar despliegue en Render](https://render.com/deploy?repo=https://github.com/Kiara1616/pulse-epis)
+
+`render.yaml` configura frontend y API en un único origen, PostgreSQL administrado
+y evidencias temporales para la demo gratuita. Render proporciona el subdominio HTTPS.
+La alternativa de pago se conserva en `deploy/render/render.production.yaml`.
+La publicación real y Google OIDC requieren configurar la cuenta del proveedor.
+Consulta el [manual de producción y aceptación](docs/12-Produccion-y-aceptacion.md).
+El [reporte sintético](pilot/synthetic-report.json) demuestra el flujo integral;
+`pilot/acceptance.json` conserva pendiente la aceptación pública y bloquea `v1.0.0`.
+
+
 Abrir artifacts/docs/index.html. Solo FD: python scripts/build_academic_pdfs.py. La [guía de generación](docs/proyecto/18-Generacion-documental.md) describe dependencias y artefactos. CI publica project-manuals y la release adjunta el paquete completo.
 
 ## Pruebas y operación

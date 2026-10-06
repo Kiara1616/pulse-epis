@@ -50,7 +50,9 @@ jobs:
         run: npm run test:e2e
 
       - name: Audit npm dependencies
-        run: npm run audit:security
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm run audit:security
 
   backend:
     name: backend
@@ -91,12 +93,20 @@ jobs:
       - name: Run ETL tests with coverage
         env:
           PYTHONPATH: .
+          PULSE_PILOT_REPORT: artifacts/pilot/report.json
         run: >-
           python -m pytest backend/tests
           --cov=backend.app
           --cov=backend.scripts_etl.main
           --cov-report=term-missing
           --cov-report=xml:backend/coverage.xml
+
+      - name: Upload synthetic pilot report
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-pilot
+          path: artifacts/pilot/report.json
+          if-no-files-found: error
 
       - name: Check installed dependency consistency
         run: python -m pip check
@@ -190,6 +200,12 @@ jobs:
           docker compose up --detach --wait --wait-timeout 120
           curl --fail --retry 5 --retry-delay 2 http://localhost:8000/ready
           curl --fail --retry 5 --retry-delay 2 http://localhost:3000
+
+      - name: Build unified Render image
+        run: docker build -f deploy/render/Dockerfile -t pulse-epis-completion:verify .
+
+      - name: Verify backup restoration and rollback in isolation
+        run: python scripts/smoke_operations.py
 
       - name: Show container logs on failure
         if: failure()
