@@ -1,6 +1,6 @@
 # Documentación de Pulse EPIS
 
-La documentación se organiza por propósito. Las fuentes Markdown se versionan; los documentos HTML/PDF y OpenAPI se generan desde esas fuentes. Los ejemplos académicos proporcionados orientan la estructura, sin transferir datos de NODIEX al proyecto.
+La documentación se organiza por propósito. Las fuentes Markdown se versionan; los documentos HTML/PDF y OpenAPI se generan desde esas fuentes. Los informes académicos presentan el análisis, diseño y resultados técnicos de Pulse EPIS con formato institucional.
 
 | Carpeta | Contenido | Punto de entrada |
 |---|---|---|

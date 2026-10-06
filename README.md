@@ -53,7 +53,7 @@ pulse-epis/
 
 ## Documentación y generación
 
-El [índice documental](docs/README.md) separa [entregables del curso](docs/academico/README.md) y [documentación del proyecto](docs/proyecto/README.md). Las fuentes se versionan; el paquete HTML/PDF contiene diagramas reales, OpenAPI, recursos y manifiesto con hashes y commit. Las referencias NODIEX orientan los formatos, sin transferir sus cifras o resultados.
+El [índice documental](docs/README.md) separa [entregables del curso](docs/academico/README.md) y [documentación del proyecto](docs/proyecto/README.md). Las fuentes se versionan; el paquete HTML/PDF contiene diagramas reales, OpenAPI, recursos y manifiesto con hashes y commit. Los informes académicos documentan exclusivamente Pulse EPIS.
 
 ```bash
 python -m pip install -r backend/requirements-dev.txt

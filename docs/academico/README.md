@@ -10,10 +10,10 @@ Esta carpeta contiene exclusivamente los cinco formatos académicos de Pulse EPI
 | FD04 | [SAD](FD04-Arquitectura-Software.md) | Cinco vistas de arquitectura, diagramas y escenarios de calidad |
 | FD05 | [Informe final](FD05-Informe-Final.md) | Síntesis, metodología, cronograma, presupuesto, resultados verificables y anexos |
 
-## Referencias de formato y evidencia
+## Presentación y evidencia
 
-Las cinco referencias DOCX aportadas describen otro proyecto. Su [matriz de cobertura](Matriz-de-cobertura.md) relaciona apartados con contenido adaptado de Pulse EPIS. No son instrucciones operativas ni pruebas de entrevistas, contratos o resultados de este proyecto. Los documentos distinguen implementación, propuesta y validación pendiente.
+Los cinco informes de Pulse EPIS incluyen escudo de la Universidad Privada de Tacna, facultad, escuela, curso, docente, integrantes con sus códigos, versión y fecha. El paquete PDF utiliza tamaño A4, tipografía Times, cuerpo de 12 puntos, párrafos justificados, control de versiones, índice, numeración y diagramas renderizados. Los documentos distinguen implementación, propuesta y validación institucional pendiente.
 
-La base de código revisada es main `cf7ab75`, y el antecedente documental es el PR 51 `a618c3e`. El manifiesto generado registra además el commit de trabajo, estado de cambios y hash de cada fuente; no etiqueta la rama actual como main. Revisión docente y aceptación institucional requieren sus propias actas.
+La base técnica es main `d123bea`, que incorpora la documentación académica y la preparación del piloto. El manifiesto generado registra el commit de trabajo, estado de cambios y hash de cada fuente. La revisión docente y la aceptación institucional requieren sus propias actas; los resultados sintéticos se identifican como tales.
 
-Desde la raíz: `python scripts/build_academic_pdfs.py`. Los cinco PDF quedan en `artifacts/docs/academico`, con portada, control de versiones, contenido, numeración y diagramas renderizados. No se requieren Pandoc ni TeX.
+Desde la raíz: `python scripts/build_docs.py` genera el paquete completo y `python scripts/build_academic_pdfs.py` genera únicamente FD01–FD05. Los PDF y HTML quedan en `artifacts/docs/academico`. No se requieren Pandoc ni TeX. La validación de fuentes y de artefactos forma parte de CI.
