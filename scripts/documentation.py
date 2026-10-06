@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 OUTPUT = ROOT / "artifacts/docs"
 WIDTH = 165 * mm
-BLUE = colors.HexColor("#173F5F")
+INK = colors.black
 LINKS = re.compile(r"(!?)\[([^\]]+)\]\(([^)]+)\)")
 MERMAID = re.compile(r"```mermaid\s*\n(.*?)```", re.S)
 
@@ -143,11 +143,12 @@ def html_page(title: str, body: str, revision: dict, output: Path) -> str:
     return f'''<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title><style>
-body{{font:16px/1.6 system-ui,sans-serif;max-width:1100px;margin:32px auto;padding:0 24px;color:#172033}}
-h1,h2,h3,h4{{color:#173f5f}} table{{border-collapse:collapse;display:block;overflow-x:auto;margin:18px 0;max-width:100%}}
-th,td{{border:1px solid #ccd5e0;padding:8px;vertical-align:top}} th{{background:#edf2f6}} pre{{background:#f2f5f8;padding:14px;overflow:auto}}
-figure{{margin:24px 0}} figure img{{display:block;max-width:100%;height:auto;margin:auto}} figcaption{{font-size:14px;color:#46515d}}
-a{{color:#155784}} footer{{margin-top:32px;font-size:13px;color:#596579}} .toc{{background:#f7f9fb;padding:16px}} nav{{margin-bottom:24px}}
+body{{font:16px/1.6 'Times New Roman',serif;max-width:1100px;margin:32px auto;padding:0 24px;color:#000;background:#fff}}
+h1,h2,h3,h4{{color:#000}} table{{border-collapse:collapse;display:block;overflow-x:auto;margin:18px 0;max-width:100%}}
+th,td{{border:1px solid #000;padding:8px;vertical-align:top;background:#fff}} pre{{background:#fff;padding:14px;overflow:auto}}
+figure{{margin:24px 0}} figure img{{display:block;max-width:100%;height:auto;margin:auto}} figcaption{{font-size:14px;color:#000}}
+a{{color:#000}} footer{{margin-top:32px;font-size:13px;color:#000}} .toc{{background:#fff;padding:16px}} nav{{margin-bottom:24px}}
+p:has(> img:only-child){{text-align:center}} p>img{{max-height:140px;max-width:100%;width:auto}}
 </style></head><body><nav><a href="{home}">Índice documental</a></nav>{body}
 <footer>Pulse EPIS · fuente {revision['source_commit'][:12]} · cambios locales: {'sí' if revision['working_tree_dirty'] else 'no'}</footer></body></html>'''
 
@@ -205,7 +206,7 @@ def styles(academic: bool = False):
         "toc_title": ParagraphStyle("ContentsTitle", fontName="Helvetica-Bold", fontSize=16, leading=20, spaceAfter=14),
     }
     for level, size in ((1,15), (2,12), (3,10.5), (4,10)):
-        result[f"h{level}"] = ParagraphStyle(f"DocH{level}", fontName="Helvetica-Bold", fontSize=size, leading=size+4, textColor=BLUE, spaceBefore=12, spaceAfter=7, keepWithNext=True)
+        result[f"h{level}"] = ParagraphStyle(f"DocH{level}", fontName="Helvetica-Bold", fontSize=size, leading=size+4, textColor=INK, spaceBefore=12, spaceAfter=7, keepWithNext=True)
     if academic:
         for key in ("body", "list"):
             result[key].fontName = "Times-Roman"
@@ -228,7 +229,7 @@ def inline(value: str, source: str, output: Path, revision: dict) -> str:
     tokens = []
     def link(match):
         href = html.escape(resolve_link(match.group(3), source, output, revision), quote=True)
-        tokens.append(f'<link href="{href}" color="#155784">{html.escape(match.group(2))}</link>')
+        tokens.append(f'<link href="{href}" color="#000000"><u>{html.escape(match.group(2))}</u></link>')
         return f"PULSELINKTOKEN{len(tokens)-1}END"
     value = LINKS.sub(link, value)
     value = html.escape(value, quote=False).replace("&lt;br&gt;", "<br/>").replace("&lt;br/&gt;", "<br/>")
@@ -249,7 +250,7 @@ class DocumentTemplate(BaseDocTemplate):
                 return
             canvas.saveState()
             canvas.setFont("Helvetica", 8)
-            canvas.setFillColor(colors.HexColor("#5D6875"))
+            canvas.setFillColor(INK)
             canvas.drawString(self.leftMargin, A4[1]-15*mm, "Pulse EPIS")
             canvas.drawRightString(A4[0]-self.rightMargin, A4[1]-15*mm, "Documentación " + ("académica" if academic else "del proyecto"))
             canvas.drawString(self.leftMargin, 12*mm, f"Fuente {revision['source_commit'][:12]}" + (" con cambios locales" if revision["working_tree_dirty"] else ""))
@@ -277,8 +278,7 @@ def table_flows(lines: list[str], st: dict, para) -> list:
     count = max(map(len, rows))
     rows = [row + [""]*(count-len(row)) for row in rows]
     styling = TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#EDF2F6")),
-        ("GRID", (0,0), (-1,-1), .35, colors.HexColor("#BCC7D2")),
+        ("GRID", (0,0), (-1,-1), .35, INK),
         ("VALIGN", (0,0), (-1,-1), "TOP"),
         ("LEFTPADDING", (0,0), (-1,-1), 5), ("RIGHTPADDING", (0,0), (-1,-1), 5),
         ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
@@ -313,6 +313,18 @@ def body_flows(text: str, source: str, output: Path, revision: dict, st: dict) -
         raw = lines[index].strip()
         index += 1
         if not raw:
+            continue
+        illustration = re.fullmatch(r"!\[([^\]]*)\]\(([^)]+)\)", raw)
+        if illustration:
+            path = (ROOT/source).parent.joinpath(unquote(illustration.group(2))).resolve()
+            if not path.is_relative_to(ROOT):
+                raise ValueError(f"Image escapes repository: {source}")
+            with PILImage.open(path) as raster:
+                width, height = raster.size
+            scale = min(40*mm/width, 40*mm/height)
+            drawing = Image(str(path), width=width*scale, height=height*scale)
+            drawing.hAlign = "CENTER"
+            story.extend([drawing, Spacer(1,5*mm)])
             continue
         if raw.startswith("```"):
             language, code = raw[3:].strip(), []
@@ -370,7 +382,7 @@ def build_pdf(entry: dict, revision: dict) -> tuple[Path, int]:
     output = target_for(source,".pdf")
     output.parent.mkdir(parents=True,exist_ok=True)
     academic = entry["group"] == "academico" and Path(source).name.startswith("FD")
-    st = styles(academic)
+    st = styles(academic or Path(source).name == "README.md")
     document = DocumentTemplate(output,title,revision,academic)
     story = []
     if academic:

@@ -1,5 +1,11 @@
 # Pulse EPIS
 
+![Escudo institucional](docs/recursos/imagenes/upt-logo.png)
+
+**Universidad Privada de Tacna**<br>
+**Facultad de Ingeniería · Escuela Profesional de Ingeniería de Sistemas**<br>
+**Proyecto: Pulse EPIS**
+
 Pulse EPIS es una plataforma web de inteligencia de negocios para consolidar certificaciones tecnológicas verificadas de estudiantes de la EPIS de la Universidad Privada de Tacna. Relaciona padrón por periodo, credenciales, evidencia privada, revisión humana y snapshots reproducibles para acreditación y mejora curricular.
 
 ## Estado del proyecto

@@ -1,5 +1,11 @@
 # Entregables académicos del curso
 
+![Escudo institucional](../recursos/imagenes/upt-logo.png)
+
+**Universidad Privada de Tacna**<br>
+**Facultad de Ingeniería · Escuela Profesional de Ingeniería de Sistemas**<br>
+**Proyecto: Pulse EPIS**
+
 Esta carpeta contiene exclusivamente los cinco formatos académicos de Pulse EPIS. Los manuales necesarios para desarrollar y operar el producto se mantienen en [Documentación del proyecto](../proyecto/README.md).
 
 | Código | Fuente | Contenido |
@@ -12,7 +18,7 @@ Esta carpeta contiene exclusivamente los cinco formatos académicos de Pulse EPI
 
 ## Presentación y evidencia
 
-Los cinco informes de Pulse EPIS incluyen escudo de la Universidad Privada de Tacna, facultad, escuela, curso, docente, integrantes con sus códigos, versión y fecha. El paquete PDF utiliza tamaño A4, tipografía Times, cuerpo de 12 puntos, párrafos justificados, control de versiones, índice, numeración y diagramas renderizados. Los documentos distinguen implementación, propuesta y validación institucional pendiente.
+Los cinco informes de Pulse EPIS incluyen escudo de la Universidad Privada de Tacna, facultad, escuela, curso, docente, integrantes con sus códigos, versión y fecha. El paquete PDF utiliza tamaño A4, tipografía Times, cuerpo de 12 puntos, párrafos justificados, títulos y texto negros, tablas sin sombreado, control de versiones, índice, numeración y diagramas renderizados. Los documentos distinguen implementación, propuesta y validación institucional pendiente.
 
 La base técnica es main `d123bea`, que incorpora la documentación académica y la preparación del piloto. El manifiesto generado registra el commit de trabajo, estado de cambios y hash de cada fuente. La revisión docente y la aceptación institucional requieren sus propias actas; los resultados sintéticos se identifican como tales.
 

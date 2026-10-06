@@ -1,5 +1,11 @@
 # Documentación técnica y operativa del proyecto
 
+![Escudo institucional](../recursos/imagenes/upt-logo.png)
+
+**Universidad Privada de Tacna**<br>
+**Facultad de Ingeniería · Escuela Profesional de Ingeniería de Sistemas**<br>
+**Proyecto: Pulse EPIS**
+
 Estas fuentes permiten comprender, desarrollar, verificar y operar Pulse EPIS. Son documentación permanente del producto, independiente de los formatos FD entregados al curso.
 
 | Documento | Propósito |
