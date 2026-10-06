@@ -1,6 +1,6 @@
 # Pulse EPIS v1.0.0
 
-Primera versión evaluable del piloto de Pulse EPIS.
+Borrador de la primera versión evaluable. No publicar hasta aceptar el piloto público.
 
 ## Alcance
 
@@ -12,4 +12,4 @@ Primera versión evaluable del piloto de Pulse EPIS.
 
 ## Limitaciones
 
-La evidencia de aceptación debe completarse con datos autorizados o anonimizados. Las cifras sintéticas no representan resultados institucionales y la URL de ejemplo debe sustituirse por la URL pública real antes de publicar la release.
+El piloto sintético integral pasó con 20 estudiantes, dos credenciales aprobadas y una rechazada, conciliación del 100 % y cobertura del 5 %. Las cifras no representan resultados institucionales. La URL pública, Google OIDC y los simulacros de operación del hosting deben verificarse antes de publicar la release. Véase `docs/12-Produccion-y-aceptacion.md`.

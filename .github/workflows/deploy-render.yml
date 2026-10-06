@@ -1,0 +1,56 @@
+name: Deploy Render production
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Main or a vX.Y.Z tag
+        required: true
+        default: main
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_PUBLIC_URL }}
+    steps:
+      - name: Validate production ref
+        env:
+          DEPLOY_REF: ${{ inputs.ref }}
+        run: |
+          [[ "$DEPLOY_REF" == main || "$DEPLOY_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Require successful CI and protected environment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/environments/production" > /tmp/policy.json
+          python -c 'import json; p=json.load(open("/tmp/policy.json")); assert any(r["type"] == "required_reviewers" for r in p["protection_rules"]), "Production requires approval"'
+          commit=$(git rev-parse HEAD)
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$commit&event=push" > /tmp/ci.json
+          python -c 'import json; runs=json.load(open("/tmp/ci.json"))["workflow_runs"]; assert runs and runs[0]["conclusion"] == "success", "The latest CI run for the selected commit must succeed"'
+      - name: Deploy the verified commit
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          test -n "$RENDER_DEPLOY_HOOK_URL" || { echo 'Configure RENDER_DEPLOY_HOOK_URL in production.'; exit 1; }
+          commit=$(git rev-parse HEAD)
+          # Do not log the secret URL or its response.
+          curl --fail --silent --output /tmp/render-deploy.json --request POST "$RENDER_DEPLOY_HOOK_URL&ref=$commit"
+          echo 'Render deployment requested for the verified commit. Check its Deploys page before accepting the release.'
+      - name: Upload deployment request evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-deployment-request
+          path: /tmp/render-deploy.json

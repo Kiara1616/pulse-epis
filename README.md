@@ -322,6 +322,18 @@ GitHub Actions deberá automatizar:
 6. Construcción de imágenes de contenedor.
 7. Despliegue a staging y, con aprobación, a producción.
 
+### Hosting administrado en Render
+
+[Preparar despliegue en Render](https://render.com/deploy?repo=https://github.com/Kiara1616/pulse-epis)
+
+`render.yaml` configura frontend y API en un único origen, PostgreSQL administrado
+y un disco privado de evidencias. Render proporciona el subdominio HTTPS.
+Esta configuración usa recursos de pago: revisar la estimación antes de activarla.
+La publicación real y Google OIDC requieren configurar la cuenta del proveedor.
+Consulta el [manual de producción y aceptación](docs/12-Produccion-y-aceptacion.md).
+El [reporte sintético](pilot/synthetic-report.json) demuestra el flujo integral;
+`pilot/acceptance.json` conserva pendiente la aceptación pública y bloquea `v1.0.0`.
+
 ### Staging público
 
 El workflow `Deploy staging` publica `main` en un host Linux administrado por el equipo. Configura un environment `staging` con las variables `STAGING_DOMAIN`, `STAGING_HOST`, `STAGING_USER` y `STAGING_PATH`, además del secreto multilinea `STAGING_SSH_KEY` y el archivo `.env` de Compose en `STAGING_ENV_FILE`; ese archivo debe incluir `PUBLIC_DOMAIN` con el mismo valor de `STAGING_DOMAIN`, `PULSE_ENVIRONMENT=staging`, `PULSE_AUTH_COOKIE_SECURE=true` y `PULSE_AUTH_COOKIE_SAMESITE=lax`. El DNS del dominio debe apuntar al host y permitir los puertos 80 y 443. Caddy termina TLS automáticamente; PostgreSQL permanece en la red privada de Compose y el workflow valida la portada y `/ready` por HTTPS.
