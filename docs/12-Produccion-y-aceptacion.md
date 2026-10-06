@@ -50,6 +50,59 @@ Guías oficiales: [web services](https://render.com/docs/web-services),
 [Blueprints](https://render.com/docs/blueprint-spec),
 [límites gratuitos](https://render.com/docs/free).
 
+## Preparación de Google OAuth y primer despliegue
+
+Antes de crear los recursos, fusionar el PR de infraestructura en `main` y
+comprobar que `render.yaml` está disponible en esa rama. La base gratuita
+empieza su periodo de 30 días cuando se crea, no cuando se acepta el piloto.
+
+La configuración de Google se puede preparar mientras se revisa el PR:
+
+1. Abrir [Google Auth Platform](https://console.cloud.google.com/auth/overview)
+   en un proyecto de Google Cloud destinado a Pulse EPIS.
+2. Configurar Branding con nombre `Pulse EPIS`, correo de soporte y contacto
+   del responsable. En Audience, utilizar External para cuentas de Google
+   externas a una organización administrada y mantener el piloto en Testing.
+   Añadir las cuentas que participarán en la prueba a Test users.
+3. En Data Access, limitar los permisos a identidad: `openid`, email y profile.
+   El backend solicita `openid email profile`; no necesita permisos de Drive.
+4. En Clients, crear un cliente de tipo **Web application**. Conservar el
+   Client ID y el Client secret en almacenamiento privado. Si se descarga un
+   JSON de credenciales, guardarlo fuera del repositorio.
+5. Cuando Render asigne la URL HTTPS, editar el cliente y añadir a Authorized
+   redirect URIs esa URL exacta seguida de `/api/v1/auth/google/callback`.
+   No utilizar el enlace del dashboard de Render ni un dominio supuesto.
+   La URI debe coincidir exactamente con la enviada por el backend.
+6. Introducir Client ID y Client secret en Render como
+   `PULSE_GOOGLE_CLIENT_ID` y `PULSE_GOOGLE_CLIENT_SECRET`. Mantener las
+   credenciales fuera de capturas, comentarios y archivos de GitHub.
+
+Referencia: [crear credenciales web de Google OAuth](https://developers.google.com/identity/protocols/oauth2/web-server)
+y [configurar consentimiento y usuarios de prueba](https://developers.google.com/workspace/guides/configure-oauth-consent).
+
+Una vez disponible el Blueprint en `main`, crear el servicio y la base Free
+en el workspace confirmado, completar las dos variables de Google y verificar
+el commit desplegado. Si Google todavía no tiene registrada la URL asignada,
+completar ese paso antes de probar el login.
+
+Para continuar desde GitHub, guardar `RENDER_DEPLOY_HOOK_URL` como secreto de
+`production` y `PRODUCTION_PUBLIC_URL` como variable de ese environment.
+Para el monitor, la URL también debe existir como variable del repositorio;
+el job de Render no utiliza el environment `production`. Habilitar
+`PRODUCTION_MONITOR_ENABLED` solo después de comprobar la URL pública.
+
+El login necesita dos autorizaciones distintas: estar permitido en Google
+Testing y tener una cuenta activa con rol en la base de Pulse EPIS. Registrar
+las cuentas ADMIN/VALIDATOR y el padrón de prueba por un procedimiento
+administrativo controlado; no habilitar el seed local de desarrollo.
+El servicio Free no ofrece shell ni jobs puntuales, por lo que el procedimiento
+de provisión de esas cuentas debe prepararse antes de las pruebas de roles.
+
+El piloto gratuito permite comprobar publicación y autenticación, pero no
+demuestra PITR ni recuperación de un disco persistente. Mantener pendientes
+esas verificaciones en `pilot/acceptance.json` y las issues #21/#22 hasta
+obtener la evidencia correspondiente.
+
 ## Despliegue aprobado desde GitHub
 
 El environment `production` debe exigir aprobación de un integrante distinto
