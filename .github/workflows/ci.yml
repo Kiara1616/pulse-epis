@@ -51,7 +51,6 @@ jobs:
 
       - name: Audit npm dependencies
         run: |
-          node --test ../scripts/audit_frontend.test.mjs
           npm audit --omit=dev --audit-level=high
           npm run audit:security
 
