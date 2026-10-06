@@ -1,0 +1,91 @@
+{
+  "base": "a618c3e",
+  "fecha": "2026-10-02",
+  "archivos": [
+    {
+      "anterior": "docs/FD01-Informe-Factibilidad.md",
+      "actual": "docs/academico/FD01-Informe-Factibilidad.md",
+      "sha256_original": "bc031cffa54e2658580e144e93176b98fea53de0b506bec83a20526f02f41ba5"
+    },
+    {
+      "anterior": "docs/FD02-Informe-Vision.md",
+      "actual": "docs/academico/FD02-Informe-Vision.md",
+      "sha256_original": "37ee4efa6e6450f1e984d3fe92f6ddbc39efdf50efa5aaa1b65d41af44640210"
+    },
+    {
+      "anterior": "docs/FD03-EPIS-Informe Especificación Requerimientos.md",
+      "actual": "docs/academico/FD03-Especificacion-Requerimientos.md",
+      "sha256_original": "35b091ad4189b881cd839f1b05d664efd92da0c6d215d28d8ec9d6b42d10754f"
+    },
+    {
+      "anterior": "docs/FD04-EPIS-Informe Arquitectura de Software.md",
+      "actual": "docs/academico/FD04-Arquitectura-Software.md",
+      "sha256_original": "e7e49469cafe82a8ed3853b55ed7c48c1d5b9625444958ce8e817db445ab2a87"
+    },
+    {
+      "anterior": "docs/06-entregables-academicos/README.md",
+      "actual": "docs/academico/README.md",
+      "sha256_original": "8f931de51325be046b1a7821203b325cc8994dfc93c136f32a00e94458d82cf4"
+    },
+    {
+      "anterior": "docs/render-fd01.ps1",
+      "actual": "docs/tooling/render-fd01.ps1",
+      "sha256_original": "e627d1c2354d11260723d391beea68da1435a0ea8f7d3f7e0b99fbf197630777"
+    },
+    {
+      "anterior": "docs/schemas/dashboard-spec.json",
+      "actual": "docs/recursos/schemas/dashboard-spec-objetivo.json",
+      "sha256_original": "8d3dd981a2a9e1175ce69c00e7290ac909fc671b2dd9e48963c8fb5480048dca"
+    },
+    {
+      "anterior": "docs/templates/padron.csv",
+      "actual": "docs/recursos/templates/padron.csv",
+      "sha256_original": "d0a57d10e61706d4393debe68a203d9582a83344b970a4015a92c9592f93a824"
+    },
+    {
+      "anterior": "docs/00-Problema-y-linea-base.md",
+      "actual": "docs/proyecto/00-Problema-y-linea-base.md",
+      "sha256_original": "596d0643581cd09df41e9fcd8df0fdf5471c6973aa55e179920a957f82ed79fa"
+    },
+    {
+      "anterior": "docs/01-Objetivos-medibles.md",
+      "actual": "docs/proyecto/01-Objetivos-medibles.md",
+      "sha256_original": "0812e0bff393be221773158d4ca6e536556692d7791fba1cef1f7e696472ede5"
+    },
+    {
+      "anterior": "docs/05-Modelo-de-datos.md",
+      "actual": "docs/proyecto/05-Modelo-de-datos.md",
+      "sha256_original": "a3f211aa10fa725ce73cdea3c0404538c97de280d01c629b219202c6be65791f"
+    },
+    {
+      "anterior": "docs/06-Plantilla-padron.md",
+      "actual": "docs/proyecto/06-Plantilla-padron.md",
+      "sha256_original": "d0452bf19ffbe365ec7e89b7e6312e4f6bde74e7429113048c8648b329e7d81e"
+    },
+    {
+      "anterior": "docs/07-Certificaciones-evidencias.md",
+      "actual": "docs/proyecto/07-Certificaciones-evidencias.md",
+      "sha256_original": "a9b8dc4387ce7c9876b6152ccc3737f845c440b7898391c5419254ea87738608"
+    },
+    {
+      "anterior": "docs/08-Validacion-certificaciones.md",
+      "actual": "docs/proyecto/08-Validacion-certificaciones.md",
+      "sha256_original": "ac838d3eda94bd73ff1f79e09a5cd76fef18a029a834474c385dd31532b448bf"
+    },
+    {
+      "anterior": "docs/09-Diccionario-indicadores.md",
+      "actual": "docs/proyecto/09-Diccionario-indicadores.md",
+      "sha256_original": "2eeb31f2546494f1e52b190b968d5d76ea8edbfce7286931859d5280b869b864"
+    },
+    {
+      "anterior": "docs/10-Manual-de-usuario.md",
+      "actual": "docs/proyecto/10-Manual-de-usuario.md",
+      "sha256_original": "c6be28e1c163c4ce77374b4869a07d5c404fcc6b1b3b8a8b80fc1dda5e7631b2"
+    },
+    {
+      "anterior": "docs/REPOSITORY-GOVERNANCE.md",
+      "actual": "docs/proyecto/REPOSITORY-GOVERNANCE.md",
+      "sha256_original": "1fe68c532084b7c54d17ff95ecbde1194e38248c31df06ed6d2a4edf8afa715b"
+    }
+  ]
+}

@@ -40,6 +40,9 @@ jobs:
         with:
           python-version: 3.12
 
+      - name: Install documentation dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+
       - name: Validate pilot and documentation
         run: |
           python scripts/validate_release.py --strict
@@ -58,8 +61,8 @@ jobs:
 
       - name: Build manuals and diagrams
         run: |
-          python -m pip install -r backend/requirements-dev.txt
           python scripts/build_docs.py
+          python scripts/validate_docs.py --artifacts
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2

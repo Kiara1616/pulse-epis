@@ -157,13 +157,16 @@ jobs:
         run: git diff --check origin/main...HEAD
 
       - name: Validate dashboard contract JSON
-        run: python -m json.tool docs/schemas/dashboard-spec.json > /dev/null
+        run: python -m json.tool docs/recursos/schemas/dashboard-spec.json > /dev/null
 
       - name: Validate pilot evidence contract
         run: python scripts/validate_release.py
 
       - name: Build diagrams, OpenAPI and manuals
         run: python scripts/build_docs.py
+
+      - name: Validate generated documentation
+        run: python scripts/validate_docs.py --artifacts
 
       - name: Upload manuals artifact
         uses: actions/upload-artifact@v4

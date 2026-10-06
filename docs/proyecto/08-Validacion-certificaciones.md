@@ -38,4 +38,4 @@ En desarrollo, la API permite únicamente los orígenes definidos en `PULSE_CORS
 
 ## Regla para KPI
 
-Una certificación solo es elegible si su estado persistido es `APPROVED` y permanece vigente al corte. La función `is_kpi_eligible` implementa esta regla para que las consultas analíticas futuras no cuenten observadas, rechazadas o aprobadas vencidas.
+Una certificación solo es elegible si su estado persistido es `APPROVED` y permanece vigente al corte. La función `is_kpi_eligible` implementa esta regla y el ETL publica estados efectivos para que las consultas analíticas no cuenten observadas, rechazadas o aprobadas vencidas.

@@ -8,7 +8,7 @@ body:
     id: document
     attributes:
       label: Documento o área
-      placeholder: docs/FD03-EPIS-Informe Especificación Requerimientos.md
+      placeholder: docs/academico/FD03-Especificacion-Requerimientos.md
     validations:
       required: true
   - type: textarea

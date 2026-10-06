@@ -1,0 +1,257 @@
+{
+  "$defs": {
+    "AnalyticsFilters": {
+      "properties": {
+        "period_code": {
+          "title": "Period Code",
+          "type": "string"
+        },
+        "cutoff_date": {
+          "format": "date",
+          "title": "Cutoff Date",
+          "type": "string"
+        },
+        "cohort": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cohort"
+        },
+        "cycle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cycle"
+        },
+        "issuer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Issuer"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Level"
+        }
+      },
+      "required": [
+        "period_code",
+        "cutoff_date"
+      ],
+      "title": "AnalyticsFilters",
+      "type": "object"
+    },
+    "AnalyticsKpis": {
+      "properties": {
+        "active_students": {
+          "minimum": 0,
+          "title": "Active Students",
+          "type": "integer"
+        },
+        "certified_students": {
+          "minimum": 0,
+          "title": "Certified Students",
+          "type": "integer"
+        },
+        "coverage_percent": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Coverage Percent",
+          "type": "number"
+        },
+        "approved_certifications": {
+          "minimum": 0,
+          "title": "Approved Certifications",
+          "type": "integer"
+        },
+        "expiring_soon": {
+          "minimum": 0,
+          "title": "Expiring Soon",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "active_students",
+        "certified_students",
+        "coverage_percent",
+        "approved_certifications",
+        "expiring_soon"
+      ],
+      "title": "AnalyticsKpis",
+      "type": "object"
+    },
+    "EvolutionPoint": {
+      "properties": {
+        "cutoff_date": {
+          "format": "date",
+          "title": "Cutoff Date",
+          "type": "string"
+        },
+        "certified_students": {
+          "minimum": 0,
+          "title": "Certified Students",
+          "type": "integer"
+        },
+        "approved_certifications": {
+          "minimum": 0,
+          "title": "Approved Certifications",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cutoff_date",
+        "certified_students",
+        "approved_certifications"
+      ],
+      "title": "EvolutionPoint",
+      "type": "object"
+    },
+    "MetricValue": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "minimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "MetricValue",
+      "type": "object"
+    },
+    "SkillGap": {
+      "properties": {
+        "skill": {
+          "title": "Skill",
+          "type": "string"
+        },
+        "certified_students": {
+          "minimum": 0,
+          "title": "Certified Students",
+          "type": "integer"
+        },
+        "gap_students": {
+          "minimum": 0,
+          "title": "Gap Students",
+          "type": "integer"
+        },
+        "coverage_percent": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Coverage Percent",
+          "type": "number"
+        }
+      },
+      "required": [
+        "skill",
+        "certified_students",
+        "gap_students",
+        "coverage_percent"
+      ],
+      "title": "SkillGap",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "filters": {
+      "$ref": "#/$defs/AnalyticsFilters"
+    },
+    "kpis": {
+      "$ref": "#/$defs/AnalyticsKpis"
+    },
+    "by_issuer": {
+      "items": {
+        "$ref": "#/$defs/MetricValue"
+      },
+      "title": "By Issuer",
+      "type": "array"
+    },
+    "by_level": {
+      "items": {
+        "$ref": "#/$defs/MetricValue"
+      },
+      "title": "By Level",
+      "type": "array"
+    },
+    "by_cohort": {
+      "items": {
+        "$ref": "#/$defs/MetricValue"
+      },
+      "title": "By Cohort",
+      "type": "array"
+    },
+    "by_cycle": {
+      "items": {
+        "$ref": "#/$defs/MetricValue"
+      },
+      "title": "By Cycle",
+      "type": "array"
+    },
+    "by_skill": {
+      "items": {
+        "$ref": "#/$defs/MetricValue"
+      },
+      "title": "By Skill",
+      "type": "array"
+    },
+    "evolution": {
+      "items": {
+        "$ref": "#/$defs/EvolutionPoint"
+      },
+      "title": "Evolution",
+      "type": "array"
+    },
+    "skill_gaps": {
+      "items": {
+        "$ref": "#/$defs/SkillGap"
+      },
+      "title": "Skill Gaps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "filters",
+    "kpis",
+    "by_issuer",
+    "by_level",
+    "by_cohort",
+    "by_cycle",
+    "by_skill",
+    "evolution",
+    "skill_gaps"
+  ],
+  "title": "AnalyticsOverview",
+  "type": "object"
+}
