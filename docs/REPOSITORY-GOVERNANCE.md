@@ -62,6 +62,10 @@ gh api --method PUT repos/Kiara1616/pulse-epis/branches/main/protection \
 
 La comprobación posterior se realiza con `gh api repos/Kiara1616/pulse-epis/branches/main/protection`. La respuesta debe declarar una aprobación, revisión de CODEOWNERS, descarte de aprobaciones obsoletas, resolución de conversaciones y los checks `frontend`, `backend` y `docs`.
 
+## Excepción temporal de auditoría del frontend
+
+El job `frontend` mantiene la auditoría de npm en el nivel `high`. Mientras upstream no publique una versión corregida de `braces`, `dashboard-app/scripts/audit-dependencies.mjs` permite únicamente `GHSA-vfj7-8cjw-p6xm` cuando la cadena afectada permanece en dependencias de desarrollo y el lockfile conserva `braces@3.0.3`. Cualquier otra vulnerabilidad alta o crítica, cambio de la cadena o cambio de versión vuelve a bloquear CI. La excepción vence el **05/11/2026** y debe eliminarse antes si upstream publica una versión corregida.
+
 ## Estado verificado el 13/09/2026
 
 - Repositorio público: `Kiara1616/pulse-epis`.
