@@ -1,13 +1,18 @@
 # Documento de Arquitectura de Software
 
+![Escudo institucional](../recursos/imagenes/upt-logo.png)
+
 **Proyecto:** Pulse EPIS Dashboard de certificaciones tecnológicas verificadas de estudiantes de la EPIS<br>
 **Institución:** Universidad Privada de Tacna Facultad de Ingeniería Escuela Profesional de Ingeniería de Sistemas<br>
 **Curso:** Inteligencia de Negocios<br>
+**Docente:** Patrick Cuadros Quiroga<br>
 **Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
 **Código:** FD04<br>
-**Versión:** 3.1<br>
-**Fecha:** 02/10/2026<br>
-**Base técnica:** main cf7ab75 y documentación del PR 51 a618c3e
+**Versión:** 3.3<br>
+**Fecha:** 06/10/2026<br>
+**Base técnica:** main d123bea; implementación, piloto sintético y documentación de Pulse EPIS
+
+**Escenario de presentación académica:** se asume como estado final Pulse EPIS desplegado y funcionando públicamente, con autenticación y almacenamiento duradero. Este supuesto se desarrolla en FD05, apartado 4.5; las tablas de implementación y resultados distinguen la evidencia técnica comprobada de la aceptación institucional.
 
 ## Control de versiones
 
@@ -16,6 +21,7 @@
 | 2.x | Septiembre 2026 | Kiara Zapana y Vincenzo Lllanos | Desarrollo de las fuentes del proyecto |
 | 3.0 | 01/10/2026 | Vincenzo Lllanos | Generación académica FD01 a FD04 en PR 51 |
 | 3.1 | 02/10/2026 | Equipo del proyecto | Organización documental y actualización contra el código |
+| 3.3 | 06/10/2026 | Equipo del proyecto | Carátula institucional, formato de informe y actualización de resultados técnicos |
 
 Revisión y aprobación académica: sin acta registrada. La versión del documento no certifica una aprobación ni un despliegue institucional.
 
@@ -35,7 +41,7 @@ La arquitectura convierte el prototipo Next.js y Python en una plataforma segura
 | Evidencias | Persistencia privada, hash, URLs temporales y validación | Objetos privados, hash, URLs temporales y retención |
 | Identidad | Google OIDC, login local de desarrollo, sesiones firmadas y RBAC | OIDC institucional, sesiones seguras y RBAC/scopes |
 | Operación | Compose local, CI y workflows de despliegue; la infraestructura requiere host y secretos | Desarrollo, staging y producción reproducibles |
-| Resiliencia | Workflows de backup, monitoreo y rollback definidos; pruebas operativas pendientes | RPO/RTO definidos, alertas, restauración y rollback |
+| Resiliencia | Backup conjunto, verificación aislada y rollback implementados; smoke reproducible. Operación en host institucional pendiente | RPO/RTO definidos, alertas, restauración y rollback |
 
 El prototipo no se presentará como producción. Las decisiones de este documento son el contrato técnico para los issues de construcción; cada componente pendiente conserva su issue de implementación y criterio de salida.
 
@@ -494,9 +500,9 @@ Los escenarios se vinculan con RNF del SRS. Sus valores son objetivos de aceptac
 | Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | Esquema de AnalyticsOverview contrastado con Pydantic y OpenAPI exportado; API analítica implementada |
 | Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Backend base de #11 y permisos de certificación/validación de #13/#14; analítica pública pendiente |
 | Datos | Lotes, deduplicación, fórmulas y cortes | Resultados idempotentes y reproducibles | ETL e indicadores implementados; pruebas sintéticas de cortes y fórmulas disponibles |
-| Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Parcial: registro, evidencia y validación de #13/#14; storage productivo y worker pendientes en #19 |
+| Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Flujos persistentes y ETL disponibles; pruebas de backend, piloto sintético y smoke de operaciones. Storage duradero y proveedor OIDC real pendientes en el despliegue público |
 | Rendimiento | p95, lotes y consultas materializadas | Cumple metas de FD03 | Pendiente |
-| Recuperación | Backup, restore y rollback | RPO/RTO verificados en staging | Ensayo operativo pendiente |
+| Recuperación | Backup, restore y rollback | RPO/RTO verificados en staging | Verificación aislada y smoke disponibles; ensayo con host real y RPO/RTO medidos pendientes |
 
 ## 5 Seguridad operación y recuperación
 
@@ -564,7 +570,7 @@ Cada alerta debe incluir servicio, ambiente, timestamp, `request_id`/`batch_id`,
 
 Las migraciones destructivas no se ejecutan en la misma promoción que el código que las requiere. Se prefiere expand/contract: agregar columnas compatibles, desplegar código, migrar datos y retirar lo antiguo después de una ventana de seguridad.
 
-El workflow actual comprime un pg_dump de la base y conserva 30 días en el host. No incluye el volumen de evidencias ni demuestra cifrado/offsite. Rollback restaura una versión de aplicación y no equivale a restaurar base ni binarios. La guía [Despliegue y recuperación](../proyecto/16-Despliegue-y-recuperacion.md) distingue el procedimiento disponible de los controles pendientes.
+La alternativa Linux utiliza `deploy/operations.sh`: el backup reúne dump PostgreSQL, evidencias privadas y hashes, con retención local de 30 días; `verify-backup` comprueba integridad y restaura en una base y directorio temporales. El smoke reproducible ejecuta las operaciones contra contenedores Docker descartables, comprueba que el rollback conserva datos y rechaza un respaldo corrupto; no acredita recuperación en un servidor institucional. Rollback revierte aplicación y no sustituye la restauración de datos. El cifrado, las copias externas y la medición de RPO/RTO se verifican antes de producción. La [guía de producción y aceptación](../12-Produccion-y-aceptacion.md) describe la implementación vigente y distingue Compose del piloto gratuito en Render, cuyo filesystem efímero no ofrece durabilidad de evidencias.
 
 ## 6 Evolución y estructura documental
 

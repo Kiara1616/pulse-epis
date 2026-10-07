@@ -1,13 +1,18 @@
 # Documento de Visión
 
+![Escudo institucional](../recursos/imagenes/upt-logo.png)
+
 **Proyecto:** Pulse EPIS Dashboard de certificaciones tecnológicas verificadas de estudiantes de la EPIS<br>
 **Institución:** Universidad Privada de Tacna Facultad de Ingeniería Escuela Profesional de Ingeniería de Sistemas<br>
 **Curso:** Inteligencia de Negocios<br>
+**Docente:** Patrick Cuadros Quiroga<br>
 **Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
 **Código:** FD02<br>
-**Versión:** 3.1<br>
-**Fecha:** 02/10/2026<br>
-**Base técnica:** main cf7ab75 y documentación del PR 51 a618c3e
+**Versión:** 3.3<br>
+**Fecha:** 06/10/2026<br>
+**Base técnica:** main d123bea; implementación, piloto sintético y documentación de Pulse EPIS
+
+**Escenario de presentación académica:** se asume como estado final Pulse EPIS desplegado y funcionando públicamente, con autenticación y almacenamiento duradero. Este supuesto se desarrolla en FD05, apartado 4.5; las tablas de implementación y resultados distinguen la evidencia técnica comprobada de la aceptación institucional.
 
 ## Control de versiones
 
@@ -16,6 +21,7 @@
 | 2.x | Septiembre 2026 | Kiara Zapana y Vincenzo Lllanos | Desarrollo de las fuentes del proyecto |
 | 3.0 | 01/10/2026 | Vincenzo Lllanos | Generación académica FD01 a FD04 en PR 51 |
 | 3.1 | 02/10/2026 | Equipo del proyecto | Organización documental y actualización contra el código |
+| 3.3 | 06/10/2026 | Equipo del proyecto | Carátula institucional, formato de informe y actualización de resultados técnicos |
 
 Revisión y aprobación académica: sin acta registrada. La versión del documento no certifica una aprobación ni un despliegue institucional.
 

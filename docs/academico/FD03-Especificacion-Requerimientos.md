@@ -1,13 +1,18 @@
 # Especificación de Requerimientos de Software
 
+![Escudo institucional](../recursos/imagenes/upt-logo.png)
+
 **Proyecto:** Pulse EPIS Dashboard de certificaciones tecnológicas verificadas de estudiantes de la EPIS<br>
 **Institución:** Universidad Privada de Tacna Facultad de Ingeniería Escuela Profesional de Ingeniería de Sistemas<br>
 **Curso:** Inteligencia de Negocios<br>
+**Docente:** Patrick Cuadros Quiroga<br>
 **Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
 **Código:** FD03<br>
-**Versión:** 3.1<br>
-**Fecha:** 02/10/2026<br>
-**Base técnica:** main cf7ab75 y documentación del PR 51 a618c3e
+**Versión:** 3.3<br>
+**Fecha:** 06/10/2026<br>
+**Base técnica:** main d123bea; implementación, piloto sintético y documentación de Pulse EPIS
+
+**Escenario de presentación académica:** se asume como estado final Pulse EPIS desplegado y funcionando públicamente, con autenticación y almacenamiento duradero. Este supuesto se desarrolla en FD05, apartado 4.5; las tablas de implementación y resultados distinguen la evidencia técnica comprobada de la aceptación institucional.
 
 ## Control de versiones
 
@@ -16,6 +21,7 @@
 | 2.x | Septiembre 2026 | Kiara Zapana y Vincenzo Lllanos | Desarrollo de las fuentes del proyecto |
 | 3.0 | 01/10/2026 | Vincenzo Lllanos | Generación académica FD01 a FD04 en PR 51 |
 | 3.1 | 02/10/2026 | Equipo del proyecto | Organización documental y actualización contra el código |
+| 3.3 | 06/10/2026 | Equipo del proyecto | Carátula institucional, formato de informe y actualización de resultados técnicos |
 
 Revisión y aprobación académica: sin acta registrada. La versión del documento no certifica una aprobación ni un despliegue institucional.
 
@@ -28,7 +34,7 @@ El SRS define necesidades, requisitos finales, reglas, escenarios y pruebas de a
 
 ### 2.1 Nombre y contexto
 
-La unidad de aplicación es la Escuela Profesional de Ingeniería de Sistemas de la Universidad Privada de Tacna. La solución sirve a responsables del padrón, validadores, estudiantes y consumidores de reportes de calidad. Se consulta el [portal institucional](https://www.upt.edu.pe/) como referencia de identidad institucional, sin copiar información del proyecto NODIEX usado como ejemplo de formato.
+La unidad de aplicación es la Escuela Profesional de Ingeniería de Sistemas de la Universidad Privada de Tacna. La solución sirve a responsables del padrón, validadores, estudiantes y consumidores de reportes de calidad. Se consulta el [portal institucional](https://www.upt.edu.pe/) como referencia de identidad institucional.
 
 ### 2.2 Misión visión y estructura de responsabilidades
 
@@ -51,7 +57,7 @@ El problema es producir mediciones de certificación reproducibles sobre una pob
 
 El sistema objetivo administrará el padrón autorizado, recepción y validación de evidencias, normalización de credenciales, generación de indicadores y reportes. Habrá vistas privadas de administración y vistas agregadas de consulta.
 
-El repositorio contiene una aplicación Next.js con datos JSON demostrativos para varias vistas analíticas, navegación por páginas, `AuthBoundary`, `RoleProvider`/`RoleGate`, formularios de estudiante, un ETL Python reproducible y una API FastAPI con OIDC/RBAC y login local para desarrollo. El registro privado de certificaciones de #13, la bandeja conectada de validaciones de #14 y la sesión del frontend ya cuentan con persistencia y pruebas; los KPI analíticos sobre datos reales, la importación CSV desde la interfaz y la exportación PDF/CSV siguen registrados como `Pendiente` o `Parcial`.
+El repositorio contiene frontend Next.js conectado a FastAPI, sesión OIDC/RBAC y login local exclusivo de desarrollo. La importación CSV del padrón desde UI/API, el registro privado con evidencia, la bandeja de revisión, los snapshots analíticos y la exportación CSV están implementados y probados con datos sintéticos. El piloto reproduce los tres roles y contrasta los indicadores; no acredita cifras institucionales. La exportación PDF operativa, el cierre institucional y las capacidades parciales indicadas en la tabla de requisitos siguen pendientes.
 
 ### 3.2 Viabilidad y evidencia del levantamiento
 
@@ -59,7 +65,7 @@ FD01 concluye viabilidad condicionada. La información disponible procede del re
 
 ### 3.3 Hallazgos y oportunidades
 
-La implementación permite separar flujos por rol, persistir decisiones y publicar cortes reproducibles. Las oportunidades pendientes son cierre institucional autorizado, exportación PDF operativa, captura completa de habilidades, demanda laboral externa y recuperación integral. No se atribuyen tasas de ahorro o demanda externa sin una fuente medida.
+La implementación permite separar flujos por rol, persistir decisiones y publicar cortes reproducibles. Las oportunidades pendientes son cierre institucional autorizado, exportación PDF operativa, captura completa de habilidades, demanda laboral externa y recuperación integral en el ambiente institucional. No se atribuyen tasas de ahorro o demanda externa sin una fuente medida.
 
 ## 4 Análisis de procesos
 
@@ -145,7 +151,7 @@ Implementado describe código y pruebas disponibles; no significa aceptación in
 | RNF-04 | Privacidad crítica | Indicadores no revelan código, correo ni student_key; acceso a evidencias expira | Pruebas de API y tokens disponibles; retención y controles institucionales pendientes |
 | RNF-05 | Usabilidad y accesibilidad alta | Flujos de registro, importación y revisión navegables con teclado, errores identificables y objetivo WCAG 2.1 AA | E2E cubre roles; auditoría completa y evaluación con usuarios pendientes |
 | RNF-06 | Mantenibilidad alta | CI ejecuta lint, tipos, build, pruebas, enlaces y generación; API documentada | Workflows y suites disponibles; OpenAPI se extrae de FastAPI |
-| RNF-07 | Recuperación alta | RPO objetivo 24 h y RTO objetivo 4 h para base y evidencias; restauración trimestral comprobada | Backup de base versionado; copia conjunta, retención externa y simulacro pendientes |
+| RNF-07 | Recuperación alta | RPO objetivo 24 h y RTO objetivo 4 h para base y evidencias; restauración trimestral comprobada | Backup conjunto y verificación aislada disponibles en deploy/operations.sh; smoke de operaciones reproducible. Retención externa, RPO/RTO y simulacro en host real pendientes |
 | RNF-08 | Observabilidad media | Logs estructurados sin PII; alerta tiene receptor y procedimiento | Middleware y monitor versionados; responsable y alertas externas por confirmar |
 | RNF-09 | Portabilidad media | Mismo commit despliega frontend, API y PostgreSQL con Compose; secretos externos | Dockerfiles y CI implementados; host y DNS institucionales por configurar |
 | RNF-10 | Calidad de datos crítica | Completitud al menos 95%, duplicados menor a 1%, rechazos explicados y snapshot atómico | ETL y pruebas disponibles; metas institucionales deben medirse con datos autorizados |

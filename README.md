@@ -1,5 +1,11 @@
 # Pulse EPIS
 
+![Escudo institucional](docs/recursos/imagenes/upt-logo.png)
+
+**Universidad Privada de Tacna**<br>
+**Facultad de Ingeniería · Escuela Profesional de Ingeniería de Sistemas**<br>
+**Proyecto: Pulse EPIS**
+
 Pulse EPIS es una plataforma web de inteligencia de negocios para consolidar certificaciones tecnológicas verificadas de estudiantes de la EPIS de la Universidad Privada de Tacna. Relaciona padrón por periodo, credenciales, evidencia privada, revisión humana y snapshots reproducibles para acreditación y mejora curricular.
 
 ## Estado del proyecto
@@ -53,7 +59,7 @@ pulse-epis/
 
 ## Documentación y generación
 
-El [índice documental](docs/README.md) separa [entregables del curso](docs/academico/README.md) y [documentación del proyecto](docs/proyecto/README.md). Las fuentes se versionan; el paquete HTML/PDF contiene diagramas reales, OpenAPI, recursos y manifiesto con hashes y commit. Las referencias NODIEX orientan los formatos, sin transferir sus cifras o resultados.
+El [índice documental](docs/README.md) separa [entregables del curso](docs/academico/README.md) y [documentación del proyecto](docs/proyecto/README.md). Las fuentes se versionan; el paquete HTML/PDF contiene diagramas reales, OpenAPI, recursos y manifiesto con hashes y commit. Los informes académicos documentan exclusivamente Pulse EPIS.
 
 ```bash
 python -m pip install -r backend/requirements-dev.txt

@@ -1,5 +1,11 @@
 # Recursos compartidos
 
+![Escudo institucional](imagenes/upt-logo.png)
+
+**Universidad Privada de Tacna**<br>
+**Facultad de Ingeniería · Escuela Profesional de Ingeniería de Sistemas**<br>
+**Proyecto: Pulse EPIS**
+
 | Recurso | Uso y autoridad |
 |---|---|
 | [Plantilla padron.csv](templates/padron.csv) | Ejemplo sintético; siete columnas para importación autorizada |
@@ -7,4 +13,4 @@
 | [dashboard-spec-objetivo.json](schemas/dashboard-spec-objetivo.json) | Propuesta histórica camelCase preservada; no es respuesta actual de la API |
 | [migracion.json](migracion.json) | Ubicaciones anteriores y actuales con SHA-256 original |
 
-El generador exporta OpenAPI desde FastAPI sin conexión a datos institucionales. El validador compara el esquema vigente con Pydantic para detectar cambios sin documentar. Las referencias académicas externas se usan para estructura; no se añaden sus datos al producto.
+El generador exporta OpenAPI desde FastAPI sin conexión a datos institucionales. El validador compara el esquema vigente con Pydantic para detectar cambios sin documentar. Los recursos documentan exclusivamente los contratos, datos sintéticos y trazabilidad de Pulse EPIS.

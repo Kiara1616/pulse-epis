@@ -16,7 +16,7 @@ from urllib.parse import quote, unquote, urlsplit
 from markdown import markdown
 from pypdf import PdfReader
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 OUTPUT = ROOT / "artifacts/docs"
 WIDTH = 165 * mm
-BLUE = colors.HexColor("#173F5F")
+INK = colors.black
 LINKS = re.compile(r"(!?)\[([^\]]+)\]\(([^)]+)\)")
 MERMAID = re.compile(r"```mermaid\s*\n(.*?)```", re.S)
 
@@ -51,7 +51,7 @@ def source_revision() -> dict:
         "source_commit": git("rev-parse", "HEAD"),
         "source_branch": git("branch", "--show-current") or "detached",
         "working_tree_dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
-        "technical_baseline": "cf7ab75082e04bab8da96a4faebf1a64c7f9f2de",
+        "technical_baseline": "d123beaae64df4f60e6f270cf0b9d682be481f37",
         "reference_documentation_commit": "a618c3e70a51cb07713264bbaa5d4440c3f11ad8",
     }
 
@@ -63,6 +63,16 @@ def target_for(source: str, extension: str) -> Path:
 
 def title_of(text: str, fallback: str) -> str:
     return next((line[2:].strip() for line in text.splitlines() if line.startswith("# ")), fallback)
+
+
+def academic_metadata(text: str) -> dict[str, str]:
+    """Read cover fields from the canonical report, rather than duplicate them."""
+    fields = dict(re.findall(r"^\*\*([^*]+):\*\* (.+?)(?:<br>)?$", text, re.M))
+    required = ("Institución", "Curso", "Docente", "Código", "Versión", "Fecha")
+    missing = [key for key in required if not fields.get(key)]
+    if missing or not (fields.get("Integrantes") or fields.get("Autores")):
+        raise ValueError(f"Incomplete academic cover: {missing or ['Integrantes/Autores']}")
+    return fields
 
 
 def diagram_key(code: str) -> str:
@@ -133,11 +143,12 @@ def html_page(title: str, body: str, revision: dict, output: Path) -> str:
     return f'''<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title><style>
-body{{font:16px/1.6 system-ui,sans-serif;max-width:1100px;margin:32px auto;padding:0 24px;color:#172033}}
-h1,h2,h3,h4{{color:#173f5f}} table{{border-collapse:collapse;display:block;overflow-x:auto;margin:18px 0;max-width:100%}}
-th,td{{border:1px solid #ccd5e0;padding:8px;vertical-align:top}} th{{background:#edf2f6}} pre{{background:#f2f5f8;padding:14px;overflow:auto}}
-figure{{margin:24px 0}} figure img{{display:block;max-width:100%;height:auto;margin:auto}} figcaption{{font-size:14px;color:#46515d}}
-a{{color:#155784}} footer{{margin-top:32px;font-size:13px;color:#596579}} .toc{{background:#f7f9fb;padding:16px}} nav{{margin-bottom:24px}}
+body{{font:16px/1.6 'Times New Roman',serif;max-width:1100px;margin:32px auto;padding:0 24px;color:#000;background:#fff}}
+h1,h2,h3,h4{{color:#000}} table{{border-collapse:collapse;display:block;overflow-x:auto;margin:18px 0;max-width:100%}}
+th,td{{border:1px solid #000;padding:8px;vertical-align:top;background:#fff}} pre{{background:#fff;padding:14px;overflow:auto}}
+figure{{margin:24px 0}} figure img{{display:block;max-width:100%;height:auto;margin:auto}} figcaption{{font-size:14px;color:#000}}
+a{{color:#000}} footer{{margin-top:32px;font-size:13px;color:#000}} .toc{{background:#fff;padding:16px}} nav{{margin-bottom:24px}}
+p:has(> img:only-child){{text-align:center}} p>img{{max-height:140px;max-width:100%;width:auto}}
 </style></head><body><nav><a href="{home}">Índice documental</a></nav>{body}
 <footer>Pulse EPIS · fuente {revision['source_commit'][:12]} · cambios locales: {'sí' if revision['working_tree_dirty'] else 'no'}</footer></body></html>'''
 
@@ -157,12 +168,31 @@ def build_html(entry: dict, revision: dict) -> Path:
     # Do not rewrite literals in code fences as document links.
     pieces = re.split(r"(```.*?```)", text, flags=re.S)
     text = "".join(piece if piece.startswith("```") else LINKS.sub(link, piece) for piece in pieces)
-    body = markdown("[TOC]\n\n" + text, extensions=["tables", "fenced_code", "toc", "sane_lists"], output_format="html")
+    academic = entry["group"] == "academico" and Path(source).name.startswith("FD")
+    if academic:
+        fields = academic_metadata(text)
+        logo = resolve_link("../recursos/imagenes/upt-logo.png", source, output, revision)
+        authors = fields.get("Integrantes", fields.get("Autores", ""))
+        cover = f'''<section class="academic-cover" style="text-align:center;font-family:'Times New Roman',serif;page-break-after:always">
+<h2>UNIVERSIDAD PRIVADA DE TACNA</h2><h3>FACULTAD DE INGENIERÍA</h3><p>Escuela Profesional de Ingeniería de Sistemas</p>
+<img src="{logo}" alt="Escudo de la Universidad Privada de Tacna" style="height:120px;width:auto">
+<h1>{html.escape(title_of(text, Path(source).stem))}</h1><h2>Pulse EPIS</h2>
+<p>Dashboard de certificaciones tecnológicas verificadas</p><p><b>Curso:</b> {html.escape(fields['Curso'])}</p>
+<p><b>Docente:</b> {html.escape(fields['Docente'])}</p><p><b>Integrantes:</b><br>{html.escape(authors)}</p>
+<p>{fields['Código']} · Versión {fields['Versión']} · {fields['Fecha']}</p><p>Tacna – Perú<br>2026</p></section>'''
+        # The Markdown logo is useful on GitHub; the generated cover already has it.
+        text = re.sub(r"^!\[Escudo institucional\].*\n", "", text, flags=re.M)
+        marker = re.search(r"^## 1(?:\.| )", text, re.M)
+        text = text[:marker.start()] + "[TOC]\n\n" + text[marker.start():] if marker else "[TOC]\n\n" + text
+    else:
+        cover = ""
+        text = "[TOC]\n\n" + text
+    body = cover + markdown(text, extensions=["tables", "fenced_code", "toc", "sane_lists"], output_format="html")
     output.write_text(html_page(title_of(text, Path(source).stem), body, revision, output), encoding="utf-8")
     return output
 
 
-def styles():
+def styles(academic: bool = False):
     base = getSampleStyleSheet()
     result = {
         "title": ParagraphStyle("DocTitle", parent=base["Title"], fontName="Helvetica-Bold", fontSize=19, leading=24, textColor=colors.black, spaceAfter=16),
@@ -176,7 +206,21 @@ def styles():
         "toc_title": ParagraphStyle("ContentsTitle", fontName="Helvetica-Bold", fontSize=16, leading=20, spaceAfter=14),
     }
     for level, size in ((1,15), (2,12), (3,10.5), (4,10)):
-        result[f"h{level}"] = ParagraphStyle(f"DocH{level}", fontName="Helvetica-Bold", fontSize=size, leading=size+4, textColor=BLUE, spaceBefore=12, spaceAfter=7, keepWithNext=True)
+        result[f"h{level}"] = ParagraphStyle(f"DocH{level}", fontName="Helvetica-Bold", fontSize=size, leading=size+4, textColor=INK, spaceBefore=12, spaceAfter=7, keepWithNext=True)
+    if academic:
+        for key in ("body", "list"):
+            result[key].fontName = "Times-Roman"
+            result[key].fontSize = 12
+            result[key].leading = 17
+        result["body"].alignment = TA_JUSTIFY
+        for key in ("cover", "title", "toc_title", "h1", "h2", "h3", "h4"):
+            result[key].fontName = "Times-Bold"
+        result["cell"].fontName = "Times-Roman"
+        result["header"].fontName = "Times-Bold"
+        result["cover"].fontSize = 13
+        result["cover"].leading = 18
+        result["cover"].spaceAfter = 8
+        result["cover_meta"] = ParagraphStyle("CoverMetadata", fontName="Times-Roman", fontSize=12, leading=17, alignment=TA_CENTER, spaceAfter=8)
     return result
 
 
@@ -185,7 +229,7 @@ def inline(value: str, source: str, output: Path, revision: dict) -> str:
     tokens = []
     def link(match):
         href = html.escape(resolve_link(match.group(3), source, output, revision), quote=True)
-        tokens.append(f'<link href="{href}" color="#155784">{html.escape(match.group(2))}</link>')
+        tokens.append(f'<link href="{href}" color="#000000"><u>{html.escape(match.group(2))}</u></link>')
         return f"PULSELINKTOKEN{len(tokens)-1}END"
     value = LINKS.sub(link, value)
     value = html.escape(value, quote=False).replace("&lt;br&gt;", "<br/>").replace("&lt;br/&gt;", "<br/>")
@@ -206,7 +250,7 @@ class DocumentTemplate(BaseDocTemplate):
                 return
             canvas.saveState()
             canvas.setFont("Helvetica", 8)
-            canvas.setFillColor(colors.HexColor("#5D6875"))
+            canvas.setFillColor(INK)
             canvas.drawString(self.leftMargin, A4[1]-15*mm, "Pulse EPIS")
             canvas.drawRightString(A4[0]-self.rightMargin, A4[1]-15*mm, "Documentación " + ("académica" if academic else "del proyecto"))
             canvas.drawString(self.leftMargin, 12*mm, f"Fuente {revision['source_commit'][:12]}" + (" con cambios locales" if revision["working_tree_dirty"] else ""))
@@ -234,8 +278,7 @@ def table_flows(lines: list[str], st: dict, para) -> list:
     count = max(map(len, rows))
     rows = [row + [""]*(count-len(row)) for row in rows]
     styling = TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#EDF2F6")),
-        ("GRID", (0,0), (-1,-1), .35, colors.HexColor("#BCC7D2")),
+        ("GRID", (0,0), (-1,-1), .35, INK),
         ("VALIGN", (0,0), (-1,-1), "TOP"),
         ("LEFTPADDING", (0,0), (-1,-1), 5), ("RIGHTPADDING", (0,0), (-1,-1), 5),
         ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
@@ -270,6 +313,18 @@ def body_flows(text: str, source: str, output: Path, revision: dict, st: dict) -
         raw = lines[index].strip()
         index += 1
         if not raw:
+            continue
+        illustration = re.fullmatch(r"!\[([^\]]*)\]\(([^)]+)\)", raw)
+        if illustration:
+            path = (ROOT/source).parent.joinpath(unquote(illustration.group(2))).resolve()
+            if not path.is_relative_to(ROOT):
+                raise ValueError(f"Image escapes repository: {source}")
+            with PILImage.open(path) as raster:
+                width, height = raster.size
+            scale = min(32*mm/width, 32*mm/height)
+            drawing = Image(str(path), width=width*scale, height=height*scale)
+            drawing.hAlign = "CENTER"
+            story.extend([drawing, Spacer(1,5*mm)])
             continue
         if raw.startswith("```"):
             language, code = raw[3:].strip(), []
@@ -326,16 +381,25 @@ def build_pdf(entry: dict, revision: dict) -> tuple[Path, int]:
     title = title_of(text,Path(source).stem)
     output = target_for(source,".pdf")
     output.parent.mkdir(parents=True,exist_ok=True)
-    st = styles()
     academic = entry["group"] == "academico" and Path(source).name.startswith("FD")
+    is_index = Path(source).name == "README.md"
+    st = styles(academic or is_index)
+    if is_index:
+        for key in ("body", "list"):
+            st[key].fontSize = 11
+            st[key].leading = 15
     document = DocumentTemplate(output,title,revision,academic)
     story = []
     if academic:
         story.extend([Spacer(1,12*mm),Paragraph("UNIVERSIDAD PRIVADA DE TACNA",st["cover"]),Paragraph("FACULTAD DE INGENIERÍA",st["cover"]),Paragraph("Escuela Profesional de Ingeniería de Sistemas",st["cover"]),Spacer(1,8*mm)])
-        logo = ROOT/"dashboard-app/public/epis-logo.png"
-        if logo.exists():
-            image=Image(str(logo),width=30*mm,height=30*mm);image.hAlign="CENTER";story.extend([image,Spacer(1,10*mm)])
-        story.extend([Paragraph(title,st["cover"]),Paragraph("Pulse EPIS",st["cover"]),Paragraph("Dashboard de certificaciones tecnológicas verificadas",st["cover"]),Spacer(1,8*mm),Paragraph("Curso Inteligencia de Negocios",st["cover"]),Paragraph("Kiara Holly Zapana Murillo<br/>Vincenzo Rafael Lllanos Niño",st["cover"]),Spacer(1,10*mm),Paragraph("Tacna Perú<br/>2026",st["cover"]),PageBreak()])
+        fields = academic_metadata(text)
+        logo = ROOT/"docs/recursos/imagenes/upt-logo.png"
+        with PILImage.open(logo) as original:
+            ratio = original.width / original.height
+        image=Image(str(logo),width=32*mm*ratio,height=32*mm);image.hAlign="CENTER";story.extend([image,Spacer(1,10*mm)])
+        authors = fields.get("Integrantes", fields.get("Autores", ""))
+        story.extend([Paragraph(title,st["cover"]),Paragraph("Pulse EPIS",st["cover"]),Paragraph("Dashboard de certificaciones tecnológicas verificadas",st["cover_meta"]),Spacer(1,5*mm),Paragraph("Curso: " + html.escape(fields["Curso"]),st["cover_meta"]),Paragraph("Docente: " + html.escape(fields["Docente"]),st["cover_meta"]),Paragraph("Integrantes:<br/>" + html.escape(authors).replace(" y Vincenzo", "<br/>Vincenzo"),st["cover_meta"]),Paragraph(f"{fields['Código']} · Versión {fields['Versión']} · {fields['Fecha']}",st["cover_meta"]),Spacer(1,6*mm),Paragraph("Tacna – Perú<br/>2026",st["cover_meta"]),PageBreak()])
+        text = re.sub(r"^!\[Escudo institucional\].*\n", "", text, flags=re.M)
         # Keep all front matter and version history from the canonical source.
         marker=re.search(r"^## 1(?:\.| )",text,re.M)
         if not marker:
@@ -347,8 +411,15 @@ def build_pdf(entry: dict, revision: dict) -> tuple[Path, int]:
         text=text[marker.start():]
     else:
         story.append(Paragraph(html.escape(title),st["title"]))
+        if is_index and len(text.splitlines()) > 65:
+            # Present the logo and institutional identity before the contents.
+            marker = re.search(r"^## ", text, re.M)
+            if marker:
+                story.extend(body_flows(text[:marker.start()],source,output,revision,st))
+                story.append(PageBreak())
+                text = text[marker.start():]
     toc=TableOfContents()
-    toc.levelStyles=[ParagraphStyle(f"TOC{i}",fontName="Helvetica-Bold" if i==0 else "Helvetica",fontSize=9 if i<2 else 8,leading=13,leftIndent=12*i,spaceBefore=3) for i in range(4)]
+    toc.levelStyles=[ParagraphStyle(f"TOC{i}",fontName=("Times-Bold" if i==0 else "Times-Roman") if academic else ("Helvetica-Bold" if i==0 else "Helvetica"),fontSize=8.5 if academic else (9 if i<2 else 8),leading=11 if academic else 13,leftIndent=12*i,spaceBefore=2 if academic else 3) for i in range(4)]
     if academic or len(text.splitlines())>65:
         story.extend([Paragraph("Contenido",st["toc_title"]),toc,PageBreak()])
     story.extend(body_flows(text,source,output,revision,st))
@@ -402,6 +473,13 @@ def build_index(records: list[dict], revision: dict) -> None:
 def build(academic_only: bool=False) -> dict:
     subprocess.run([sys.executable,str(ROOT/"scripts/validate_docs.py")],cwd=ROOT,check=True)
     OUTPUT.mkdir(parents=True,exist_ok=True)
+    # Remove obsolete academic outputs from earlier builds, including source
+    # copies, so a removed report cannot reappear in the distributed package.
+    academic_sources = {Path(e["source"]).stem for e in catalog() if e["source"].startswith("docs/academico/")}
+    for directory, extensions in ((OUTPUT/"academico", {".html", ".pdf"}), (OUTPUT/"sources/academico", {".md"})):
+        for obsolete in directory.glob("*"):
+            if obsolete.is_file() and obsolete.suffix in extensions and obsolete.stem not in academic_sources:
+                obsolete.unlink()
     selected=[e for e in catalog() if not academic_only or (e["group"]=="academico" and Path(e["source"]).name.startswith("FD"))]
     previous=json.loads((OUTPUT/"manifest.json").read_text(encoding="utf-8")) if (OUTPUT/"manifest.json").exists() else {}
     revision=source_revision()
@@ -419,7 +497,8 @@ def build(academic_only: bool=False) -> dict:
         print(f"Document {index}/{len(selected)}: {entry['source']} ({pages} pages)",flush=True)
     if academic_only:
         included={r["source"] for r in records}
-        records.extend(r for r in previous.get("documents",[]) if r["source"] not in included)
+        registered = {e["source"] for e in catalog()}
+        records.extend(r for r in previous.get("documents",[]) if r["source"] not in included and r["source"] in registered)
         diagram_names={d["svg"] for d in diagrams}
         diagrams.extend(d for d in previous.get("diagrams",[]) if d["svg"] not in diagram_names)
     resources=copy_resources()
