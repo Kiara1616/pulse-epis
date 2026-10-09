@@ -37,7 +37,7 @@
 
 # Documento de Especificación de Requerimientos de Software
 
-<p align="center">Código FD03<br>Versión <em>3.5</em></p>
+<p align="center">Código FD03<br>Versión <em>3.6</em></p>
 
 **CONTROL DE VERSIONES**
 
@@ -49,6 +49,8 @@
 | 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de presentación y contenido |
 | 3.4 | — | — | — | 09/10/2026 | Ampliación a 15 casos de uso, objetos y secuencias |
 | 3.5 | — | — | — | 09/10/2026 | Adecuación del formato SRS y diagramas Mermaid |
+| 3.6 | — | — | — | 09/10/2026 | Índice detallado y modelos independientes por caso de uso |
+
 
 **ÍNDICE GENERAL**
 
@@ -80,10 +82,70 @@
   - [5.2. Modelo Conceptual](#52-modelo-conceptual)
     - [5.2.1. Diagrama de Paquetes](#521-diagrama-de-paquetes)
     - [5.2.2. Diagrama de Casos de Uso](#522-diagrama-de-casos-de-uso)
+      - [5.2.2.1. CU-01 — Importar padrón — Caso de uso](#5221-cu-01--importar-padrón--caso-de-uso)
+      - [5.2.2.2. CU-02 — Registrar certificación y evidencia — Caso de uso](#5222-cu-02--registrar-certificación-y-evidencia--caso-de-uso)
+      - [5.2.2.3. CU-03 — Revisar y decidir evidencia — Caso de uso](#5223-cu-03--revisar-y-decidir-evidencia--caso-de-uso)
+      - [5.2.2.4. CU-04 — Consultar indicadores y filtros — Caso de uso](#5224-cu-04--consultar-indicadores-y-filtros--caso-de-uso)
+      - [5.2.2.5. CU-05 — Exportar reporte — Caso de uso](#5225-cu-05--exportar-reporte--caso-de-uso)
+      - [5.2.2.6. CU-06 — Corregir una observación — Caso de uso](#5226-cu-06--corregir-una-observación--caso-de-uso)
+      - [5.2.2.7. CU-07 — Publicar snapshot ETL — Caso de uso](#5227-cu-07--publicar-snapshot-etl--caso-de-uso)
+      - [5.2.2.8. CU-08 — Iniciar y cerrar sesión — Caso de uso](#5228-cu-08--iniciar-y-cerrar-sesión--caso-de-uso)
+      - [5.2.2.9. CU-09 — Consultar certificaciones propias — Caso de uso](#5229-cu-09--consultar-certificaciones-propias--caso-de-uso)
+      - [5.2.2.10. CU-10 — Adjuntar evidencia a una certificación — Caso de uso](#52210-cu-10--adjuntar-evidencia-a-una-certificación--caso-de-uso)
+      - [5.2.2.11. CU-11 — Acceder a evidencia autorizada — Caso de uso](#52211-cu-11--acceder-a-evidencia-autorizada--caso-de-uso)
+      - [5.2.2.12. CU-12 — Consultar periodos y último corte publicado — Caso de uso](#52212-cu-12--consultar-periodos-y-último-corte-publicado--caso-de-uso)
+      - [5.2.2.13. CU-13 — Consultar evolución de certificaciones — Caso de uso](#52213-cu-13--consultar-evolución-de-certificaciones--caso-de-uso)
+      - [5.2.2.14. CU-14 — Consultar brechas internas por habilidad — Caso de uso](#52214-cu-14--consultar-brechas-internas-por-habilidad--caso-de-uso)
+      - [5.2.2.15. CU-15 — Consultar historial de importaciones — Caso de uso](#52215-cu-15--consultar-historial-de-importaciones--caso-de-uso)
     - [5.2.3. Escenarios de Caso de Uso (Narrativa)](#523-escenarios-de-caso-de-uso-narrativa)
+      - [5.2.3.1. CU-01 Importar padrón](#5231-cu-01-importar-padrón)
+      - [5.2.3.2. CU-02 Registrar certificación y evidencia](#5232-cu-02-registrar-certificación-y-evidencia)
+      - [5.2.3.3. CU-03 Revisar y decidir evidencia](#5233-cu-03-revisar-y-decidir-evidencia)
+      - [5.2.3.4. CU-04 Consultar indicadores y filtros](#5234-cu-04-consultar-indicadores-y-filtros)
+      - [5.2.3.5. CU-05 Exportar reporte](#5235-cu-05-exportar-reporte)
+      - [5.2.3.6. CU-06 Corregir una observación](#5236-cu-06-corregir-una-observación)
+      - [5.2.3.7. CU-07 Publicar snapshot ETL](#5237-cu-07-publicar-snapshot-etl)
+      - [5.2.3.8. CU-08 Iniciar y cerrar sesión](#5238-cu-08-iniciar-y-cerrar-sesión)
+      - [5.2.3.9. CU-09 Consultar certificaciones propias](#5239-cu-09-consultar-certificaciones-propias)
+      - [5.2.3.10. CU-10 Adjuntar evidencia a una certificación](#52310-cu-10-adjuntar-evidencia-a-una-certificación)
+      - [5.2.3.11. CU-11 Acceder a evidencia autorizada](#52311-cu-11-acceder-a-evidencia-autorizada)
+      - [5.2.3.12. CU-12 Consultar periodos y último corte publicado](#52312-cu-12-consultar-periodos-y-último-corte-publicado)
+      - [5.2.3.13. CU-13 Consultar evolución de certificaciones](#52313-cu-13-consultar-evolución-de-certificaciones)
+      - [5.2.3.14. CU-14 Consultar brechas internas por habilidad](#52314-cu-14-consultar-brechas-internas-por-habilidad)
+      - [5.2.3.15. CU-15 Consultar historial de importaciones](#52315-cu-15-consultar-historial-de-importaciones)
   - [5.3. Modelo Lógico](#53-modelo-lógico)
     - [5.3.1. Análisis de objetos](#531-análisis-de-objetos)
+      - [5.3.1.1. CU-01 — Importar padrón — Objetos](#5311-cu-01--importar-padrón--objetos)
+      - [5.3.1.2. CU-02 — Registrar certificación y evidencia — Objetos](#5312-cu-02--registrar-certificación-y-evidencia--objetos)
+      - [5.3.1.3. CU-03 — Revisar y decidir evidencia — Objetos](#5313-cu-03--revisar-y-decidir-evidencia--objetos)
+      - [5.3.1.4. CU-04 — Consultar indicadores y filtros — Objetos](#5314-cu-04--consultar-indicadores-y-filtros--objetos)
+      - [5.3.1.5. CU-05 — Exportar reporte — Objetos](#5315-cu-05--exportar-reporte--objetos)
+      - [5.3.1.6. CU-06 — Corregir una observación — Objetos](#5316-cu-06--corregir-una-observación--objetos)
+      - [5.3.1.7. CU-07 — Publicar snapshot ETL — Objetos](#5317-cu-07--publicar-snapshot-etl--objetos)
+      - [5.3.1.8. CU-08 — Iniciar y cerrar sesión — Objetos](#5318-cu-08--iniciar-y-cerrar-sesión--objetos)
+      - [5.3.1.9. CU-09 — Consultar certificaciones propias — Objetos](#5319-cu-09--consultar-certificaciones-propias--objetos)
+      - [5.3.1.10. CU-10 — Adjuntar evidencia a una certificación — Objetos](#53110-cu-10--adjuntar-evidencia-a-una-certificación--objetos)
+      - [5.3.1.11. CU-11 — Acceder a evidencia autorizada — Objetos](#53111-cu-11--acceder-a-evidencia-autorizada--objetos)
+      - [5.3.1.12. CU-12 — Consultar periodos y último corte publicado — Objetos](#53112-cu-12--consultar-periodos-y-último-corte-publicado--objetos)
+      - [5.3.1.13. CU-13 — Consultar evolución de certificaciones — Objetos](#53113-cu-13--consultar-evolución-de-certificaciones--objetos)
+      - [5.3.1.14. CU-14 — Consultar brechas internas por habilidad — Objetos](#53114-cu-14--consultar-brechas-internas-por-habilidad--objetos)
+      - [5.3.1.15. CU-15 — Consultar historial de importaciones — Objetos](#53115-cu-15--consultar-historial-de-importaciones--objetos)
     - [5.3.2. Diagrama de Secuencia](#532-diagrama-de-secuencia)
+      - [5.3.2.1. CU-01 — Importar padrón — Secuencia](#5321-cu-01--importar-padrón--secuencia)
+      - [5.3.2.2. CU-02 — Registrar certificación y evidencia — Secuencia](#5322-cu-02--registrar-certificación-y-evidencia--secuencia)
+      - [5.3.2.3. CU-03 — Revisar y decidir evidencia — Secuencia](#5323-cu-03--revisar-y-decidir-evidencia--secuencia)
+      - [5.3.2.4. CU-04 — Consultar indicadores y filtros — Secuencia](#5324-cu-04--consultar-indicadores-y-filtros--secuencia)
+      - [5.3.2.5. CU-05 — Exportar reporte — Secuencia](#5325-cu-05--exportar-reporte--secuencia)
+      - [5.3.2.6. CU-06 — Corregir una observación — Secuencia](#5326-cu-06--corregir-una-observación--secuencia)
+      - [5.3.2.7. CU-07 — Publicar snapshot ETL — Secuencia](#5327-cu-07--publicar-snapshot-etl--secuencia)
+      - [5.3.2.8. CU-08 — Iniciar y cerrar sesión — Secuencia](#5328-cu-08--iniciar-y-cerrar-sesión--secuencia)
+      - [5.3.2.9. CU-09 — Consultar certificaciones propias — Secuencia](#5329-cu-09--consultar-certificaciones-propias--secuencia)
+      - [5.3.2.10. CU-10 — Adjuntar evidencia a una certificación — Secuencia](#53210-cu-10--adjuntar-evidencia-a-una-certificación--secuencia)
+      - [5.3.2.11. CU-11 — Acceder a evidencia autorizada — Secuencia](#53211-cu-11--acceder-a-evidencia-autorizada--secuencia)
+      - [5.3.2.12. CU-12 — Consultar periodos y último corte publicado — Secuencia](#53212-cu-12--consultar-periodos-y-último-corte-publicado--secuencia)
+      - [5.3.2.13. CU-13 — Consultar evolución de certificaciones — Secuencia](#53213-cu-13--consultar-evolución-de-certificaciones--secuencia)
+      - [5.3.2.14. CU-14 — Consultar brechas internas por habilidad — Secuencia](#53214-cu-14--consultar-brechas-internas-por-habilidad--secuencia)
+      - [5.3.2.15. CU-15 — Consultar historial de importaciones — Secuencia](#53215-cu-15--consultar-historial-de-importaciones--secuencia)
     - [5.3.3. Diagrama de Clases](#533-diagrama-de-clases)
 
 ## INTRODUCCIÓN
@@ -574,27 +636,270 @@ flowchart LR
 
 | Caso de uso | Actor principal | Escenario |
 |---|---|---|
-| CU-01 — Importar padrón | Administrador | [Escenario](#cu-01--importar-padrón--secuencia) |
-| CU-02 — Registrar certificación y evidencia | Estudiante | [Escenario](#cu-02--registrar-certificación-y-evidencia--secuencia) |
-| CU-03 — Revisar y decidir evidencia | Validador | [Escenario](#cu-03--revisar-y-decidir-evidencia--secuencia) |
-| CU-04 — Consultar indicadores y filtros | Usuario con ANALYTICS_READ | [Escenario](#cu-04--consultar-indicadores-y-filtros--secuencia) |
-| CU-05 — Exportar reporte | Usuario autorizado | [Escenario](#cu-05--exportar-reporte--secuencia) |
-| CU-06 — Corregir una observación | Estudiante titular | [Escenario](#cu-06--corregir-una-observación--secuencia) |
-| CU-07 — Publicar snapshot ETL | Operador de infraestructura | [Escenario](#cu-07--publicar-snapshot-etl--secuencia) |
-| CU-08 — Iniciar y cerrar sesión | Usuario provisionado | [Escenario](#cu-08--iniciar-y-cerrar-sesión--secuencia) |
-| CU-09 — Consultar certificaciones propias | Estudiante | [Escenario](#cu-09--consultar-certificaciones-propias--secuencia) |
-| CU-10 — Adjuntar evidencia a una certificación | Estudiante | [Escenario](#cu-10--adjuntar-evidencia-a-una-certificación--secuencia) |
-| CU-11 — Acceder a evidencia autorizada | Estudiante titular o validador | [Escenario](#cu-11--acceder-a-evidencia-autorizada--secuencia) |
-| CU-12 — Consultar periodos y último corte publicado | Usuario con ANALYTICS_READ | [Escenario](#cu-12--consultar-periodos-y-último-corte-publicado--secuencia) |
-| CU-13 — Consultar evolución de certificaciones | Usuario con ANALYTICS_READ | [Escenario](#cu-13--consultar-evolución-de-certificaciones--secuencia) |
-| CU-14 — Consultar brechas internas por habilidad | Usuario con ANALYTICS_READ | [Escenario](#cu-14--consultar-brechas-internas-por-habilidad--secuencia) |
-| CU-15 — Consultar historial de importaciones | Administrador | [Escenario](#cu-15--consultar-historial-de-importaciones--secuencia) |
+| CU-01 — Importar padrón | Administrador | [Escenario](#5231-cu-01-importar-padrón) |
+| CU-02 — Registrar certificación y evidencia | Estudiante | [Escenario](#5232-cu-02-registrar-certificación-y-evidencia) |
+| CU-03 — Revisar y decidir evidencia | Validador | [Escenario](#5233-cu-03-revisar-y-decidir-evidencia) |
+| CU-04 — Consultar indicadores y filtros | Usuario con ANALYTICS_READ | [Escenario](#5234-cu-04-consultar-indicadores-y-filtros) |
+| CU-05 — Exportar reporte | Usuario autorizado | [Escenario](#5235-cu-05-exportar-reporte) |
+| CU-06 — Corregir una observación | Estudiante titular | [Escenario](#5236-cu-06-corregir-una-observación) |
+| CU-07 — Publicar snapshot ETL | Operador de infraestructura | [Escenario](#5237-cu-07-publicar-snapshot-etl) |
+| CU-08 — Iniciar y cerrar sesión | Usuario provisionado | [Escenario](#5238-cu-08-iniciar-y-cerrar-sesión) |
+| CU-09 — Consultar certificaciones propias | Estudiante | [Escenario](#5239-cu-09-consultar-certificaciones-propias) |
+| CU-10 — Adjuntar evidencia a una certificación | Estudiante | [Escenario](#52310-cu-10-adjuntar-evidencia-a-una-certificación) |
+| CU-11 — Acceder a evidencia autorizada | Estudiante titular o validador | [Escenario](#52311-cu-11-acceder-a-evidencia-autorizada) |
+| CU-12 — Consultar periodos y último corte publicado | Usuario con ANALYTICS_READ | [Escenario](#52312-cu-12-consultar-periodos-y-último-corte-publicado) |
+| CU-13 — Consultar evolución de certificaciones | Usuario con ANALYTICS_READ | [Escenario](#52313-cu-13-consultar-evolución-de-certificaciones) |
+| CU-14 — Consultar brechas internas por habilidad | Usuario con ANALYTICS_READ | [Escenario](#52314-cu-14-consultar-brechas-internas-por-habilidad) |
+| CU-15 — Consultar historial de importaciones | Administrador | [Escenario](#52315-cu-15-consultar-historial-de-importaciones) |
 
 Las consultas de evolución y brechas comparten el contrato analítico overview, aunque representan objetivos de usuario distintos. La exportación CSV ocurre en el navegador; la corrección de observaciones se verifica por API mientras su interfaz permanece pendiente.
 
+Los siguientes diagramas delimitan cada caso individualmente. Los objetos de análisis y las secuencias se presentan en sus apartados independientes del modelo lógico.
+
+##### 5.2.2.1. CU-01 — Importar padrón — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Administrador con PADRON_MANAGE"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-01 Importar padrón"])
+    end
+    A1 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5231-cu-01-importar-padrón) · [Análisis de objetos](#5311-cu-01--importar-padrón--objetos) · [Diagrama de secuencia](#5321-cu-01--importar-padrón--secuencia)
+
+##### 5.2.2.2. CU-02 — Registrar certificación y evidencia — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Estudiante titular"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-02 Registrar certificación y evidencia"])
+    end
+    A1 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5232-cu-02-registrar-certificación-y-evidencia) · [Análisis de objetos](#5312-cu-02--registrar-certificación-y-evidencia--objetos) · [Diagrama de secuencia](#5322-cu-02--registrar-certificación-y-evidencia--secuencia)
+
+##### 5.2.2.3. CU-03 — Revisar y decidir evidencia — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Validador"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-03 Revisar y decidir evidencia"])
+    end
+    A1 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5233-cu-03-revisar-y-decidir-evidencia) · [Análisis de objetos](#5313-cu-03--revisar-y-decidir-evidencia--objetos) · [Diagrama de secuencia](#5323-cu-03--revisar-y-decidir-evidencia--secuencia)
+
+##### 5.2.2.4. CU-04 — Consultar indicadores y filtros — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Administrador"]
+    A2["Validador"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-04 Consultar indicadores y filtros"])
+    end
+    A1 --> CU
+    A2 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5234-cu-04-consultar-indicadores-y-filtros) · [Análisis de objetos](#5314-cu-04--consultar-indicadores-y-filtros--objetos) · [Diagrama de secuencia](#5324-cu-04--consultar-indicadores-y-filtros--secuencia)
+
+##### 5.2.2.5. CU-05 — Exportar reporte — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Administrador"]
+    A2["Validador"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-05 Exportar reporte"])
+    end
+    A1 --> CU
+    A2 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5235-cu-05-exportar-reporte) · [Análisis de objetos](#5315-cu-05--exportar-reporte--objetos) · [Diagrama de secuencia](#5325-cu-05--exportar-reporte--secuencia)
+
+##### 5.2.2.6. CU-06 — Corregir una observación — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Estudiante titular"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-06 Corregir una observación"])
+    end
+    A1 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5236-cu-06-corregir-una-observación) · [Análisis de objetos](#5316-cu-06--corregir-una-observación--objetos) · [Diagrama de secuencia](#5326-cu-06--corregir-una-observación--secuencia)
+
+##### 5.2.2.7. CU-07 — Publicar snapshot ETL — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Operador autorizado de infraestructura"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-07 Publicar snapshot ETL"])
+    end
+    A1 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5237-cu-07-publicar-snapshot-etl) · [Análisis de objetos](#5317-cu-07--publicar-snapshot-etl--objetos) · [Diagrama de secuencia](#5327-cu-07--publicar-snapshot-etl--secuencia)
+
+##### 5.2.2.8. CU-08 — Iniciar y cerrar sesión — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Administrador"]
+    A2["Validador"]
+    A3["Estudiante"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-08 Iniciar y cerrar sesión"])
+    end
+    A1 --> CU
+    A2 --> CU
+    A3 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5238-cu-08-iniciar-y-cerrar-sesión) · [Análisis de objetos](#5318-cu-08--iniciar-y-cerrar-sesión--objetos) · [Diagrama de secuencia](#5328-cu-08--iniciar-y-cerrar-sesión--secuencia)
+
+##### 5.2.2.9. CU-09 — Consultar certificaciones propias — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Estudiante titular"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-09 Consultar certificaciones propias"])
+    end
+    A1 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#5239-cu-09-consultar-certificaciones-propias) · [Análisis de objetos](#5319-cu-09--consultar-certificaciones-propias--objetos) · [Diagrama de secuencia](#5329-cu-09--consultar-certificaciones-propias--secuencia)
+
+##### 5.2.2.10. CU-10 — Adjuntar evidencia a una certificación — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Estudiante titular"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-10 Adjuntar evidencia a una certificación"])
+    end
+    A1 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#52310-cu-10-adjuntar-evidencia-a-una-certificación) · [Análisis de objetos](#53110-cu-10--adjuntar-evidencia-a-una-certificación--objetos) · [Diagrama de secuencia](#53210-cu-10--adjuntar-evidencia-a-una-certificación--secuencia)
+
+##### 5.2.2.11. CU-11 — Acceder a evidencia autorizada — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Estudiante titular"]
+    A2["Validador"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-11 Acceder a evidencia autorizada"])
+    end
+    A1 --> CU
+    A2 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#52311-cu-11-acceder-a-evidencia-autorizada) · [Análisis de objetos](#53111-cu-11--acceder-a-evidencia-autorizada--objetos) · [Diagrama de secuencia](#53211-cu-11--acceder-a-evidencia-autorizada--secuencia)
+
+##### 5.2.2.12. CU-12 — Consultar periodos y último corte publicado — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Administrador"]
+    A2["Validador"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-12 Consultar periodos y último corte publicado"])
+    end
+    A1 --> CU
+    A2 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#52312-cu-12-consultar-periodos-y-último-corte-publicado) · [Análisis de objetos](#53112-cu-12--consultar-periodos-y-último-corte-publicado--objetos) · [Diagrama de secuencia](#53212-cu-12--consultar-periodos-y-último-corte-publicado--secuencia)
+
+##### 5.2.2.13. CU-13 — Consultar evolución de certificaciones — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Administrador"]
+    A2["Validador"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-13 Consultar evolución de certificaciones"])
+    end
+    A1 --> CU
+    A2 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#52313-cu-13-consultar-evolución-de-certificaciones) · [Análisis de objetos](#53113-cu-13--consultar-evolución-de-certificaciones--objetos) · [Diagrama de secuencia](#53213-cu-13--consultar-evolución-de-certificaciones--secuencia)
+
+##### 5.2.2.14. CU-14 — Consultar brechas internas por habilidad — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Administrador"]
+    A2["Validador"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-14 Consultar brechas internas por habilidad"])
+    end
+    A1 --> CU
+    A2 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#52314-cu-14-consultar-brechas-internas-por-habilidad) · [Análisis de objetos](#53114-cu-14--consultar-brechas-internas-por-habilidad--objetos) · [Diagrama de secuencia](#53214-cu-14--consultar-brechas-internas-por-habilidad--secuencia)
+
+##### 5.2.2.15. CU-15 — Consultar historial de importaciones — Caso de uso
+
+```mermaid
+flowchart LR
+    A1["Administrador con PADRON_MANAGE"]
+    subgraph P["Pulse EPIS"]
+        CU(["CU-15 Consultar historial de importaciones"])
+    end
+    A1 --> CU
+```
+
+*Fuente: Elaboración propia.*
+
+[Escenario en tabla](#52315-cu-15-consultar-historial-de-importaciones) · [Análisis de objetos](#53115-cu-15--consultar-historial-de-importaciones--objetos) · [Diagrama de secuencia](#53215-cu-15--consultar-historial-de-importaciones--secuencia)
+
 #### 5.2.3. Escenarios de Caso de Uso (Narrativa)
 
-##### CU-01 Importar padrón
+##### 5.2.3.1. CU-01 Importar padrón
 
 | Atributo | Descripción |
 |---|---|
@@ -611,9 +916,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Atomicidad e idempotencia; no conservar el CSV original ni código en claro. |
 | Verificación | backend/tests/test_roster.py y test_database_migrations.py. |
 
-[Análisis de objetos](#cu-01--importar-padrón--objetos) · [Diagrama de secuencia](#cu-01--importar-padrón--secuencia)
+[Análisis de objetos](#5231-cu-01-importar-padrón) · [Diagrama de secuencia](#5231-cu-01-importar-padrón)
 
-##### CU-02 Registrar certificación y evidencia
+##### 5.2.3.2. CU-02 Registrar certificación y evidencia
 
 | Atributo | Descripción |
 |---|---|
@@ -630,9 +935,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Solo propietario; evidencia fuera de ruta pública; no participa en KPI antes de aprobación y ETL. |
 | Verificación | backend/tests/test_certifications.py. |
 
-[Análisis de objetos](#cu-02--registrar-certificación-y-evidencia--objetos) · [Diagrama de secuencia](#cu-02--registrar-certificación-y-evidencia--secuencia)
+[Análisis de objetos](#5232-cu-02-registrar-certificación-y-evidencia) · [Diagrama de secuencia](#5232-cu-02-registrar-certificación-y-evidencia)
 
-##### CU-03 Revisar y decidir evidencia
+##### 5.2.3.3. CU-03 Revisar y decidir evidencia
 
 | Atributo | Descripción |
 |---|---|
@@ -649,9 +954,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | No autovalidación; EXPIRED es derivado; historial sin endpoint de modificación. |
 | Verificación | backend/tests/test_validation.py. |
 
-[Análisis de objetos](#cu-03--revisar-y-decidir-evidencia--objetos) · [Diagrama de secuencia](#cu-03--revisar-y-decidir-evidencia--secuencia)
+[Análisis de objetos](#5233-cu-03-revisar-y-decidir-evidencia) · [Diagrama de secuencia](#5233-cu-03-revisar-y-decidir-evidencia)
 
-##### CU-04 Consultar indicadores y filtros
+##### 5.2.3.4. CU-04 Consultar indicadores y filtros
 
 | Atributo | Descripción |
 |---|---|
@@ -668,9 +973,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Varias habilidades no duplican el KPI de credenciales; ventana de expiración 90 días. |
 | Verificación | backend/tests/test_analytics.py y dashboard-app/tests/e2e. |
 
-[Análisis de objetos](#cu-04--consultar-indicadores-y-filtros--objetos) · [Diagrama de secuencia](#cu-04--consultar-indicadores-y-filtros--secuencia)
+[Análisis de objetos](#5234-cu-04-consultar-indicadores-y-filtros) · [Diagrama de secuencia](#5234-cu-04-consultar-indicadores-y-filtros)
 
-##### CU-05 Exportar reporte
+##### 5.2.3.5. CU-05 Exportar reporte
 
 | Atributo | Descripción |
 |---|---|
@@ -687,9 +992,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Exportar solo filas autorizadas; información nominal excluida de la analítica actual. |
 | Verificación | dashboard-app/src/shared/ui/ExportButton.tsx y validación manual del archivo. |
 
-[Análisis de objetos](#cu-05--exportar-reporte--objetos) · [Diagrama de secuencia](#cu-05--exportar-reporte--secuencia)
+[Análisis de objetos](#5235-cu-05-exportar-reporte) · [Diagrama de secuencia](#5235-cu-05-exportar-reporte)
 
-##### CU-06 Corregir una observación
+##### 5.2.3.6. CU-06 Corregir una observación
 
 | Atributo | Descripción |
 |---|---|
@@ -706,9 +1011,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Historial append-only; solo propietario y estados abiertos. |
 | Verificación | backend/tests/test_certifications.py y test_validation.py. |
 
-[Análisis de objetos](#cu-06--corregir-una-observación--objetos) · [Diagrama de secuencia](#cu-06--corregir-una-observación--secuencia)
+[Análisis de objetos](#5236-cu-06-corregir-una-observación) · [Diagrama de secuencia](#5236-cu-06-corregir-una-observación)
 
-##### CU-07 Publicar snapshot ETL
+##### 5.2.3.7. CU-07 Publicar snapshot ETL
 
 | Atributo | Descripción |
 |---|---|
@@ -725,9 +1030,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | El operador CLI no es un cuarto rol de usuario web; exige permisos de infraestructura. |
 | Verificación | backend/tests/test_etl.py y test_analytics.py. |
 
-[Análisis de objetos](#cu-07--publicar-snapshot-etl--objetos) · [Diagrama de secuencia](#cu-07--publicar-snapshot-etl--secuencia)
+[Análisis de objetos](#5237-cu-07-publicar-snapshot-etl) · [Diagrama de secuencia](#5237-cu-07-publicar-snapshot-etl)
 
-##### CU-08 Iniciar y cerrar sesión
+##### 5.2.3.8. CU-08 Iniciar y cerrar sesión
 
 | Atributo | Descripción |
 |---|---|
@@ -744,9 +1049,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Cliente no selecciona rol; no solicitar Gmail ni almacenar contraseñas externas. |
 | Verificación | backend/tests/test_auth.py y flujos E2E de roles. |
 
-[Análisis de objetos](#cu-08--iniciar-y-cerrar-sesión--objetos) · [Diagrama de secuencia](#cu-08--iniciar-y-cerrar-sesión--secuencia)
+[Análisis de objetos](#5238-cu-08-iniciar-y-cerrar-sesión) · [Diagrama de secuencia](#5238-cu-08-iniciar-y-cerrar-sesión)
 
-##### CU-09 Consultar certificaciones propias
+##### 5.2.3.9. CU-09 Consultar certificaciones propias
 
 | Atributo | Descripción |
 |---|---|
@@ -763,9 +1068,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Titularidad obligatoria; la consulta no concede lectura analítica ni capacidad de validar. |
 | Verificación | backend/tests/test_certifications.py. |
 
-[Análisis de objetos](#cu-09--consultar-certificaciones-propias--objetos) · [Diagrama de secuencia](#cu-09--consultar-certificaciones-propias--secuencia)
+[Análisis de objetos](#5239-cu-09-consultar-certificaciones-propias) · [Diagrama de secuencia](#5239-cu-09-consultar-certificaciones-propias)
 
-##### CU-10 Adjuntar evidencia a una certificación
+##### 5.2.3.10. CU-10 Adjuntar evidencia a una certificación
 
 | Atributo | Descripción |
 |---|---|
@@ -782,9 +1087,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Fuente privada y acceso restringido; registro y adjunto no forman una única transacción HTTP. |
 | Verificación | backend/tests/test_certifications.py. |
 
-[Análisis de objetos](#cu-10--adjuntar-evidencia-a-una-certificación--objetos) · [Diagrama de secuencia](#cu-10--adjuntar-evidencia-a-una-certificación--secuencia)
+[Análisis de objetos](#52310-cu-10-adjuntar-evidencia-a-una-certificación) · [Diagrama de secuencia](#52310-cu-10-adjuntar-evidencia-a-una-certificación)
 
-##### CU-11 Acceder a evidencia autorizada
+##### 5.2.3.11. CU-11 Acceder a evidencia autorizada
 
 | Atributo | Descripción |
 |---|---|
@@ -801,9 +1106,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | El enlace es temporal y debe tratarse como información restringida; no se convierte en una URL pública permanente. |
 | Verificación | backend/tests/test_certifications.py y backend/tests/test_validation.py. |
 
-[Análisis de objetos](#cu-11--acceder-a-evidencia-autorizada--objetos) · [Diagrama de secuencia](#cu-11--acceder-a-evidencia-autorizada--secuencia)
+[Análisis de objetos](#52311-cu-11-acceder-a-evidencia-autorizada) · [Diagrama de secuencia](#52311-cu-11-acceder-a-evidencia-autorizada)
 
-##### CU-12 Consultar periodos y último corte publicado
+##### 5.2.3.12. CU-12 Consultar periodos y último corte publicado
 
 | Atributo | Descripción |
 |---|---|
@@ -820,9 +1125,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | El endpoint lista periodos publicados y su último corte; no enumera todas las fechas históricas. |
 | Verificación | backend/tests/test_analytics.py. |
 
-[Análisis de objetos](#cu-12--consultar-periodos-y-último-corte-publicado--objetos) · [Diagrama de secuencia](#cu-12--consultar-periodos-y-último-corte-publicado--secuencia)
+[Análisis de objetos](#52312-cu-12-consultar-periodos-y-último-corte-publicado) · [Diagrama de secuencia](#52312-cu-12-consultar-periodos-y-último-corte-publicado)
 
-##### CU-13 Consultar evolución de certificaciones
+##### 5.2.3.13. CU-13 Consultar evolución de certificaciones
 
 | Atributo | Descripción |
 |---|---|
@@ -839,9 +1144,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | Evolución limitada al mismo periodo; la comparación entre periodos permanece pendiente. Los cortes reemplazables y dimensiones mutables limitan la reproducción histórica completa. |
 | Verificación | backend/tests/test_analytics.py y flujos analíticos E2E. |
 
-[Análisis de objetos](#cu-13--consultar-evolución-de-certificaciones--objetos) · [Diagrama de secuencia](#cu-13--consultar-evolución-de-certificaciones--secuencia)
+[Análisis de objetos](#52313-cu-13-consultar-evolución-de-certificaciones) · [Diagrama de secuencia](#52313-cu-13-consultar-evolución-de-certificaciones)
 
-##### CU-14 Consultar brechas internas por habilidad
+##### 5.2.3.14. CU-14 Consultar brechas internas por habilidad
 
 | Atributo | Descripción |
 |---|---|
@@ -858,9 +1163,9 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | La brecha interna no representa demanda laboral ni ausencia demostrada de competencia. RF-15 requiere fuente y metodología externas y no se considera cumplido por este caso. |
 | Verificación | backend/tests/test_analytics.py. |
 
-[Análisis de objetos](#cu-14--consultar-brechas-internas-por-habilidad--objetos) · [Diagrama de secuencia](#cu-14--consultar-brechas-internas-por-habilidad--secuencia)
+[Análisis de objetos](#52314-cu-14-consultar-brechas-internas-por-habilidad) · [Diagrama de secuencia](#52314-cu-14-consultar-brechas-internas-por-habilidad)
 
-##### CU-15 Consultar historial de importaciones
+##### 5.2.3.15. CU-15 Consultar historial de importaciones
 
 | Atributo | Descripción |
 |---|---|
@@ -877,7 +1182,7 @@ Las consultas de evolución y brechas comparten el contrato analítico overview,
 | Reglas y restricciones | No devolver CSV original ni código universitario en claro; las causas deben evitar exposición innecesaria de datos personales. |
 | Verificación | backend/tests/test_roster.py. |
 
-[Análisis de objetos](#cu-15--consultar-historial-de-importaciones--objetos) · [Diagrama de secuencia](#cu-15--consultar-historial-de-importaciones--secuencia)
+[Análisis de objetos](#52315-cu-15-consultar-historial-de-importaciones) · [Diagrama de secuencia](#52315-cu-15-consultar-historial-de-importaciones)
 
 ### 5.3. Modelo Lógico
 
@@ -887,7 +1192,7 @@ El [modelo de datos](../proyecto/05-Modelo-de-datos.md) conserva las relaciones 
 
 #### 5.3.1. Análisis de objetos
 
-##### CU-01 — Importar padrón — Objetos
+##### 5.3.1.1. CU-01 — Importar padrón — Objetos
 
 **Figura 6. Análisis de objetos de CU-01.**
 
@@ -912,9 +1217,9 @@ flowchart TB
 
 El servicio normaliza filas y obtiene la clave analítica antes de aplicar el lote. Student y Enrollment representan población y matrícula; RosterImport conserva resultado y hash. Una carga inválida registra causas y no aplica parcialmente la población.
 
-[Escenario del caso](#cu-01--importar-padrón--secuencia) · [Diagrama de secuencia](#cu-01--importar-padrón--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-01-objetos.mmd)
+[Escenario del caso](#5231-cu-01-importar-padrón) · [Diagrama de secuencia](#5231-cu-01-importar-padrón) · [Fuente editable](../recursos/diagramas/fd03/cu-01-objetos.mmd)
 
-##### CU-02 — Registrar certificación y evidencia — Objetos
+##### 5.3.1.2. CU-02 — Registrar certificación y evidencia — Objetos
 
 **Figura 7. Análisis de objetos de CU-02.**
 
@@ -942,9 +1247,9 @@ flowchart TB
 
 El registro y el adjunto son solicitudes separadas. Certification mantiene el expediente; Evidence describe la fuente y el archivo privado. El almacenamiento no valida la autenticidad del emisor y una falla del adjunto no elimina automáticamente la credencial creada.
 
-[Escenario del caso](#cu-02--registrar-certificación-y-evidencia--secuencia) · [Diagrama de secuencia](#cu-02--registrar-certificación-y-evidencia--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-02-objetos.mmd)
+[Escenario del caso](#5232-cu-02-registrar-certificación-y-evidencia) · [Diagrama de secuencia](#5232-cu-02-registrar-certificación-y-evidencia) · [Fuente editable](../recursos/diagramas/fd03/cu-02-objetos.mmd)
 
-##### CU-03 — Revisar y decidir evidencia — Objetos
+##### 5.3.1.3. CU-03 — Revisar y decidir evidencia — Objetos
 
 **Figura 8. Análisis de objetos de CU-03.**
 
@@ -971,9 +1276,9 @@ flowchart TB
 
 El validador examina el sustento antes de decidir. El servicio exige UNDER_REVIEW y comentario para observar o rechazar; Certification, Validation, el historial y la auditoría se actualizan de forma consistente. Un enlace temporal permite acceso restringido al archivo.
 
-[Escenario del caso](#cu-03--revisar-y-decidir-evidencia--secuencia) · [Diagrama de secuencia](#cu-03--revisar-y-decidir-evidencia--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-03-objetos.mmd)
+[Escenario del caso](#5233-cu-03-revisar-y-decidir-evidencia) · [Diagrama de secuencia](#5233-cu-03-revisar-y-decidir-evidencia) · [Fuente editable](../recursos/diagramas/fd03/cu-03-objetos.mmd)
 
-##### CU-04 — Consultar indicadores y filtros — Objetos
+##### 5.3.1.4. CU-04 — Consultar indicadores y filtros — Objetos
 
 **Figura 9. Análisis de objetos de CU-04.**
 
@@ -998,9 +1303,9 @@ flowchart TB
 
 La población académica proporciona el denominador y las certificaciones elegibles el numerador. Emisor y nivel restringen credenciales sin reducir indebidamente la población. Algunas dimensiones permanecen en tablas operacionales; los hechos no garantizan por sí solos un histórico totalmente inmutable.
 
-[Escenario del caso](#cu-04--consultar-indicadores-y-filtros--secuencia) · [Diagrama de secuencia](#cu-04--consultar-indicadores-y-filtros--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-04-objetos.mmd)
+[Escenario del caso](#5234-cu-04-consultar-indicadores-y-filtros) · [Diagrama de secuencia](#5234-cu-04-consultar-indicadores-y-filtros) · [Fuente editable](../recursos/diagramas/fd03/cu-04-objetos.mmd)
 
-##### CU-05 — Exportar reporte — Objetos
+##### 5.3.1.5. CU-05 — Exportar reporte — Objetos
 
 **Figura 10. Análisis de objetos de CU-05.**
 
@@ -1025,9 +1330,9 @@ flowchart TB
 
 La exportación actual ocurre en el navegador a partir de datos autorizados previamente consultados. No interviene un servicio backend de generación de reportes. El archivo CSV y sus metadatos no equivalen al PDF operativo ni al paquete institucional de acreditación, que siguen pendientes.
 
-[Escenario del caso](#cu-05--exportar-reporte--secuencia) · [Diagrama de secuencia](#cu-05--exportar-reporte--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-05-objetos.mmd)
+[Escenario del caso](#5235-cu-05-exportar-reporte) · [Diagrama de secuencia](#5235-cu-05-exportar-reporte) · [Fuente editable](../recursos/diagramas/fd03/cu-05-objetos.mmd)
 
-##### CU-06 — Corregir una observación — Objetos
+##### 5.3.1.6. CU-06 — Corregir una observación — Objetos
 
 **Figura 11. Análisis de objetos de CU-06.**
 
@@ -1055,9 +1360,9 @@ flowchart TB
 
 La frontera actual es un cliente de API porque la interfaz de corrección está pendiente. El cambio del expediente observado conserva decisiones anteriores y exige nueva revisión. El adjunto adicional se realiza mediante el endpoint de evidencia, no como archivo incluido automáticamente en PATCH.
 
-[Escenario del caso](#cu-06--corregir-una-observación--secuencia) · [Diagrama de secuencia](#cu-06--corregir-una-observación--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-06-objetos.mmd)
+[Escenario del caso](#5236-cu-06-corregir-una-observación) · [Diagrama de secuencia](#5236-cu-06-corregir-una-observación) · [Fuente editable](../recursos/diagramas/fd03/cu-06-objetos.mmd)
 
-##### CU-07 — Publicar snapshot ETL — Objetos
+##### 5.3.1.7. CU-07 — Publicar snapshot ETL — Objetos
 
 **Figura 12. Análisis de objetos de CU-07.**
 
@@ -1082,9 +1387,9 @@ flowchart TB
 
 El operador actúa con permisos de infraestructura, no con un cuarto rol del portal. La corrida identifica fuente y calidad; los hechos se reemplazan en una transacción para el periodo y corte. Los rechazos impiden publicar un lote inválido y permiten investigar causas.
 
-[Escenario del caso](#cu-07--publicar-snapshot-etl--secuencia) · [Diagrama de secuencia](#cu-07--publicar-snapshot-etl--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-07-objetos.mmd)
+[Escenario del caso](#5237-cu-07-publicar-snapshot-etl) · [Diagrama de secuencia](#5237-cu-07-publicar-snapshot-etl) · [Fuente editable](../recursos/diagramas/fd03/cu-07-objetos.mmd)
 
-##### CU-08 — Iniciar y cerrar sesión — Objetos
+##### 5.3.1.8. CU-08 — Iniciar y cerrar sesión — Objetos
 
 **Figura 13. Análisis de objetos de CU-08.**
 
@@ -1109,9 +1414,9 @@ flowchart TB
 
 Google OIDC verifica identidad externa y User determina habilitación y permisos. El dominio permitido no sustituye la provisión de la cuenta; Student debe estar vinculado para el acceso estudiantil. El cierre limpia la sesión del navegador; el acceso local solo se admite en desarrollo y pruebas.
 
-[Escenario del caso](#cu-08--iniciar-y-cerrar-sesión--secuencia) · [Diagrama de secuencia](#cu-08--iniciar-y-cerrar-sesión--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-08-objetos.mmd)
+[Escenario del caso](#5238-cu-08-iniciar-y-cerrar-sesión) · [Diagrama de secuencia](#5238-cu-08-iniciar-y-cerrar-sesión) · [Fuente editable](../recursos/diagramas/fd03/cu-08-objetos.mmd)
 
-##### CU-09 — Consultar certificaciones propias — Objetos
+##### 5.3.1.9. CU-09 — Consultar certificaciones propias — Objetos
 
 **Figura 14. Análisis de objetos de CU-09.**
 
@@ -1136,9 +1441,9 @@ flowchart TB
 
 El alcance de la consulta deriva del estudiante de la sesión. La lista y el detalle permiten conocer estado y observaciones, sin exponer los registros de otros estudiantes. Los metadatos de una evidencia no sustituyen la autorización de descarga.
 
-[Escenario del caso](#cu-09--consultar-certificaciones-propias--secuencia) · [Diagrama de secuencia](#cu-09--consultar-certificaciones-propias--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-09-objetos.mmd)
+[Escenario del caso](#5239-cu-09-consultar-certificaciones-propias) · [Diagrama de secuencia](#5239-cu-09-consultar-certificaciones-propias) · [Fuente editable](../recursos/diagramas/fd03/cu-09-objetos.mmd)
 
-##### CU-10 — Adjuntar evidencia a una certificación — Objetos
+##### 5.3.1.10. CU-10 — Adjuntar evidencia a una certificación — Objetos
 
 **Figura 15. Análisis de objetos de CU-10.**
 
@@ -1163,9 +1468,9 @@ flowchart TB
 
 Este caso puede ejecutarse después del registro o como recuperación de un adjunto fallido. La evidencia por URL conserva una fuente declarada; el archivo utiliza almacenamiento privado y hash. El adjunto no concede aprobación ni cambia por sí solo un corte analítico.
 
-[Escenario del caso](#cu-10--adjuntar-evidencia-a-una-certificación--secuencia) · [Diagrama de secuencia](#cu-10--adjuntar-evidencia-a-una-certificación--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-10-objetos.mmd)
+[Escenario del caso](#52310-cu-10-adjuntar-evidencia-a-una-certificación) · [Diagrama de secuencia](#52310-cu-10-adjuntar-evidencia-a-una-certificación) · [Fuente editable](../recursos/diagramas/fd03/cu-10-objetos.mmd)
 
-##### CU-11 — Acceder a evidencia autorizada — Objetos
+##### 5.3.1.11. CU-11 — Acceder a evidencia autorizada — Objetos
 
 **Figura 16. Análisis de objetos de CU-11.**
 
@@ -1191,9 +1496,9 @@ flowchart TB
 
 El acceso diferencia al titular del validador según permisos. El enlace temporal debe verificarse antes de entregar el archivo; un identificador conocido o un token vencido no concede acceso. No se publica una ruta permanente de los archivos privados.
 
-[Escenario del caso](#cu-11--acceder-a-evidencia-autorizada--secuencia) · [Diagrama de secuencia](#cu-11--acceder-a-evidencia-autorizada--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-11-objetos.mmd)
+[Escenario del caso](#52311-cu-11-acceder-a-evidencia-autorizada) · [Diagrama de secuencia](#52311-cu-11-acceder-a-evidencia-autorizada) · [Fuente editable](../recursos/diagramas/fd03/cu-11-objetos.mmd)
 
-##### CU-12 — Consultar periodos y último corte publicado — Objetos
+##### 5.3.1.12. CU-12 — Consultar periodos y último corte publicado — Objetos
 
 **Figura 17. Análisis de objetos de CU-12.**
 
@@ -1216,9 +1521,9 @@ flowchart TB
 
 La consulta permite seleccionar un periodo publicado y conocer su último corte antes de interpretar indicadores. El endpoint de periodos no enumera todos los cortes históricos ni crea periodos o ejecuta ETL.
 
-[Escenario del caso](#cu-12--consultar-periodos-y-último-corte-publicado--secuencia) · [Diagrama de secuencia](#cu-12--consultar-periodos-y-último-corte-publicado--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-12-objetos.mmd)
+[Escenario del caso](#52312-cu-12-consultar-periodos-y-último-corte-publicado) · [Diagrama de secuencia](#52312-cu-12-consultar-periodos-y-último-corte-publicado) · [Fuente editable](../recursos/diagramas/fd03/cu-12-objetos.mmd)
 
-##### CU-13 — Consultar evolución de certificaciones — Objetos
+##### 5.3.1.13. CU-13 — Consultar evolución de certificaciones — Objetos
 
 **Figura 18. Análisis de objetos de CU-13.**
 
@@ -1241,9 +1546,9 @@ flowchart TB
 
 La serie representa cortes publicados del mismo periodo. Se obtiene del contrato overview, sin inventar un endpoint de evolución. La comparación entre periodos y la reproducción íntegra de publicaciones reemplazadas requieren desarrollo o política adicional.
 
-[Escenario del caso](#cu-13--consultar-evolución-de-certificaciones--secuencia) · [Diagrama de secuencia](#cu-13--consultar-evolución-de-certificaciones--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-13-objetos.mmd)
+[Escenario del caso](#52313-cu-13-consultar-evolución-de-certificaciones) · [Diagrama de secuencia](#52313-cu-13-consultar-evolución-de-certificaciones) · [Fuente editable](../recursos/diagramas/fd03/cu-13-objetos.mmd)
 
-##### CU-14 — Consultar brechas internas por habilidad — Objetos
+##### 5.3.1.14. CU-14 — Consultar brechas internas por habilidad — Objetos
 
 **Figura 19. Análisis de objetos de CU-14.**
 
@@ -1266,9 +1571,9 @@ flowchart TB
 
 La brecha interna corresponde a población activa menos estudiantes certificados por habilidad. No representa demanda del mercado laboral ni prueba ausencia de competencia; refleja falta de certificación registrada bajo las reglas del corte.
 
-[Escenario del caso](#cu-14--consultar-brechas-internas-por-habilidad--secuencia) · [Diagrama de secuencia](#cu-14--consultar-brechas-internas-por-habilidad--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-14-objetos.mmd)
+[Escenario del caso](#52314-cu-14-consultar-brechas-internas-por-habilidad) · [Diagrama de secuencia](#52314-cu-14-consultar-brechas-internas-por-habilidad) · [Fuente editable](../recursos/diagramas/fd03/cu-14-objetos.mmd)
 
-##### CU-15 — Consultar historial de importaciones — Objetos
+##### 5.3.1.15. CU-15 — Consultar historial de importaciones — Objetos
 
 **Figura 20. Análisis de objetos de CU-15.**
 
@@ -1293,13 +1598,13 @@ flowchart TB
 
 La consulta permite revisar estado, fecha, conteos y causas de cargas previas, sin reaplicar el lote ni devolver el CSV original. El reporte técnico debe conciliarse con la fuente académica autorizada cuando se acepta la población institucional.
 
-[Escenario del caso](#cu-15--consultar-historial-de-importaciones--secuencia) · [Diagrama de secuencia](#cu-15--consultar-historial-de-importaciones--secuencia) · [Fuente editable](../recursos/diagramas/fd03/cu-15-objetos.mmd)
+[Escenario del caso](#52315-cu-15-consultar-historial-de-importaciones) · [Diagrama de secuencia](#52315-cu-15-consultar-historial-de-importaciones) · [Fuente editable](../recursos/diagramas/fd03/cu-15-objetos.mmd)
 
 #### 5.3.2. Diagrama de Secuencia
 
 Cada secuencia corresponde al caso y a sus objetos de análisis. Se muestran solicitudes, controles, persistencia y respuestas principales; las excepciones adicionales se mantienen en el escenario enlazado. Las rutas se interpretan con el prefijo `/api/v1` aunque una figura utilice su forma abreviada. Las capacidades pendientes no se representan como flujos disponibles del portal.
 
-##### CU-01 — Importar padrón — Secuencia
+##### 5.3.2.1. CU-01 — Importar padrón — Secuencia
 
 **Figura 21. Diagrama de secuencia de CU-01.**
 
@@ -1334,9 +1639,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-01--importar-padrón--secuencia) · [Análisis de objetos](#cu-01--importar-padrón--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-01-secuencia.mmd)
+[Escenario del caso](#5231-cu-01-importar-padrón) · [Análisis de objetos](#5231-cu-01-importar-padrón) · [Fuente editable](../recursos/diagramas/fd03/cu-01-secuencia.mmd)
 
-##### CU-02 — Registrar certificación y evidencia — Secuencia
+##### 5.3.2.2. CU-02 — Registrar certificación y evidencia — Secuencia
 
 **Figura 22. Diagrama de secuencia de CU-02.**
 
@@ -1374,9 +1679,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-02--registrar-certificación-y-evidencia--secuencia) · [Análisis de objetos](#cu-02--registrar-certificación-y-evidencia--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-02-secuencia.mmd)
+[Escenario del caso](#5232-cu-02-registrar-certificación-y-evidencia) · [Análisis de objetos](#5232-cu-02-registrar-certificación-y-evidencia) · [Fuente editable](../recursos/diagramas/fd03/cu-02-secuencia.mmd)
 
-##### CU-03 — Revisar y decidir evidencia — Secuencia
+##### 5.3.2.3. CU-03 — Revisar y decidir evidencia — Secuencia
 
 **Figura 23. Diagrama de secuencia de CU-03.**
 
@@ -1413,9 +1718,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-03--revisar-y-decidir-evidencia--secuencia) · [Análisis de objetos](#cu-03--revisar-y-decidir-evidencia--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-03-secuencia.mmd)
+[Escenario del caso](#5233-cu-03-revisar-y-decidir-evidencia) · [Análisis de objetos](#5233-cu-03-revisar-y-decidir-evidencia) · [Fuente editable](../recursos/diagramas/fd03/cu-03-secuencia.mmd)
 
-##### CU-04 — Consultar indicadores y filtros — Secuencia
+##### 5.3.2.4. CU-04 — Consultar indicadores y filtros — Secuencia
 
 **Figura 24. Diagrama de secuencia de CU-04.**
 
@@ -1446,9 +1751,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-04--consultar-indicadores-y-filtros--secuencia) · [Análisis de objetos](#cu-04--consultar-indicadores-y-filtros--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-04-secuencia.mmd)
+[Escenario del caso](#5234-cu-04-consultar-indicadores-y-filtros) · [Análisis de objetos](#5234-cu-04-consultar-indicadores-y-filtros) · [Fuente editable](../recursos/diagramas/fd03/cu-04-secuencia.mmd)
 
-##### CU-05 — Exportar reporte — Secuencia
+##### 5.3.2.5. CU-05 — Exportar reporte — Secuencia
 
 **Figura 25. Diagrama de secuencia de CU-05.**
 
@@ -1477,9 +1782,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-05--exportar-reporte--secuencia) · [Análisis de objetos](#cu-05--exportar-reporte--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-05-secuencia.mmd)
+[Escenario del caso](#5235-cu-05-exportar-reporte) · [Análisis de objetos](#5235-cu-05-exportar-reporte) · [Fuente editable](../recursos/diagramas/fd03/cu-05-secuencia.mmd)
 
-##### CU-06 — Corregir una observación — Secuencia
+##### 5.3.2.6. CU-06 — Corregir una observación — Secuencia
 
 **Figura 26. Diagrama de secuencia de CU-06.**
 
@@ -1514,9 +1819,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-06--corregir-una-observación--secuencia) · [Análisis de objetos](#cu-06--corregir-una-observación--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-06-secuencia.mmd)
+[Escenario del caso](#5236-cu-06-corregir-una-observación) · [Análisis de objetos](#5236-cu-06-corregir-una-observación) · [Fuente editable](../recursos/diagramas/fd03/cu-06-secuencia.mmd)
 
-##### CU-07 — Publicar snapshot ETL — Secuencia
+##### 5.3.2.7. CU-07 — Publicar snapshot ETL — Secuencia
 
 **Figura 27. Diagrama de secuencia de CU-07.**
 
@@ -1553,9 +1858,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-07--publicar-snapshot-etl--secuencia) · [Análisis de objetos](#cu-07--publicar-snapshot-etl--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-07-secuencia.mmd)
+[Escenario del caso](#5237-cu-07-publicar-snapshot-etl) · [Análisis de objetos](#5237-cu-07-publicar-snapshot-etl) · [Fuente editable](../recursos/diagramas/fd03/cu-07-secuencia.mmd)
 
-##### CU-08 — Iniciar y cerrar sesión — Secuencia
+##### 5.3.2.8. CU-08 — Iniciar y cerrar sesión — Secuencia
 
 **Figura 28. Diagrama de secuencia de CU-08.**
 
@@ -1595,9 +1900,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-08--iniciar-y-cerrar-sesión--secuencia) · [Análisis de objetos](#cu-08--iniciar-y-cerrar-sesión--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-08-secuencia.mmd)
+[Escenario del caso](#5238-cu-08-iniciar-y-cerrar-sesión) · [Análisis de objetos](#5238-cu-08-iniciar-y-cerrar-sesión) · [Fuente editable](../recursos/diagramas/fd03/cu-08-secuencia.mmd)
 
-##### CU-09 — Consultar certificaciones propias — Secuencia
+##### 5.3.2.9. CU-09 — Consultar certificaciones propias — Secuencia
 
 **Figura 29. Diagrama de secuencia de CU-09.**
 
@@ -1630,9 +1935,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-09--consultar-certificaciones-propias--secuencia) · [Análisis de objetos](#cu-09--consultar-certificaciones-propias--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-09-secuencia.mmd)
+[Escenario del caso](#5239-cu-09-consultar-certificaciones-propias) · [Análisis de objetos](#5239-cu-09-consultar-certificaciones-propias) · [Fuente editable](../recursos/diagramas/fd03/cu-09-secuencia.mmd)
 
-##### CU-10 — Adjuntar evidencia a una certificación — Secuencia
+##### 5.3.2.10. CU-10 — Adjuntar evidencia a una certificación — Secuencia
 
 **Figura 30. Diagrama de secuencia de CU-10.**
 
@@ -1663,9 +1968,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-10--adjuntar-evidencia-a-una-certificación--secuencia) · [Análisis de objetos](#cu-10--adjuntar-evidencia-a-una-certificación--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-10-secuencia.mmd)
+[Escenario del caso](#52310-cu-10-adjuntar-evidencia-a-una-certificación) · [Análisis de objetos](#52310-cu-10-adjuntar-evidencia-a-una-certificación) · [Fuente editable](../recursos/diagramas/fd03/cu-10-secuencia.mmd)
 
-##### CU-11 — Acceder a evidencia autorizada — Secuencia
+##### 5.3.2.11. CU-11 — Acceder a evidencia autorizada — Secuencia
 
 **Figura 31. Diagrama de secuencia de CU-11.**
 
@@ -1697,9 +2002,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-11--acceder-a-evidencia-autorizada--secuencia) · [Análisis de objetos](#cu-11--acceder-a-evidencia-autorizada--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-11-secuencia.mmd)
+[Escenario del caso](#52311-cu-11-acceder-a-evidencia-autorizada) · [Análisis de objetos](#52311-cu-11-acceder-a-evidencia-autorizada) · [Fuente editable](../recursos/diagramas/fd03/cu-11-secuencia.mmd)
 
-##### CU-12 — Consultar periodos y último corte publicado — Secuencia
+##### 5.3.2.12. CU-12 — Consultar periodos y último corte publicado — Secuencia
 
 **Figura 32. Diagrama de secuencia de CU-12.**
 
@@ -1728,9 +2033,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-12--consultar-periodos-y-último-corte-publicado--secuencia) · [Análisis de objetos](#cu-12--consultar-periodos-y-último-corte-publicado--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-12-secuencia.mmd)
+[Escenario del caso](#52312-cu-12-consultar-periodos-y-último-corte-publicado) · [Análisis de objetos](#52312-cu-12-consultar-periodos-y-último-corte-publicado) · [Fuente editable](../recursos/diagramas/fd03/cu-12-secuencia.mmd)
 
-##### CU-13 — Consultar evolución de certificaciones — Secuencia
+##### 5.3.2.13. CU-13 — Consultar evolución de certificaciones — Secuencia
 
 **Figura 33. Diagrama de secuencia de CU-13.**
 
@@ -1756,9 +2061,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-13--consultar-evolución-de-certificaciones--secuencia) · [Análisis de objetos](#cu-13--consultar-evolución-de-certificaciones--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-13-secuencia.mmd)
+[Escenario del caso](#52313-cu-13-consultar-evolución-de-certificaciones) · [Análisis de objetos](#52313-cu-13-consultar-evolución-de-certificaciones) · [Fuente editable](../recursos/diagramas/fd03/cu-13-secuencia.mmd)
 
-##### CU-14 — Consultar brechas internas por habilidad — Secuencia
+##### 5.3.2.14. CU-14 — Consultar brechas internas por habilidad — Secuencia
 
 **Figura 34. Diagrama de secuencia de CU-14.**
 
@@ -1784,9 +2089,9 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-14--consultar-brechas-internas-por-habilidad--secuencia) · [Análisis de objetos](#cu-14--consultar-brechas-internas-por-habilidad--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-14-secuencia.mmd)
+[Escenario del caso](#52314-cu-14-consultar-brechas-internas-por-habilidad) · [Análisis de objetos](#52314-cu-14-consultar-brechas-internas-por-habilidad) · [Fuente editable](../recursos/diagramas/fd03/cu-14-secuencia.mmd)
 
-##### CU-15 — Consultar historial de importaciones — Secuencia
+##### 5.3.2.15. CU-15 — Consultar historial de importaciones — Secuencia
 
 **Figura 35. Diagrama de secuencia de CU-15.**
 
@@ -1816,7 +2121,7 @@ sequenceDiagram
 
 *Fuente: Elaboración propia.*
 
-[Escenario del caso](#cu-15--consultar-historial-de-importaciones--secuencia) · [Análisis de objetos](#cu-15--consultar-historial-de-importaciones--objetos) · [Fuente editable](../recursos/diagramas/fd03/cu-15-secuencia.mmd)
+[Escenario del caso](#52315-cu-15-consultar-historial-de-importaciones) · [Análisis de objetos](#52315-cu-15-consultar-historial-de-importaciones) · [Fuente editable](../recursos/diagramas/fd03/cu-15-secuencia.mmd)
 
 #### 5.3.3. Diagrama de Clases
 
