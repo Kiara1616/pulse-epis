@@ -1,0 +1,29 @@
+sequenceDiagram
+ actor U as Estudiante
+ participant P as Formulario
+ participant A as API y autorización
+ participant S as Servicio de certificaciones
+ participant D as PostgreSQL
+ participant F as Almacenamiento privado
+ U->>P: Completar credencial propia
+ P->>A: POST /certifications
+ A->>S: Registrar con identidad autorizada
+ S->>S: Validar titularidad, campos y duplicados
+ S->>D: Crear PENDING, historial y auditoría
+ D-->>S: Registro confirmado
+ S-->>A: Identificador
+ A-->>P: Credencial creada
+ opt Archivo seleccionado
+  P->>A: Solicitud multipart de evidencia
+  A->>S: Adjuntar al identificador creado
+  S->>S: Validar tipo, tamaño y titularidad
+  alt Archivo válido
+   S->>F: Guardar con clave privada y SHA-256
+   S->>D: Asociar Evidence y auditoría
+   A-->>P: Adjunto confirmado
+  else Adjunto rechazado
+   A-->>P: Error del archivo
+   Note over P,D: La credencial creada permanece PENDING
+  end
+ end
+ P-->>U: Estado de registro y adjunto

@@ -1,0 +1,17 @@
+sequenceDiagram
+ actor U as Usuario autorizado
+ participant P as Vista de habilidades
+ participant A as API y autorización
+ participant S as Servicio analítico
+ participant D as PostgreSQL
+ U->>P: Elegir periodo, corte y filtros
+ P->>A: GET /indicators/overview
+ A->>A: Verificar ANALYTICS_READ
+ A->>S: Consultar habilidades del contexto
+ S->>D: Obtener población activa y hechos por habilidad
+ D-->>S: Población y estudiantes certificados
+ S->>S: Calcular cobertura y brecha interna por habilidad
+ S-->>A: skill_gaps y contexto
+ A-->>P: Resultados agregados
+ P-->>U: Distribución de habilidades y brechas
+ Note over S,P: Sin fuente de demanda laboral externa

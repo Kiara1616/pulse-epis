@@ -1,0 +1,22 @@
+sequenceDiagram
+ actor U as Usuario autorizado
+ participant P as Tablero y filtros
+ participant A as API y autorización
+ participant S as Servicio analítico
+ participant D as PostgreSQL
+ U->>P: Elegir periodo, corte y filtros
+ P->>A: GET /indicators/overview con sesión
+ A->>A: Verificar ANALYTICS_READ
+ A->>S: Consultar contexto autorizado
+ S->>D: Resolver corte y hechos publicados
+ alt Sin corte publicado
+  S-->>A: SNAPSHOT_NOT_FOUND
+  A-->>P: Estado de ausencia de datos
+ else Corte disponible
+  D-->>S: Población, credenciales y dimensiones
+  S->>S: Aplicar filtros y conteos distintos
+  Note over S: Emisor y nivel no reducen el denominador activo
+  S-->>A: KPIs y desgloses agregados
+  A-->>P: Resultado sin identificadores nominales
+  P-->>U: Indicadores y contexto seleccionado
+ end

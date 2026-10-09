@@ -1,0 +1,26 @@
+sequenceDiagram
+ actor U as Estudiante titular
+ participant P as Cliente API
+ participant A as API y autorización
+ participant S as Servicio de certificaciones
+ participant D as PostgreSQL
+ U->>P: Consultar observación propia y preparar datos
+ P->>A: PATCH /certifications/{id}
+ A->>S: Editar con identidad del titular
+ S->>D: Consultar credencial y estado
+ S->>S: Verificar titularidad y campos corregibles
+ alt OBSERVED y corrección válida
+  S->>D: Cambiar contenido y estado a RESUBMITTED
+  S->>D: Conservar historial y auditoría en transacción
+  A-->>P: Corrección confirmada
+  opt Evidencia adicional
+   P->>A: Solicitud separada al endpoint de evidencia
+   A->>S: Adjuntar con controles de titularidad
+   S-->>P: Resultado del adjunto
+  end
+ else Estado, titularidad o datos inválidos
+  A-->>P: Error sin modificación autorizada
+ end
+ P-->>U: Estado actualizado o error
+ Note over P,D: La interfaz de corrección está pendiente
+ Note over S,D: La nueva decisión requiere START_REVIEW del validador

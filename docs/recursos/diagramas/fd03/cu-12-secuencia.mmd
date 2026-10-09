@@ -1,0 +1,20 @@
+sequenceDiagram
+ actor U as Usuario autorizado
+ participant P as Selector analítico
+ participant A as API y autorización
+ participant S as Servicio analítico
+ participant D as PostgreSQL
+ U->>P: Abrir selección de contexto
+ P->>A: GET /indicators/periods
+ A->>A: Verificar ANALYTICS_READ
+ A->>S: Obtener periodos y último corte publicado
+ S->>D: Consultar AcademicPeriod y hechos publicados
+ D-->>S: Contextos disponibles
+ S-->>A: Periodos y último corte
+ A-->>P: Lista autorizada
+ alt Existen contextos publicados
+  U->>P: Elegir periodo publicado
+  P-->>U: Contexto seleccionado
+ else No existe publicación disponible
+  P-->>U: Estado vacío sin generar cifras
+ end

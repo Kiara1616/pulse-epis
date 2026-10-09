@@ -1,0 +1,17 @@
+flowchart TB
+    U(("«actor»<br/>Estudiante"))
+    B["«boundary»<br/>Formulario de certificación"]
+    A("«control»<br/>Autorización y titularidad")
+    S("«control»<br/>Servicio de certificaciones")
+    C[("«entity»<br/>Certification e historial")]
+    E[("«entity»<br/>Evidence")]
+    F("«control»<br/>Almacenamiento privado")
+    L[("«entity»<br/>AuditLog")]
+    U -->|"1. Declarar credencial"| B
+    B -->|"2. Enviar datos propios"| A
+    A -->|"3. Validar permiso y titular"| S
+    S -->|"4. Crear PENDING"| C
+    B -->|"5. Solicitar adjunto separado"| S
+    S -->|"6. Guardar archivo y hash"| F
+    S -->|"7. Asociar metadatos"| E
+    S -->|"8. Registrar eventos"| L

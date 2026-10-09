@@ -1,0 +1,28 @@
+sequenceDiagram
+ actor U as Validador
+ participant P as Bandeja
+ participant A as API y autorización
+ participant E as Acceso a evidencia
+ participant S as Servicio de validación
+ participant D as PostgreSQL
+ U->>P: Abrir expediente
+ P->>A: Consultar con CERTIFICATION_VALIDATE
+ A->>E: Solicitar acceso temporal autorizado
+ E-->>P: Enlace temporal
+ U->>P: Examinar evidencia
+ P->>A: START_REVIEW
+ A->>S: Iniciar revisión
+ S->>D: Bloquear y verificar PENDING o RESUBMITTED
+ S->>D: Persistir UNDER_REVIEW e historial
+ A-->>P: Revisión iniciada
+ U->>P: Aprobar, observar o rechazar
+ P->>A: Decisión y comentario
+ A->>S: Aplicar transición
+ S->>D: Bloquear credencial y verificar estado
+ alt Decisión y comentario válidos
+  S->>D: Estado, Validation, historial y auditoría en transacción
+  A-->>P: Decisión confirmada
+ else Transición o comentario inválidos
+  A-->>P: Error sin cambio confirmado
+ end
+ P-->>U: Resultado de revisión

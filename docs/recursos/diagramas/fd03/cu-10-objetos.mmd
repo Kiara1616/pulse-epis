@@ -1,0 +1,14 @@
+flowchart TB
+    U(("«actor»<br/>Estudiante"))
+    B["«boundary»<br/>Carga de evidencia"]
+    A("«control»<br/>Autorización de escritura propia")
+    S("«control»<br/>Servicio de certificaciones")
+    C[("«entity»<br/>Certification propia")]
+    F("«control»<br/>Almacenamiento privado")
+    E[("«entity»<br/>Evidence y AuditLog")]
+    U -->|"1. Elegir fuente o archivo"| B
+    B -->|"2. Solicitar adjunto"| A
+    A -->|"3. Autorizar titularidad"| S
+    S -->|"4. Comprobar expediente"| C
+    S -->|"5. Validar y guardar binario"| F
+    S -->|"6. Registrar metadatos y evento"| E

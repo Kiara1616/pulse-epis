@@ -1,0 +1,12 @@
+flowchart TB
+    U(("«actor»<br/>Usuario con ANALYTICS_READ"))
+    B["«boundary»<br/>Vista de habilidades"]
+    A("«control»<br/>Autorización de lectura")
+    S("«control»<br/>Servicio analítico")
+    P[("«entity»<br/>FactStudentPeriod")]
+    C[("«entity»<br/>FactCertification y Skill")]
+    U -->|"1. Elegir población y corte"| B
+    B -->|"2. Solicitar overview"| A
+    A -->|"3. Autorizar consulta"| S
+    S -->|"4. Contar población activa"| P
+    S -->|"5. Contar estudiantes certificados por habilidad"| C

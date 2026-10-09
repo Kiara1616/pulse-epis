@@ -1,0 +1,26 @@
+sequenceDiagram
+ actor U as Administrador
+ participant P as Pantalla de padrón
+ participant A as API y autorización
+ participant S as Servicio de padrón
+ participant D as PostgreSQL
+ U->>P: Seleccionar periodo y CSV
+ P->>A: POST /padron/imports con sesión
+ A->>A: Verificar PADRON_MANAGE y límites
+ A->>S: Importar fuente autorizada
+ S->>D: Consultar periodo y carga por hash
+ alt Carga aplicada anteriormente
+  D-->>S: Reporte existente
+  S-->>A: Resultado idempotente
+ else Fuente nueva
+  S->>S: Normalizar, calcular HMAC y validar filas
+  alt Filas inválidas
+   S->>D: Registrar REJECTED y causas
+   Note over S,D: No aplicar población parcial
+  else Lote válido
+   S->>D: Aplicar estudiantes, matrículas y APPLIED en transacción
+  end
+  S-->>A: Reporte del lote
+ end
+ A-->>P: Resultado autorizado
+ P-->>U: Totales, estado y causas

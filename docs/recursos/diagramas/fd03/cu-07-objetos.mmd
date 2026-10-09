@@ -1,0 +1,14 @@
+flowchart TB
+    U(("«actor»<br/>Operador de infraestructura"))
+    B["«boundary»<br/>CLI o workflow ETL"]
+    S("«control»<br/>Servicio ETL")
+    O[("«entity»<br/>Datos operacionales")]
+    Q("«control»<br/>Normalización y calidad")
+    R[("«entity»<br/>EtlRun y EtlRejection")]
+    F[("«entity»<br/>FactStudentPeriod y FactCertification")]
+    U -->|"1. Fijar periodo y corte"| B
+    B -->|"2. Ejecutar corrida"| S
+    S -->|"3. Extraer fuente y hash"| O
+    S -->|"4. Evaluar reglas"| Q
+    S -->|"5. Registrar calidad e idempotencia"| R
+    S -->|"6. Publicar solo lote válido"| F

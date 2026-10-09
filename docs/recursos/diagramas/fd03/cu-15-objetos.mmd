@@ -1,0 +1,14 @@
+flowchart TB
+    U(("«actor»<br/>Administrador"))
+    B["«boundary»<br/>Historial de padrón"]
+    A("«control»<br/>Autorización PADRON_MANAGE")
+    S("«control»<br/>Servicio de padrón")
+    P[("«entity»<br/>AcademicPeriod")]
+    R[("«entity»<br/>RosterImport")]
+    E[("«entity»<br/>RosterImportRejection")]
+    U -->|"1. Seleccionar periodo"| B
+    B -->|"2. Solicitar historial"| A
+    A -->|"3. Autorizar consulta"| S
+    S -->|"4. Resolver periodo"| P
+    S -->|"5. Obtener estados y conteos"| R
+    S -->|"6. Mostrar causas registradas"| E

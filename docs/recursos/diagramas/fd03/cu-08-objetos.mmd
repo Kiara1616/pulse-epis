@@ -1,0 +1,14 @@
+flowchart TB
+    U(("«actor»<br/>Usuario provisionado"))
+    B["«boundary»<br/>Portal de acceso"]
+    A("«control»<br/>Rutas y servicio de autenticación")
+    G["«boundary»<br/>Proveedor Google OIDC"]
+    U1[("«entity»<br/>User habilitado")]
+    S[("«entity»<br/>Student vinculado")]
+    C("«control»<br/>Sesión firmada y cookie")
+    U -->|"1. Iniciar acceso"| B
+    B -->|"2. Consultar configuración"| A
+    A -->|"3. Autenticar identidad externa"| G
+    A -->|"4. Verificar cuenta y rol"| U1
+    A -->|"5. Comprobar vínculo STUDENT"| S
+    A -->|"6. Establecer o limpiar sesión"| C

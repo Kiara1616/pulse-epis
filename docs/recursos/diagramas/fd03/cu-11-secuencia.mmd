@@ -1,0 +1,23 @@
+sequenceDiagram
+ actor U as Titular o validador
+ participant P as Consulta de evidencia
+ participant A as API y autorización
+ participant S as Servicio de evidencia
+ participant D as PostgreSQL
+ participant F as Almacenamiento privado
+ U->>P: Solicitar archivo
+ P->>A: Solicitar acceso temporal
+ A->>S: Autorizar según titularidad o permiso de validación
+ S->>D: Consultar evidencia y expediente
+ S->>S: Firmar token de acceso de duración limitada
+ A-->>P: Enlace temporal
+ P->>A: Solicitar descarga con token
+ A->>S: Verificar firma, vigencia y alcance del token
+ alt Token vigente y autorizado
+  S->>F: Leer objeto privado
+  F-->>A: Archivo
+  A-->>P: Respuesta de descarga
+  P-->>U: Evidencia accesible
+ else Token vencido, alterado o sin acceso
+  A-->>P: Error sin archivo
+ end

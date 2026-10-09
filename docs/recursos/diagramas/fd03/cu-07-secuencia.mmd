@@ -1,0 +1,28 @@
+sequenceDiagram
+ actor U as Operador autorizado
+ participant C as CLI o workflow
+ participant S as Servicio ETL
+ participant Q as Normalización y calidad
+ participant D as PostgreSQL
+ U->>C: Fijar periodo y fecha de corte
+ C->>S: Ejecutar corrida
+ S->>D: Extraer fuente operacional
+ S->>S: Calcular hash determinista
+ S->>D: Buscar corrida por periodo, corte y hash
+ alt Corrida existente
+  D-->>S: Resultado previamente registrado
+  S-->>C: Respuesta idempotente
+ else Fuente nueva
+  S->>Q: Normalizar y evaluar registros
+  Q-->>S: Resultado de calidad
+  alt Registros inválidos
+   S->>D: Guardar corrida y rechazos
+   Note over S,D: Preservar último corte publicado
+  else Lote válido
+   S->>D: Reemplazar hechos del periodo y corte en transacción
+   S->>D: Guardar resultado de corrida
+  end
+  S-->>C: Estado y conteos
+ end
+ C-->>U: Reporte de ejecución
+ Note over U,C: Autorización de infraestructura, sin nuevo rol web
