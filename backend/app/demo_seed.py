@@ -363,7 +363,13 @@ def seed_demo_data(
         cutoff = min(period_end, _SEED_AS_OF)
         report = etl.run(spec["code"], cutoff)
         if report.status != "APPLIED":
-            raise RuntimeError(f"La publicación sintética fue rechazada para {spec['code']}")
+            logger.warning(
+                "Synthetic demo seed left operational snapshot unpublished period=%s status=%s rejected_rows=%s; review ETL quality report",
+                spec["code"],
+                report.status,
+                report.rejected_rows,
+            )
+            continue
         snapshot_count += 1
 
     logger.info(
