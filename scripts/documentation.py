@@ -184,7 +184,10 @@ def build_html(entry: dict, revision: dict) -> Path:
         return f'\n<figure><img src="{link}" alt="Diagrama de {html.escape(title_of(text, "Pulse EPIS"))}"><figcaption>Diagrama renderizado desde la fuente Mermaid del documento</figcaption></figure>\n'
     text = MERMAID.sub(figure, text)
     def link(match):
-        return f"{match.group(1)}[{match.group(2)}]({resolve_link(match.group(3), source, output, revision)})"
+        target = match.group(3)
+        if target.startswith("#"):
+            target = "#" + re.sub(r"-+", "-", target[1:])
+        return f"{match.group(1)}[{match.group(2)}]({resolve_link(target, source, output, revision)})"
     # Do not rewrite literals in code fences as document links.
     pieces = re.split(r"(```.*?```)", text, flags=re.S)
     text = "".join(piece if piece.startswith("```") else LINKS.sub(link, piece) for piece in pieces)
@@ -207,7 +210,11 @@ def build_html(entry: dict, revision: dict) -> Path:
     else:
         cover = ""
         text = "[TOC]\n\n" + text
-    body = cover + markdown(text, extensions=["tables", "fenced_code", "toc", "sane_lists"], output_format="html")
+    def heading_slug(value, separator):
+        value = re.sub(r"[^\w\s-]", "", value.lower())
+        return re.sub(r"[-\s]+", separator, value).strip(separator)
+    body = cover + markdown(text, extensions=["tables", "fenced_code", "toc", "sane_lists"],
+                            extension_configs={"toc": {"slugify": heading_slug}}, output_format="html")
     output.write_text(html_page(title_of(text, Path(source).stem), body, revision, output), encoding="utf-8")
     return output
 
