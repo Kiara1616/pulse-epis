@@ -128,6 +128,14 @@
     {
       "source": "pilot/RELEASE-NOTES.md",
       "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/20-Cierre-funcional-local.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/21-Correcciones-dashboard.md",
+      "group": "proyecto"
     }
   ]
 }

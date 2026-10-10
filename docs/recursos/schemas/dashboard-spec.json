@@ -185,6 +185,11 @@
     }
   },
   "properties": {
+    "dataset": {
+      "default": "registered",
+      "title": "Dataset",
+      "type": "string"
+    },
     "filters": {
       "$ref": "#/$defs/AnalyticsFilters"
     },
@@ -224,6 +229,13 @@
         "$ref": "#/$defs/MetricValue"
       },
       "title": "By Skill",
+      "type": "array"
+    },
+    "by_credential": {
+      "items": {
+        "$ref": "#/$defs/MetricValue"
+      },
+      "title": "By Credential",
       "type": "array"
     },
     "evolution": {
