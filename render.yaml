@@ -8,7 +8,7 @@ services:
     branch: main
     dockerfilePath: ./deploy/render/Dockerfile
     dockerContext: .
-    autoDeployTrigger: 'off'
+    autoDeployTrigger: 'checksPass'
     healthCheckPath: /ready
     envVars:
       - key: PORT
@@ -31,6 +31,8 @@ services:
         generateValue: true
       - key: PULSE_EVIDENCE_STORAGE_PATH
         value: /tmp/pulse-evidence
+      - key: PULSE_DEMO_DATA_SEED
+        value: 'true'
       - key: PULSE_GOOGLE_CLIENT_ID
         sync: false
       - key: PULSE_GOOGLE_CLIENT_SECRET

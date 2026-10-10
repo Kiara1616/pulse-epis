@@ -37,7 +37,7 @@ Las fuentes individuales están en `backend/data/academic-periods-upt.json`. El 
 | Validador | `/validaciones` | Consultar evidencia, tomar revisión, aprobar, observar o rechazar con comentario, consultar historial |
 | Administrador | `/admin/publicaciones` | Publicar por periodo y corte, consultar calidad e historial, repetir sin duplicar |
 | Administrador y validador | `/`, `/tecnologias` | Consultar indicadores agregados y filtros, exportar CSV y PDF |
-| Administrador | `/estudiantes` | Listado del padrón con código, correo, ciclo, cohorte, plan y estado; búsqueda, periodo y paginación |
+| Administrador | `/estudiantes` | Listado del padrón con código, correo, ciclo, cohorte, plan, estado y certificaciones por emisor; búsqueda, periodo y paginación |
 | Validador | `/estudiantes` | Indicadores agregados por cohorte y ciclo |
 | Administrador | `/brechas` | Consultar cobertura interna por habilidad y exportar resultados |
 | Administrador | `/admin` | Acceder a las etapas del flujo académico |
@@ -46,17 +46,17 @@ Las rutas ajenas al rol muestran acceso restringido. Las direcciones inexistente
 
 ## Evidencia de ejecución
 
-Se cargó el archivo proporcionado `padron_corregido_iniciales_2025-II.csv`: 342 filas aceptadas y ninguna rechazada. La carga repetida confirmó la ausencia de duplicados. Se publicó el corte 2025-12-05 y se descargó el PDF desde la interfaz. El padrón no crea certificaciones: los indicadores permanecen en cero hasta que existan registros aprobados para ese periodo y corte.
+Se cargó el archivo proporcionado `padron_corregido_iniciales_2025-II.csv`: 342 filas aceptadas y ninguna rechazada. La carga repetida confirmó la ausencia de duplicados. El padrón no crea certificaciones por sí solo. Para el piloto se añadió una semilla sintética optativa que conserva las cuentas de KZ y VL, distribuye certificaciones de AWS, Cisco, Oracle, Neo4j y Grafana y publica snapshots desde 2020-I hasta 2026-II.
 
 La prueba real del navegador verificó nueve rutas con los tres roles (27 combinaciones), sin errores de JavaScript. Sus resultados y capturas se guardan localmente en `artifacts/local-validation`, excluido de Git. La prueba integrada del backend recorre registro, evidencia, observación, corrección, aprobación, publicación y PDF sobre una base aislada, sin introducir certificaciones ficticias en el padrón del usuario.
 
 ## Demostración separada de certificaciones
 
-Por elección del usuario, las vistas analíticas locales cargan una demostración de 2020-I a 2026-II. Su base SQLite en memoria es independiente del padrón real. Contiene registros sintéticos de AWS, Cisco, Microsoft, Oracle, Google Cloud y Scrum.org, con tres cortes por periodo y habilidades asociadas. El selector Fuente de datos permite consultar las publicaciones reales; su selección se conserva durante la navegación. La exportación Excel, CSV y PDF identifica la demostración.
+Por elección del usuario, las vistas analíticas locales cargan una demostración de 2020-I a 2026-II. Su base SQLite en memoria es independiente del padrón real. Contiene registros sintéticos de AWS, Cisco, Oracle, Neo4j y Grafana, con habilidades asociadas. El selector Fuente de datos permite consultar las publicaciones reales; su selección se conserva durante la navegación. La exportación Excel, CSV y PDF identifica la demostración.
 
 Los gráficos cuentan certificaciones únicas por emisor y nombre, y estudiantes únicos para cobertura. Las habilidades no son categorías excluyentes; una certificación puede contar en más de una habilidad. Se retiró nivel de las vistas y formularios. Año de ingreso reemplaza el término cohorte en la interfaz. Las cifras de matrícula de la captura del usuario se muestran como referencia independiente y no como certificaciones. Los totales reales de matrícula de 2026 quedan sin dato.
 
-La verificación del navegador comprueba los filtros 2020-I y 2026-II, gráficos, cambio de fuente, persistencia de la fuente, PDF marcado y vista móvil. Confirma que el padrón real continúa con 342 estudiantes y cero certificaciones aprobadas tras consultar la demostración.
+La verificación del navegador comprueba los filtros 2020-I y 2026-II, gráficos, cambio de fuente, persistencia de la fuente, PDF marcado, vista móvil y la columna de certificaciones del directorio administrativo. La semilla registrada es sintética y no sustituye un padrón ni evidencias institucionales validadas.
 
 ## Uso institucional
 

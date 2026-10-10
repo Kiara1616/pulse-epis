@@ -33,6 +33,15 @@ type ValidationRecord = {
   skills?: Array<{ name: string; level: string | null }>;
 };
 
+function evidencePreviewKind(evidence: ValidationEvidence): "image" | "pdf" | "link" {
+  if (evidence.evidence_type !== "FILE") return "link";
+  const contentType = evidence.content_type?.toLowerCase() ?? "";
+  const filename = evidence.original_filename?.toLowerCase() ?? "";
+  if (contentType.startsWith("image/") || /\.(png|jpe?g)$/.test(filename)) return "image";
+  if (contentType === "application/pdf" || filename.endsWith(".pdf")) return "pdf";
+  return "link";
+}
+
 const statusLabels: Record<Status, string> = {
   PENDING: "Pendiente",
   UNDER_REVIEW: "En revisión",
@@ -152,14 +161,15 @@ export default function ValidationsPage() {
       {selected.source_url && <a href={selected.source_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">Enlace de verificación declarado</a>}
       {selected.latest_comment && <p className="rounded-lg bg-orange-50 p-3 text-sm"><strong>Último comentario:</strong> {selected.latest_comment}</p>}
       <div><h4 className="font-semibold mb-2">Evidencia adjunta</h4><div className="flex flex-wrap gap-2">{selected.evidences.map((evidence) => <button key={evidence.id} disabled={actingId !== null} onClick={() => void openEvidence(selected, evidence)} className="rounded-lg border px-3 py-2 text-sm text-blue-700 disabled:opacity-50">{evidence.original_filename || "Abrir enlace de evidencia"}</button>)}</div>{selected.evidences.length === 0 && <p className="text-sm text-gray-500">No hay evidencia adjunta.</p>}</div>
-      {preview && <div className="rounded-xl border bg-slate-50 p-3 space-y-3">
+      {preview && <div className="rounded-xl border bg-slate-50 p-3 space-y-3" aria-live="polite">
         <a href={preview.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-blue-600 underline"><ExternalLink size={16}/>Abrir evidencia en otra pestaña</a>
-        {preview.evidence.evidence_type === "FILE" && preview.evidence.content_type?.startsWith("image/") && !previewError &&
+        {evidencePreviewKind(preview.evidence) === "image" && !previewError &&
           // Temporary signed URLs must be rendered directly, without Next image caching.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview.url} alt="Certificado adjunto por el estudiante" onError={() => setPreviewError(true)} className="max-h-[650px] w-full object-contain"/>}
-        {preview.evidence.evidence_type === "FILE" && preview.evidence.content_type === "application/pdf" && <iframe src={preview.url} title="Certificado PDF adjunto" className="h-[650px] w-full"/>}
-        {previewError && <p role="alert" className="text-sm text-rose-700">No se pudo cargar la imagen. Vuelve a seleccionar el archivo para renovar el acceso o ábrelo en otra pestaña.</p>}
+          <img key={preview.url} src={preview.url} alt="Certificado adjunto por el estudiante" decoding="async" onError={() => setPreviewError(true)} className="max-h-[650px] w-full rounded-lg border border-slate-200 bg-white object-contain"/>}
+        {evidencePreviewKind(preview.evidence) === "pdf" && <iframe src={preview.url} title="Certificado PDF adjunto" className="h-[650px] w-full rounded-lg border border-slate-200 bg-white"/>}
+        {evidencePreviewKind(preview.evidence) === "link" && <p className="text-sm text-slate-600">Esta evidencia se abrirá mediante el enlace de verificación.</p>}
+        {previewError && <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-rose-700"><p>No se pudo cargar la imagen. El acceso temporal puede haber vencido.</p><button onClick={() => selected && void openEvidence(selected, preview.evidence)} className="rounded-md border border-rose-200 bg-white px-3 py-1.5 font-semibold text-rose-700">Renovar vista previa</button></div>}
       </div>}
       {(selected.status === "PENDING" || selected.status === "RESUBMITTED") && <button disabled={actingId !== null} onClick={() => void decide(selected, "START_REVIEW")} className="rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50">Tomar revisión</button>}
       {selected.status === "UNDER_REVIEW" && <div className="space-y-3 border-t pt-4"><label htmlFor="review-comment" className="block font-semibold">Comentario para el estudiante</label><textarea id="review-comment" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={2000} disabled={actingId !== null} rows={3} placeholder="Indica el motivo del rechazo o las correcciones necesarias." className="w-full rounded-lg border p-3"/><p className="text-sm text-gray-500">Obligatorio al observar o rechazar. Si observas el envío, el estudiante podrá corregirlo y reenviarlo.</p><div className="flex flex-wrap gap-3">{([['APPROVE', 'Aprobar', 'bg-emerald-600 text-white'], ['OBSERVE', 'Observar', 'bg-amber-100 text-amber-800'], ['REJECT', 'Rechazar', 'bg-rose-50 text-rose-700']] as const).map(([action, label, color]) => <button key={action} disabled={actingId !== null} onClick={() => void decide(selected, action)} className={`rounded-lg px-4 py-2 font-semibold disabled:opacity-50 ${color}`}>{actingId === selected.id ? "Guardando…" : label}</button>)}</div></div>}

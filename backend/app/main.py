@@ -33,6 +33,7 @@ from .analytics.service import (
 )
 from .auth.oidc import GoogleOidcClient, OidcClient
 from .auth.local_seed import seed_local_users
+from .demo_seed import seed_demo_data
 from .auth.service import AuthService
 from .auth.store import (
     SqlAlchemyUserDirectory,
@@ -115,6 +116,8 @@ def create_app(
         if settings.local_auth_enabled and settings.local_auth_seed:
             created_demo_users = seed_local_users(session_factory, settings)
             logger.info("Local auth seed completed created_users=%s", created_demo_users)
+        if settings.demo_data_seed and session_factory is not None:
+            seed_demo_data(session_factory, settings)
         logger.info(
             "Starting %s version=%s environment=%s",
             settings.app_name,

@@ -400,7 +400,12 @@ def download_evidence(
             path=item.path,
             media_type=item.content_type or "application/octet-stream",
             filename=item.original_filename,
-            content_disposition_type="inline" if item.content_type in {"image/jpeg", "image/png", "application/pdf"} else "attachment",
+            # Browsers can render the supported evidence formats in the
+            # validator preview. Unknown types remain downloads.
+            content_disposition_type="inline"
+            if item.content_type == "application/pdf"
+            or (item.content_type or "").startswith("image/")
+            else "attachment",
             headers={
                 "Cache-Control": "private, no-store",
                 "X-Content-Type-Options": "nosniff",

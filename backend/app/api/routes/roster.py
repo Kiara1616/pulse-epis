@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
+
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
 
 from ...auth.dependencies import require_permissions
@@ -16,7 +18,7 @@ from ...roster.service import (
     RosterServiceUnavailable,
 )
 from sqlalchemy import select, func, or_
-from ...db.models import Student, User, Enrollment, AcademicPeriod
+from ...db.models import AcademicPeriod, Certification, Enrollment, Issuer, Student, User
 
 
 router = APIRouter(prefix="/padron", tags=["padron"])
@@ -41,9 +43,35 @@ def roster_students(request: Request, period_code: str | None = None,
             query = query.where(or_(Student.student_code.ilike(term, escape="\\"), User.email.ilike(term, escape="\\")))
         total = session.scalar(select(func.count()).select_from(query.subquery()))
         rows = session.execute(query.order_by(Student.student_code, Student.id).offset(offset).limit(limit)).all()
+        student_ids = [student.id for student, _, _ in rows]
+        certification_by_student: dict[object, list[dict[str, object]]] = defaultdict(list)
+        if student_ids:
+            certification_rows = session.execute(
+                select(Certification, Issuer)
+                .join(Issuer, Issuer.id == Certification.issuer_id)
+                .where(Certification.student_id.in_(student_ids))
+                .order_by(
+                    Certification.student_id,
+                    Certification.issued_on.desc(),
+                    Issuer.name,
+                    Certification.id,
+                )
+            ).all()
+            for certification, issuer in certification_rows:
+                certification_by_student[certification.student_id].append(
+                    {
+                        "id": str(certification.id),
+                        "issuer": issuer.name,
+                        "credential_name": certification.credential_name,
+                        "issued_on": certification.issued_on,
+                        "expires_on": certification.expires_on,
+                        "status": certification.status,
+                    }
+                )
         return {"period_code": period_code, "total": total, "items": [
             {"id": str(s.id), "code": s.student_code, "email": u.email if u else None,
-             "cycle": e.cycle, "cohort": e.cohort, "school": e.school, "plan": e.study_plan, "status": e.status}
+             "cycle": e.cycle, "cohort": e.cohort, "school": e.school, "plan": e.study_plan, "status": e.status,
+             "certifications": certification_by_student.get(s.id, [])}
             for s, u, e in rows]}
 
 

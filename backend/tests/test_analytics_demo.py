@@ -19,7 +19,14 @@ def test_demo_covers_2020_to_2026_with_consistent_unique_counts():
         assert data.kpis.certified_students <= data.kpis.active_students
         assert data.kpis.coverage_percent == round(data.kpis.certified_students*100/data.kpis.active_students,2)
         assert str(data.filters.cutoff_date) <= "2026-10-10"
-    assert len(service.overview(period_code="2025-II").by_credential) == 6
+    assert len(service.overview(period_code="2025-II").by_credential) == 5
+    assert {item.name for item in service.overview(period_code="2025-II").by_issuer} == {
+        "AWS",
+        "Cisco",
+        "Grafana",
+        "Neo4j",
+        "Oracle",
+    }
 
 def test_demo_is_unavailable_without_local_authentication():
     app = create_app(Settings())
