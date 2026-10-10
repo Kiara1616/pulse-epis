@@ -7,7 +7,7 @@ import hmac
 import logging
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Protocol
 from uuid import UUID, uuid4
 
@@ -46,11 +46,23 @@ class RosterImportServiceProtocol(Protocol):
         *,
         period_code: str,
         actor_user_id: UUID | None,
+        selected_period_only: bool = False,
     ) -> "ImportReport":
         """Import a period-scoped CSV and return a non-sensitive report."""
 
     def list_history(self, *, period_code: str) -> list["ImportHistory"]:
         """Return import history without raw source data."""
+
+    def list_periods(self) -> list["RosterPeriod"]: ...
+
+    def create_period(self, *, code: str, starts_on: date, ends_on: date) -> "RosterPeriod": ...
+
+
+@dataclass(frozen=True, slots=True)
+class RosterPeriod:
+    code: str
+    starts_on: date
+    ends_on: date
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,6 +128,21 @@ class RosterImportService:
         return session.scalar(
             select(AcademicPeriod).where(func.lower(AcademicPeriod.code) == normalized)
         )
+
+    def list_periods(self) -> list[RosterPeriod]:
+        with self._session_factory() as session:
+            return [RosterPeriod(p.code, p.starts_on, p.ends_on) for p in session.scalars(
+                select(AcademicPeriod).order_by(AcademicPeriod.starts_on.desc(), AcademicPeriod.code.desc())
+            )]
+
+    def create_period(self, *, code: str, starts_on: date, ends_on: date) -> RosterPeriod:
+        with self._session_factory.begin() as session:
+            if self._period(session, code):
+                raise ValueError("El periodo ya está registrado.")
+            period = AcademicPeriod(code=normalize_text(code).upper(), name=normalize_text(code).upper(), starts_on=starts_on, ends_on=ends_on)
+            session.add(period)
+            session.flush()
+            return RosterPeriod(period.code, period.starts_on, period.ends_on)
 
     def _existing_import(
         self,
@@ -265,6 +292,7 @@ class RosterImportService:
             student.status = record.status
             student.entry_year = student.entry_year or _entry_year(record.code)
 
+        student.student_code = record.code
         session.flush()
         enrollment = session.scalar(
             select(Enrollment).where(
@@ -291,15 +319,22 @@ class RosterImportService:
             enrollment.study_plan = record.plan
             enrollment.status = record.status
 
+        session.flush()
+        latest_status = session.scalar(select(Enrollment.status).join(AcademicPeriod, AcademicPeriod.id == Enrollment.period_id)
+            .where(Enrollment.student_id == student.id).order_by(AcademicPeriod.starts_on.desc(), AcademicPeriod.code.desc()).limit(1))
+        if latest_status is not None:
+            student.status = latest_status
+
     def import_csv(
         self,
         content: bytes,
         *,
         period_code: str,
         actor_user_id: UUID | None,
+        selected_period_only: bool = False,
     ) -> ImportReport:
         normalized_period_code = normalize_text(period_code)
-        source_sha256 = hashlib.sha256(content).hexdigest()
+        source_sha256 = hashlib.sha256((b"selected-period-v1\0" if selected_period_only else b"") + content).hexdigest()
 
         with self._session_factory() as session:
             period = self._period(session, normalized_period_code)
@@ -307,6 +342,18 @@ class RosterImportService:
                 raise RosterPeriodNotFound("Academic period is not provisioned")
             existing = self._existing_import(session, period.id, source_sha256)
             if existing is not None:
+                # Older imports stored only a pseudonym; recover codes from the
+                # same verified source without creating another import or student.
+                if existing.status == "APPLIED":
+                    parsed_source = parse_roster_csv(content, period_code=normalized_period_code,
+                        settings=self._settings, selected_period_only=selected_period_only)
+                    if not parsed_source.rejections:
+                        for record in parsed_source.records:
+                            key = pseudonymize_student_code(record.code, self._settings.roster_pseudonym_secret)
+                            student = session.scalar(select(Student).where(Student.student_key == key))
+                            if student is not None and student.student_code is None:
+                                student.student_code = record.code
+                        session.commit()
                 return self._report_from_record(
                     session,
                     existing,
@@ -318,6 +365,7 @@ class RosterImportService:
             content,
             period_code=normalized_period_code,
             settings=self._settings,
+            selected_period_only=selected_period_only,
         )
 
         session = self._session_factory()
@@ -432,12 +480,21 @@ class UnavailableRosterImportService:
     def _raise(self) -> None:
         raise RosterServiceUnavailable("PULSE_DATABASE_URL is not configured")
 
+    def list_periods(self) -> list[RosterPeriod]:
+        self._raise()
+        return []
+
+    def create_period(self, *, code: str, starts_on: date, ends_on: date) -> RosterPeriod:
+        self._raise()
+        raise AssertionError("unreachable")
+
     def import_csv(
         self,
         content: bytes,
         *,
         period_code: str,
         actor_user_id: UUID | None,
+        selected_period_only: bool = False,
     ) -> ImportReport:
         self._raise()
         raise AssertionError("unreachable")

@@ -41,6 +41,11 @@ class ValidationEvidenceResponse(BaseModel):
     content_type: str | None
 
 
+class ValidationSkillResponse(BaseModel):
+    name: str
+    level: str | None
+
+
 class ValidationQueueResponse(BaseModel):
     id: UUID
     student_key: str
@@ -53,6 +58,9 @@ class ValidationQueueResponse(BaseModel):
     source_url: str | None
     evidences: list[ValidationEvidenceResponse]
     latest_comment: str | None
+    external_id: str | None = None
+    issuer_url: str | None = None
+    skills: list[ValidationSkillResponse] = Field(default_factory=list)
     updated_at: datetime
 
 

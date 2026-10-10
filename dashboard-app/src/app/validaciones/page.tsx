@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Check, Clock3, ExternalLink, Eye, Loader2, RotateCcw, X } from "lucide-react";
+import { AlertCircle, Clock3, ExternalLink, Loader2 } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
 import { apiFetch } from "@/shared/api/client";
+import { ValidationHistory } from "@/features/certifications/ValidationHistory";
 
 type Status = "PENDING" | "UNDER_REVIEW" | "APPROVED" | "OBSERVED" | "RESUBMITTED" | "REJECTED" | "EXPIRED";
 type Action = "START_REVIEW" | "APPROVE" | "OBSERVE" | "REJECT";
@@ -26,6 +27,10 @@ type ValidationRecord = {
   status: Status;
   evidences: ValidationEvidence[];
   latest_comment: string | null;
+  source_url: string | null;
+  external_id?: string | null;
+  issuer_url?: string | null;
+  skills?: Array<{ name: string; level: string | null }>;
 };
 
 const statusLabels: Record<Status, string> = {
@@ -57,6 +62,12 @@ export default function ValidationsPage() {
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
+  const [preview, setPreview] = useState<{ url: string; evidence: ValidationEvidence } | null>(null);
+  const [previewError, setPreviewError] = useState(false);
+  const selected = records.find((record) => record.id === selectedId);
+  const [historyId, setHistoryId] = useState<string | null>(null);
 
   const loadRecords = useCallback(async () => {
     setLoading(true);
@@ -83,19 +94,20 @@ export default function ValidationsPage() {
   }), [records]);
 
   async function decide(record: ValidationRecord, action: Action) {
-    let comment: string | null = null;
-    if (action === "OBSERVE" || action === "REJECT") {
-      comment = window.prompt("Escribe el comentario que verá el estudiante:")?.trim() || null;
-      if (!comment) return;
+    const decisionComment = comment.trim() || null;
+    if ((action === "OBSERVE" || action === "REJECT") && !decisionComment) {
+      setError("Escribe el motivo o las correcciones que debe realizar el estudiante.");
+      return;
     }
     setActingId(record.id);
     setError(null);
     try {
       await apiFetch(`/validations/${record.id}`, {
         method: "POST",
-        body: JSON.stringify({ action, comment }),
+        body: JSON.stringify({ action, comment: decisionComment }),
       });
       await loadRecords();
+      setComment("");
     } catch (decisionError) {
       setError(decisionError instanceof Error ? decisionError.message : "No se pudo guardar la decisión.");
     } finally {
@@ -111,7 +123,8 @@ export default function ValidationsPage() {
         `/validations/${record.id}/evidence/${evidence.id}/access`,
         { method: "POST" },
       );
-      window.open(access.access_url, "_blank", "noopener,noreferrer");
+      setPreviewError(false);
+      setPreview({ url: access.access_url, evidence });
     } catch (accessError) {
       setError(accessError instanceof Error ? accessError.message : "No se pudo abrir la evidencia.");
     } finally {
@@ -122,9 +135,36 @@ export default function ValidationsPage() {
   return <RoleGate allow={["VALIDATOR"]}><div className="space-y-6">
     <div><p className="text-sm font-bold text-blue-600 uppercase tracking-wider">Control de evidencia</p><h2 className="text-3xl font-black text-gray-900 mt-1">Bandeja de validaciones</h2><p className="text-gray-500 mt-2">Revisa titular, emisor, vigencia y duplicados antes de incluir una certificación en los indicadores.</p></div>
     {error && <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><AlertCircle size={18} className="mt-0.5 shrink-0"/><p>{error}</p></div>}
+    {historyId && <ValidationHistory key={historyId} id={historyId} onClose={() => setHistoryId(null)}/>}
     <section className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
       {[["Pendientes", counts.pending], ["En revisión", counts.review], ["Aprobadas", counts.approved], ["Observadas", counts.observed]].map(([label, count]) => <div key={label} className="bg-white border border-gray-100 rounded-2xl p-5"><p className="text-sm text-gray-500">{label}</p><p className="text-3xl font-black mt-1">{count}</p></div>)}
     </section>
-    {loading ? <div className="flex items-center justify-center gap-2 py-16 text-gray-500"><Loader2 className="animate-spin" size={20}/>Cargando certificaciones...</div> : records.length === 0 ? <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center text-gray-500">No hay certificaciones para revisar.</div> : <section className="space-y-4">{records.map((record) => <article key={record.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col xl:flex-row xl:items-center gap-5"><div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><Clock3/></div><div className="flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-gray-900">{record.credential_name}</h3><span className={`text-xs px-2 py-1 rounded-full font-bold ${statusClasses[record.status]}`}>{statusLabels[record.status]}</span></div><p className="text-sm text-gray-500 mt-1">{record.student_key} · {record.issuer_name} · Emitida {formatDate(record.issued_on)}{record.expires_on ? ` · Vence ${formatDate(record.expires_on)}` : ""}</p>{record.latest_comment && <p className="text-sm text-gray-600 mt-2"><span className="font-semibold">Último comentario:</span> {record.latest_comment}</p>}<div className="flex flex-wrap gap-2 mt-3">{record.evidences.map((evidence) => <button key={evidence.id} onClick={() => void openEvidence(record, evidence)} disabled={actingId === record.id} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"><ExternalLink size={14}/>{evidence.original_filename ?? `Evidencia ${evidence.evidence_type}`}</button>)}</div></div><div className="flex flex-wrap gap-2 xl:max-w-sm xl:justify-end">{(record.status === "PENDING" || record.status === "RESUBMITTED") && <button onClick={() => void decide(record, "START_REVIEW")} disabled={actingId === record.id} className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold disabled:opacity-50"><RotateCcw size={16}/>Tomar revisión</button>}{record.status === "UNDER_REVIEW" && <><button onClick={() => void decide(record, "APPROVE")} disabled={actingId === record.id} className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold disabled:opacity-50"><Check size={16}/>Aprobar</button><button onClick={() => void decide(record, "OBSERVE")} disabled={actingId === record.id} className="flex items-center gap-1.5 px-3 py-2 bg-amber-100 text-amber-800 rounded-lg text-sm font-bold disabled:opacity-50"><Eye size={16}/>Observar</button><button onClick={() => void decide(record, "REJECT")} disabled={actingId === record.id} className="p-2.5 bg-rose-50 text-rose-700 rounded-lg disabled:opacity-50" title="Rechazar"><X size={17}/></button></>}</div></article>)}</section>}
+    {selected && <section className="rounded-2xl border border-blue-200 bg-white p-6 space-y-5" aria-label="Detalle del envío">
+      <div className="flex justify-between gap-4"><div><h3 className="text-xl font-bold">{selected.credential_name}</h3><span className={`inline-block mt-2 rounded-full px-3 py-1 text-xs font-bold ${statusClasses[selected.status]}`}>{statusLabels[selected.status]}</span></div><button disabled={actingId !== null} onClick={() => { setSelectedId(null); setPreview(null); setHistoryId(null); }} className="text-sm font-semibold text-blue-600">Cerrar detalle</button></div>
+      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[
+        ["Estudiante", selected.student_key], ["Emisor", selected.issuer_name],
+        ["Identificador de la credencial", selected.external_id || "No registrado"],
+        ["Fecha de emisión", formatDate(selected.issued_on)],
+        ["Fecha de vencimiento", selected.expires_on ? formatDate(selected.expires_on) : "Sin vencimiento registrado"],
+      ].map(([label, value]) => <div key={label}><dt className="text-sm text-gray-500">{label}</dt><dd className="font-semibold break-words">{value}</dd></div>)}</dl>
+      <div><h4 className="font-semibold">Habilidades declaradas</h4><p className="text-sm text-gray-600">{selected.skills?.map((skill) => `${skill.name}${skill.level ? ` (${skill.level})` : ""}`).join(", ") || "Sin habilidades registradas"}</p></div>
+      {selected.issuer_url && <a href={selected.issuer_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">Sitio del emisor</a>}
+      {selected.source_url && <a href={selected.source_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">Enlace de verificación declarado</a>}
+      {selected.latest_comment && <p className="rounded-lg bg-orange-50 p-3 text-sm"><strong>Último comentario:</strong> {selected.latest_comment}</p>}
+      <div><h4 className="font-semibold mb-2">Evidencia adjunta</h4><div className="flex flex-wrap gap-2">{selected.evidences.map((evidence) => <button key={evidence.id} disabled={actingId !== null} onClick={() => void openEvidence(selected, evidence)} className="rounded-lg border px-3 py-2 text-sm text-blue-700 disabled:opacity-50">{evidence.original_filename || "Abrir enlace de evidencia"}</button>)}</div>{selected.evidences.length === 0 && <p className="text-sm text-gray-500">No hay evidencia adjunta.</p>}</div>
+      {preview && <div className="rounded-xl border bg-slate-50 p-3 space-y-3">
+        <a href={preview.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-blue-600 underline"><ExternalLink size={16}/>Abrir evidencia en otra pestaña</a>
+        {preview.evidence.evidence_type === "FILE" && preview.evidence.content_type?.startsWith("image/") && !previewError &&
+          // Temporary signed URLs must be rendered directly, without Next image caching.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={preview.url} alt="Certificado adjunto por el estudiante" onError={() => setPreviewError(true)} className="max-h-[650px] w-full object-contain"/>}
+        {preview.evidence.evidence_type === "FILE" && preview.evidence.content_type === "application/pdf" && <iframe src={preview.url} title="Certificado PDF adjunto" className="h-[650px] w-full"/>}
+        {previewError && <p role="alert" className="text-sm text-rose-700">No se pudo cargar la imagen. Vuelve a seleccionar el archivo para renovar el acceso o ábrelo en otra pestaña.</p>}
+      </div>}
+      {(selected.status === "PENDING" || selected.status === "RESUBMITTED") && <button disabled={actingId !== null} onClick={() => void decide(selected, "START_REVIEW")} className="rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50">Tomar revisión</button>}
+      {selected.status === "UNDER_REVIEW" && <div className="space-y-3 border-t pt-4"><label htmlFor="review-comment" className="block font-semibold">Comentario para el estudiante</label><textarea id="review-comment" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={2000} disabled={actingId !== null} rows={3} placeholder="Indica el motivo del rechazo o las correcciones necesarias." className="w-full rounded-lg border p-3"/><p className="text-sm text-gray-500">Obligatorio al observar o rechazar. Si observas el envío, el estudiante podrá corregirlo y reenviarlo.</p><div className="flex flex-wrap gap-3">{([['APPROVE', 'Aprobar', 'bg-emerald-600 text-white'], ['OBSERVE', 'Observar', 'bg-amber-100 text-amber-800'], ['REJECT', 'Rechazar', 'bg-rose-50 text-rose-700']] as const).map(([action, label, color]) => <button key={action} disabled={actingId !== null} onClick={() => void decide(selected, action)} className={`rounded-lg px-4 py-2 font-semibold disabled:opacity-50 ${color}`}>{actingId === selected.id ? "Guardando…" : label}</button>)}</div></div>}
+      <button onClick={() => setHistoryId(selected.id)} className="text-sm font-semibold text-blue-600">Ver historial</button>
+    </section>}
+    {loading ? <div role="status" className="flex items-center justify-center gap-2 py-16 text-gray-500"><Loader2 className="animate-spin" size={20}/>Cargando certificaciones...</div> : records.length === 0 ? <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center text-gray-500">No hay certificaciones para revisar.</div> : <section className="space-y-4">{records.map((record) => <button key={record.id} disabled={actingId !== null} onClick={() => { setSelectedId(record.id); setComment(""); setPreview(null); setHistoryId(null); setError(null); if (record.evidences[0]) void openEvidence(record, record.evidences[0]); }} className="w-full text-left bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex items-center gap-5 hover:border-blue-300 focus-visible:outline-blue-600 disabled:opacity-50"><div className="rounded-xl bg-blue-50 p-3 text-blue-600"><Clock3/></div><div className="flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-gray-900">{record.credential_name}</h3><span className={`text-xs px-2 py-1 rounded-full font-bold ${statusClasses[record.status]}`}>{statusLabels[record.status]}</span></div><p className="text-sm text-gray-500 mt-1">{record.student_key} · {record.issuer_name} · Emitida {formatDate(record.issued_on)}</p></div><span className="text-sm font-semibold text-blue-600">Ver envío</span></button>)}</section>}
   </div></RoleGate>;
 }

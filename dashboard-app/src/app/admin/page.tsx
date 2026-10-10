@@ -7,7 +7,7 @@ import { RoleGate } from "@/features/access/RoleGate";
 const modules = [
   { title: "Padrón EPIS", description: "Importa estudiantes activos y revisa la conciliación por periodo.", href: "/admin/estudiantes", icon: Users, status: "API conectada" },
   { title: "Certificaciones", description: "El equipo validador supervisa registros, evidencias, duplicados y vencimientos.", href: null, icon: ShieldCheck, status: "Gestionado por validadores" },
-  { title: "Pipeline ETL", description: "Consulta indicadores provenientes de snapshots publicados.", href: "/", icon: Database, status: "Indicadores agregados" },
+  { title: "Publicar indicadores", description: "Actualiza los indicadores por periodo y fecha de corte, y consulta el historial de publicación.", href: "/admin/publicaciones", icon: Database, status: "Indicadores agregados" },
 ];
 
 export default function AdminPage() {

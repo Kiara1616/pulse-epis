@@ -179,6 +179,7 @@ class CertificationResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     correction_allowed: bool
+    latest_comment: str | None = None
 
 
 class EvidenceAccessResponse(BaseModel):

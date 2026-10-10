@@ -2,11 +2,29 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
+
+
+class RosterPeriodResponse(BaseModel):
+    code: str
+    starts_on: date
+    ends_on: date
+
+
+class RosterPeriodCreate(BaseModel):
+    code: str = Field(pattern=r"^20\d{2}-(?:I|II)$")
+    starts_on: date
+    ends_on: date
+
+    @model_validator(mode="after")
+    def dates(self):
+        if self.ends_on < self.starts_on:
+            raise ValueError("La fecha final debe ser posterior al inicio.")
+        return self
 
 
 class RosterRejectionResponse(BaseModel):

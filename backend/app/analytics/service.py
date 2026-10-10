@@ -79,7 +79,7 @@ class AnalyticsService:
         with self._session_factory() as session:
             rows = session.execute(
                 select(AcademicPeriod, latest_cutoffs.c.latest_cutoff_date)
-                .join(latest_cutoffs, latest_cutoffs.c.period_id == AcademicPeriod.id)
+                .outerjoin(latest_cutoffs, latest_cutoffs.c.period_id == AcademicPeriod.id)
                 .order_by(AcademicPeriod.starts_on.desc(), AcademicPeriod.code.desc())
             ).all()
         return tuple(
@@ -180,9 +180,11 @@ class AnalyticsService:
             cycle_by_key = {fact.student_key: fact.cycle or "Sin ciclo" for fact in student_facts}
             issuer_certifications: dict[str, set[object]] = {}
             level_certifications: dict[str, set[object]] = {}
-            cohort_certifications: dict[str, set[object]] = {}
-            cycle_certifications: dict[str, set[object]] = {}
+            cohort_certifications: dict[str, set[object]] = {name: set() for name in cohort_by_key.values()}
+            cycle_certifications: dict[str, set[object]] = {name: set() for name in cycle_by_key.values()}
             students_by_skill: dict[str, set[str]] = {}
+            skill_certifications: dict[str, set[object]] = {}
+            credential_certifications: dict[str, set[object]] = {}
             for row in rows:
                 certification_id = row.FactCertification.certification_id
                 issuer_certifications.setdefault(row.Issuer.name, set()).add(certification_id)
@@ -196,6 +198,8 @@ class AnalyticsService:
                     cycle_by_key[row.Student.student_key], set()
                 ).add(certification_id)
                 students_by_skill.setdefault(row.Skill.name, set()).add(row.Student.student_key)
+                skill_certifications.setdefault(row.Skill.name, set()).add(certification_id)
+                credential_certifications.setdefault(row.Certification.credential_name, set()).add(certification_id)
             skill_gaps = [
                 SkillGap(
                     skill=skill_name,
@@ -267,7 +271,8 @@ class AnalyticsService:
                 by_level=_series(Counter({key: len(value) for key, value in level_certifications.items()})),
                 by_cohort=_series(Counter({key: len(value) for key, value in cohort_certifications.items()})),
                 by_cycle=_series(Counter({key: len(value) for key, value in cycle_certifications.items()})),
-                by_skill=_series(Counter(row.Skill.name for row in rows)),
+                by_skill=_series(Counter({key: len(value) for key, value in skill_certifications.items()})),
+                by_credential=_series(Counter({key: len(value) for key, value in credential_certifications.items()})),
                 evolution=evolution,
                 skill_gaps=skill_gaps,
             )

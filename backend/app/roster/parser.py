@@ -98,7 +98,7 @@ def _canonical_status(value: str, settings: Settings) -> str | None:
     return normalized if normalized in settings.allowed_roster_statuses else None
 
 
-def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings) -> ParsedRoster:
+def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings, selected_period_only: bool = False) -> ParsedRoster:
     """Parse a UTF-8 CSV and return valid rows plus non-sensitive rejection reasons."""
 
     if len(content) > settings.roster_max_bytes:
@@ -138,6 +138,7 @@ def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings) ->
     seen_codes: set[str] = set()
     seen_emails: set[str] = set()
     total_rows = 0
+    source_rows = 0
     expected_period = normalize_text(period_code).casefold()
     allowed_domains = set(settings.allowed_google_email_domains)
 
@@ -148,8 +149,8 @@ def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings) ->
         }
         if not any(row.values()):
             continue
-        total_rows += 1
-        if total_rows > settings.roster_max_rows:
+        source_rows += 1
+        if source_rows > settings.roster_max_rows:
             rejections.append(
                 _rejection(
                     row_number,
@@ -159,6 +160,10 @@ def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings) ->
                 )
             )
             break
+
+        if selected_period_only and row["period"].casefold() != expected_period:
+            continue
+        total_rows += 1
 
         if None in raw_row:
             rejections.append(
