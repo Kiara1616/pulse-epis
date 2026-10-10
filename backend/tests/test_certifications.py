@@ -303,6 +303,19 @@ def test_student_certification_and_temporary_download_api(tmp_path):
         download = client.get(access.json()["access_url"], follow_redirects=False)
         assert download.status_code == 200
         assert download.content.startswith(b"%PDF-1.7")
+        assert download.headers["content-disposition"].startswith("inline")
+        image_upload = client.post(
+            f"/api/v1/certifications/{certification_id}/evidence",
+            files={"file": ("certificate.png", b"\x89PNG\r\n\x1a\nsynthetic image", "image/png")},
+        )
+        assert image_upload.status_code == 201
+        image_access = client.post(
+            f"/api/v1/certifications/{certification_id}/evidence/{image_upload.json()['id']}/access"
+        )
+        image_download = client.get(image_access.json()["access_url"], follow_redirects=False)
+        assert image_download.status_code == 200
+        assert image_download.headers["content-type"].startswith("image/png")
+        assert image_download.headers["content-disposition"].startswith("inline")
         listing = client.get("/api/v1/certifications")
         assert listing.status_code == 200
         assert listing.json()[0]["status"] == "PENDING"

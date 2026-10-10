@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from ..db.base import Base
 from ..db.models import AcademicPeriod, Student, Issuer, Skill, Certification, FactCertification, FactStudentPeriod
+from ..demo_catalog import DEMO_CERTIFICATION_CATALOG
 from .service import AnalyticsService
 
 
@@ -17,12 +18,8 @@ def demo_analytics():
     Base.metadata.create_all(engine)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     catalogs = [
-        ("AWS", "AWS Cloud Practitioner", ["Cloud Computing", "Seguridad en la nube"]),
-        ("Cisco", "CCNA", ["Redes", "Ciberseguridad"]),
-        ("Microsoft", "Azure Fundamentals", ["Cloud Computing"]),
-        ("Oracle", "Oracle Database SQL", ["Bases de datos", "SQL"]),
-        ("Google Cloud", "Cloud Digital Leader", ["Cloud Computing", "Análisis de datos"]),
-        ("Scrum.org", "Professional Scrum Master", ["Gestión ágil"]),
+        (spec.issuer_name, spec.credential_name, [skill for skill, _ in spec.skills])
+        for spec in DEMO_CERTIFICATION_CATALOG
     ]
     periods = json.loads((Path(__file__).resolve().parents[2] / "data/academic-periods-upt.json").read_text())
     with factory.begin() as session:

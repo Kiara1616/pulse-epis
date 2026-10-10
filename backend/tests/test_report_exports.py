@@ -28,6 +28,6 @@ def test_branded_pdf_preserves_counts_and_marks_demo():
     text = " ".join(p.extract_text() for p in pdf.pages)
     assert "DEMOSTRACIÓN LOCAL" in text
     assert "2026-II" in text
-    assert "AWS Cloud Practitioner" in text
+    assert "AWS Certified Cloud Practitioner" in text
     assert str(data["kpis"]["approved_certifications"]) in text
     assert "level" not in text and "@" not in text
