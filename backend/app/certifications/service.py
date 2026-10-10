@@ -142,6 +142,7 @@ class CertificationView:
     created_at: datetime
     updated_at: datetime
     correction_allowed: bool
+    latest_comment: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -474,6 +475,10 @@ class CertificationService:
             created_at=_as_utc(certification.created_at),
             updated_at=_as_utc(certification.updated_at),
             correction_allowed=certification.status in _ALLOWED_CERTIFICATION_STATUSES,
+            latest_comment=session.scalar(select(CertificationStatusHistory.comment).where(
+                CertificationStatusHistory.certification_id == certification.id,
+                CertificationStatusHistory.comment.is_not(None),
+            ).order_by(CertificationStatusHistory.changed_at.desc(), CertificationStatusHistory.id.desc()).limit(1)),
         )
 
     def _duplicate_certification(

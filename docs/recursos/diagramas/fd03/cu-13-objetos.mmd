@@ -1,0 +1,12 @@
+flowchart TB
+    U(("«actor»<br/>Usuario con ANALYTICS_READ"))
+    B["«boundary»<br/>Vista de evolución"]
+    A("«control»<br/>Autorización de lectura")
+    S("«control»<br/>Servicio analítico")
+    F[("«entity»<br/>Hechos por corte")]
+    D[("«entity»<br/>Dimensiones y filtros")]
+    U -->|"1. Elegir periodo y filtros"| B
+    B -->|"2. Solicitar overview"| A
+    A -->|"3. Autorizar consulta"| S
+    S -->|"4. Obtener cortes del periodo"| F
+    S -->|"5. Aplicar contexto comparable"| D

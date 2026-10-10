@@ -1,0 +1,17 @@
+sequenceDiagram
+ actor U as Usuario autorizado
+ participant P as Vista de evolución
+ participant A as API y autorización
+ participant S as Servicio analítico
+ participant D as PostgreSQL
+ U->>P: Seleccionar periodo y filtros
+ P->>A: GET /indicators/overview
+ A->>A: Verificar ANALYTICS_READ
+ A->>S: Solicitar contexto analítico
+ S->>D: Obtener hechos de cortes del periodo
+ D-->>S: Población y credenciales por corte
+ S->>S: Construir evolución con conteos distintos
+ S-->>A: Serie dentro del periodo
+ A-->>P: Evolución y contexto
+ P-->>U: Gráfico o ausencia de serie
+ Note over S,P: Comparación entre periodos pendiente

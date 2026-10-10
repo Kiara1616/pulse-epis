@@ -1,0 +1,14 @@
+flowchart TB
+    U(("«actor»<br/>Estudiante"))
+    B["«boundary»<br/>Lista de certificaciones propias"]
+    A("«control»<br/>Autorización y titularidad")
+    S("«control»<br/>Servicio de certificaciones")
+    U1[("«entity»<br/>Student vinculado")]
+    C[("«entity»<br/>Certification e historial")]
+    E[("«entity»<br/>Evidence y decisiones")]
+    U -->|"1. Abrir mis certificaciones"| B
+    B -->|"2. Solicitar lista o detalle"| A
+    A -->|"3. Aplicar identidad del titular"| S
+    S -->|"4. Resolver estudiante"| U1
+    S -->|"5. Consultar expedientes propios"| C
+    S -->|"6. Recuperar metadatos autorizados"| E

@@ -9,12 +9,14 @@ export function apiUrl(path: string) {
 export class ApiError extends Error {
   status: number;
   code: string;
+  payload: unknown;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, payload?: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.payload = payload;
   }
 }
 
@@ -39,7 +41,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
       : typeof error === "string"
         ? error
         : "La API no pudo completar la operación.";
-    throw new ApiError(response.status, code, message);
+    throw new ApiError(response.status, code, message, body);
   }
   return body as T;
 }

@@ -1,0 +1,20 @@
+sequenceDiagram
+ actor U as Usuario autorizado
+ participant P as Vista analítica
+ participant X as ExportButton
+ participant C as Serialización CSV
+ participant N as Navegador
+ Note over P,X: Los datos autorizados ya fueron consultados
+ U->>P: Seleccionar Exportar Reporte
+ P->>X: Filas y metadatos de la vista
+ alt Sin filas
+  X-->>P: Botón deshabilitado
+ else Filas disponibles
+  X->>C: Construir cabecera y escapar valores
+  C-->>X: Contenido CSV UTF-8 con BOM
+  X->>N: Crear Blob y URL temporal
+  X->>N: Activar descarga
+  N-->>U: Archivo CSV
+  X->>N: Liberar URL temporal
+ end
+ Note over X,N: Sin solicitud backend de generación de PDF

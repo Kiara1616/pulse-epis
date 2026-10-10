@@ -1,0 +1,31 @@
+sequenceDiagram
+ actor U as Usuario provisionado
+ participant P as Portal
+ participant A as API de autenticación
+ participant G as Google OIDC
+ participant D as PostgreSQL
+ U->>P: Iniciar acceso
+ P->>A: Consultar configuración
+ alt Acceso OIDC configurado
+  P->>A: Iniciar login Google
+  A-->>P: Redirección al proveedor
+  P->>G: Autenticar identidad externa
+  G-->>A: Callback autorizado
+  A->>A: Validar protocolo e identidad
+ else Desarrollo o pruebas con proveedor local
+  P->>A: Credenciales locales
+  A->>A: Verificar proveedor permitido y contraseña
+ end
+ A->>D: Consultar cuenta habilitada y vínculo STUDENT
+ alt Cuenta autorizada
+  A-->>P: Cookie de sesión firmada
+  P->>A: GET /auth/me
+  A-->>P: Identidad y permisos del servidor
+ else Cuenta no autorizada
+  A-->>P: Denegación sin sesión privilegiada
+ end
+ U->>P: Cerrar sesión
+ P->>A: POST /auth/logout
+ A->>A: Limpiar sesión
+ A-->>P: Respuesta de cierre
+ P-->>U: Portal restringido

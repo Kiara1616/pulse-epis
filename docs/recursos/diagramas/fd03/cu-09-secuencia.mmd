@@ -1,0 +1,24 @@
+sequenceDiagram
+ actor U as Estudiante
+ participant P as Mis certificaciones
+ participant A as API y autorización
+ participant S as Servicio de certificaciones
+ participant D as PostgreSQL
+ U->>P: Consultar registros propios
+ P->>A: GET /certifications con sesión
+ A->>S: Listar según usuario autorizado
+ S->>D: Resolver Student y credenciales propias
+ D-->>S: Expedientes del titular
+ S-->>A: Lista autorizada
+ A-->>P: Estados y datos propios
+ opt Consulta de un detalle
+  P->>A: GET /certifications/{id}
+  A->>S: Consultar con titularidad
+  alt Pertenece al estudiante
+   S->>D: Recuperar evidencia, historial y decisiones
+   A-->>P: Detalle autorizado
+  else Registro ajeno
+   A-->>P: Denegar sin revelar expediente
+  end
+ end
+ P-->>U: Lista, detalle o estado vacío

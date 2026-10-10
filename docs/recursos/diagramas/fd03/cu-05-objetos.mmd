@@ -1,0 +1,14 @@
+flowchart TB
+    U(("«actor»<br/>Usuario autorizado"))
+    B["«boundary»<br/>Vista analítica"]
+    X("«control»<br/>ExportButton")
+    R[("«entity»<br/>Filas y metadatos autorizados")]
+    C("«control»<br/>Serialización CSV")
+    F[("«entity»<br/>Blob CSV")]
+    N["«boundary»<br/>Descarga del navegador"]
+    U -->|"1. Solicitar exportación"| B
+    B -->|"2. Ejecutar Exportar Reporte"| X
+    X -->|"3. Tomar filas ya cargadas"| R
+    X -->|"4. Escapar y formar contenido"| C
+    C -->|"5. Crear CSV UTF-8 con BOM"| F
+    X -->|"6. Descargar y liberar URL"| N

@@ -25,9 +25,9 @@ export default function RootLayout({
             <AuthBoundary>
             <div className="flex min-h-screen bg-[#f3f6fb] w-full">
               <Sidebar />
-              <main className="flex-1 ml-28 flex flex-col min-h-screen overflow-hidden bg-[#f3f6fb]">
+              <main className="flex-1 min-w-0 ml-20 md:ml-56 flex flex-col min-h-screen bg-[#f3f6fb]">
                 <Header />
-                <div className="px-8 py-7 flex-1 w-full max-w-[1500px] mx-auto">{children}</div>
+                <div className="px-4 md:px-8 py-7 md:py-9 flex-1 w-full max-w-[1500px] mx-auto">{children}</div>
               </main>
             </div>
             </AuthBoundary>

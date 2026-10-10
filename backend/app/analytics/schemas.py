@@ -23,7 +23,7 @@ class AnalyticsPeriod(BaseModel):
     code: str
     starts_on: date
     ends_on: date
-    latest_cutoff_date: date
+    latest_cutoff_date: date | None
 
 
 class AnalyticsKpis(BaseModel):
@@ -48,6 +48,7 @@ class SkillGap(BaseModel):
 
 
 class AnalyticsOverview(BaseModel):
+    dataset: str = "registered"
     filters: AnalyticsFilters
     kpis: AnalyticsKpis
     by_issuer: list[MetricValue]
@@ -55,6 +56,7 @@ class AnalyticsOverview(BaseModel):
     by_cohort: list[MetricValue]
     by_cycle: list[MetricValue]
     by_skill: list[MetricValue]
+    by_credential: list[MetricValue] = Field(default_factory=list)
     evolution: list[EvolutionPoint]
     skill_gaps: list[SkillGap]
 

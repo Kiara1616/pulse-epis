@@ -1,0 +1,17 @@
+flowchart TB
+    U(("«actor»<br/>Estudiante titular"))
+    B["«boundary»<br/>Cliente API de corrección"]
+    A("«control»<br/>Autorización y titularidad")
+    S("«control»<br/>Servicio de certificaciones")
+    C[("«entity»<br/>Certification OBSERVED")]
+    H[("«entity»<br/>CertificationStatusHistory")]
+    E[("«entity»<br/>Evidence adicional")]
+    L[("«entity»<br/>AuditLog")]
+    U -->|"1. Preparar corrección"| B
+    B -->|"2. Enviar PATCH propio"| A
+    A -->|"3. Autorizar edición"| S
+    S -->|"4. Validar y pasar a RESUBMITTED"| C
+    S -->|"5. Conservar transición"| H
+    B -->|"6. Solicitar adjunto separado"| S
+    S -->|"6.1. Asociar evidencia admitida"| E
+    S -->|"7. Auditar cambio"| L

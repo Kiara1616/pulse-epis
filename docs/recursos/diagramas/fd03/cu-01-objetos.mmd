@@ -1,0 +1,14 @@
+flowchart TB
+    U(("«actor»<br/>Administrador"))
+    B["«boundary»<br/>Pantalla de padrón"]
+    A("«control»<br/>Autorización PADRON_MANAGE")
+    S("«control»<br/>Servicio de padrón")
+    P[("«entity»<br/>AcademicPeriod")]
+    E[("«entity»<br/>Student y Enrollment")]
+    R[("«entity»<br/>RosterImport y rechazos")]
+    U -->|"1. Seleccionar periodo y CSV"| B
+    B -->|"2. Solicitar importación"| A
+    A -->|"3. Autorizar y procesar"| S
+    S -->|"4. Validar periodo"| P
+    S -->|"5. Conciliar población"| E
+    S -->|"6. Guardar resultado del lote"| R

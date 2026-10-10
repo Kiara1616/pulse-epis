@@ -1,600 +1,914 @@
+<p align="center">
+  <img src="../recursos/imagenes/upt-logo.png" alt="Escudo institucional" width="150">
+</p>
+
+<p align="center">
+  <strong>UNIVERSIDAD PRIVADA DE TACNA</strong><br>
+  <strong>FACULTAD DE INGENIERÍA</strong><br>
+  <strong>Escuela Profesional de Ingeniería de Sistemas</strong>
+</p>
+
+<p align="center">
+  <strong>Pulse EPIS: plataforma de inteligencia de negocios para la gestión y análisis de certificaciones tecnológicas verificadas de estudiantes de la EPIS</strong>
+</p>
+
+<p align="center">
+  Curso: Inteligencia de Negocios<br>
+  Docente: Patrick Cuadros Quiroga
+</p>
+
+<p align="center">
+  Integrantes:<br>
+  <strong>Zapana Murillo, Kiara Holly (2023077087)</strong><br>
+  <strong>Lllanos Niño, Vincenzo Rafael (2023076796)</strong>
+</p>
+
+<p align="center">
+  <strong>Tacna – Perú</strong><br>
+  <strong><em>2026</em></strong>
+</p>
+
+---
+
+<p align="center">
+  <strong>Pulse EPIS</strong><br>
+  Plataforma de inteligencia de negocios para la gestión y análisis de certificaciones tecnológicas verificadas
+</p>
+
 # Documento de Arquitectura de Software
 
-![Escudo institucional](../recursos/imagenes/upt-logo.png)
+<p align="center">Código FD04<br>Versión <em>3.4</em></p>
 
-**Proyecto:** Pulse EPIS Dashboard de certificaciones tecnológicas verificadas de estudiantes de la EPIS<br>
-**Institución:** Universidad Privada de Tacna Facultad de Ingeniería Escuela Profesional de Ingeniería de Sistemas<br>
-**Curso:** Inteligencia de Negocios<br>
-**Docente:** Patrick Cuadros Quiroga<br>
-**Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
-**Código:** FD04<br>
-**Versión:** 3.3<br>
-**Fecha:** 06/10/2026<br>
-**Base técnica:** main d123bea; implementación, piloto sintético y documentación de Pulse EPIS
+**CONTROL DE VERSIONES**
 
-**Escenario de presentación académica:** se asume como estado final Pulse EPIS desplegado y funcionando públicamente, con autenticación y almacenamiento duradero. Este supuesto se desarrolla en FD05, apartado 4.5; las tablas de implementación y resultados distinguen la evidencia técnica comprobada de la aceptación institucional.
+| Versión | Hecha por | Revisada por | Aprobada por | Fecha | Motivo |
+|---|---|---|---|---|---|
+| 2.x | KHZM / VRLN | — | — | Septiembre 2026 | Elaboración de la arquitectura inicial |
+| 3.0 | VRLN | — | — | 01/10/2026 | Elaboración del documento académico |
+| 3.1 | KHZM / VRLN | — | — | 02/10/2026 | Organización y revisión de las vistas |
+| 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de presentación y contenido |
+| 3.4 | — | — | — | 09/10/2026 | Adecuación de estructura SAD, diagramas y atributos de calidad |
 
-## Control de versiones
+**ÍNDICE GENERAL**
 
-| Versión | Fecha | Autores | Motivo |
-|---|---|---|---|
-| 2.x | Septiembre 2026 | Kiara Zapana y Vincenzo Lllanos | Desarrollo de las fuentes del proyecto |
-| 3.0 | 01/10/2026 | Vincenzo Lllanos | Generación académica FD01 a FD04 en PR 51 |
-| 3.1 | 02/10/2026 | Equipo del proyecto | Organización documental y actualización contra el código |
-| 3.3 | 06/10/2026 | Equipo del proyecto | Carátula institucional, formato de informe y actualización de resultados técnicos |
+- [1. INTRODUCCIÓN](#1-introducción)
+  - [1.1. Propósito](#11-propósito)
+  - [1.2. Alcance](#12-alcance)
+  - [1.3. Definición, siglas y abreviaturas](#13-definición-siglas-y-abreviaturas)
+  - [1.4. Organización del documento](#14-organización-del-documento)
+- [2. OBJETIVOS Y RESTRICCIONES ARQUITECTÓNICAS](#2-objetivos-y-restricciones-arquitectónicas)
+  - [2.1. Priorización de requerimientos](#21-priorización-de-requerimientos)
+    - [2.1.1. Requerimientos Funcionales](#211-requerimientos-funcionales)
+    - [2.1.2. Requerimientos No Funcionales – Atributos de Calidad](#212-requerimientos-no-funcionales--atributos-de-calidad)
+  - [2.2. Restricciones](#22-restricciones)
+- [3. REPRESENTACIÓN DE LA ARQUITECTURA DEL SISTEMA](#3-representación-de-la-arquitectura-del-sistema)
+  - [3.1. Vista de Caso de uso](#31-vista-de-caso-de-uso)
+    - [3.1.1. Diagramas de Casos de Uso](#311-diagramas-de-casos-de-uso)
+  - [3.2. Vista Lógica](#32-vista-lógica)
+    - [3.2.1. Diagrama de Subsistemas](#321-diagrama-de-subsistemas)
+    - [3.2.2. Diagrama de Secuencia](#322-diagrama-de-secuencia)
+    - [3.2.3. Diagrama de Colaboración](#323-diagrama-de-colaboración)
+    - [3.2.4. Diagrama de Objetos](#324-diagrama-de-objetos)
+    - [3.2.5. Diagrama de Clases](#325-diagrama-de-clases)
+    - [3.2.6. Diagrama de Base de datos](#326-diagrama-de-base-de-datos)
+  - [3.3. Vista de Implementación](#33-vista-de-implementación)
+    - [3.3.1. Diagrama de arquitectura software (paquetes)](#331-diagrama-de-arquitectura-software-paquetes)
+    - [3.3.2. Diagrama de arquitectura del sistema](#332-diagrama-de-arquitectura-del-sistema)
+  - [3.4. Vista de procesos](#34-vista-de-procesos)
+    - [3.4.1. Diagrama de Procesos del sistema](#341-diagrama-de-procesos-del-sistema)
+  - [3.5. Vista de Despliegue](#35-vista-de-despliegue)
+    - [3.5.1. Diagrama de despliegue](#351-diagrama-de-despliegue)
+- [4. ATRIBUTOS DE CALIDAD DEL SOFTWARE](#4-atributos-de-calidad-del-software)
+  - [4.1. Escenario de Funcionalidad](#41-escenario-de-funcionalidad)
+  - [4.2. Escenario de Usabilidad](#42-escenario-de-usabilidad)
+  - [4.3. Escenario de confiabilidad](#43-escenario-de-confiabilidad)
+  - [4.4. Escenario de rendimiento](#44-escenario-de-rendimiento)
+  - [4.5. Escenario de mantenibilidad](#45-escenario-de-mantenibilidad)
+  - [4.6. Otros Escenarios](#46-otros-escenarios)
+    - [4.6.1. Escalabilidad](#461-escalabilidad)
+    - [4.6.2. Seguridad (OWASP Top 10)](#462-seguridad-owasp-top-10)
+    - [4.6.3. Portabilidad](#463-portabilidad)
 
-Revisión y aprobación académica: sin acta registrada. La versión del documento no certifica una aprobación ni un despliegue institucional.
+## 1. INTRODUCCIÓN
 
-## 1 Introducción
+Pulse EPIS integra la gestión de certificaciones tecnológicas verificadas con su análisis institucional. La información académica autorizada determina la población; las credenciales y sus evidencias aportan registros; la revisión humana establece su admisión y el ETL produce hechos para indicadores. Esta arquitectura permite que la Escuela Profesional de Ingeniería de Sistemas de la Universidad Privada de Tacna consulte cobertura, vigencia y distribución de habilidades con una fuente explicable.
 
-### 1.1 Propósito
+La separación entre expediente operativo y resultado analítico protege la información individual y evita calcular cobertura exclusivamente a partir de estudiantes que declaran certificados. Las decisiones arquitectónicas se orientan a integridad, permisos, continuidad y reproducibilidad. Los diagramas siguientes representan los componentes presentes en el repositorio; las ampliaciones se identifican expresamente para no confundir diseño futuro con capacidad disponible.
 
-Describir decisiones, restricciones, interfaces y arquitectura de Pulse EPIS bajo vistas de casos de uso, lógica, implementación, procesos y despliegue. Los diagramas C4 complementan estas vistas; las alternativas objetivo se identifican para no confundirlas con servicios activos.
+### 1.1. Propósito
 
-La arquitectura convierte el prototipo Next.js y Python en una plataforma segura, trazable y desplegable para consolidar certificaciones de estudiantes de la EPIS. Se separan operación, evidencias, analítica y publicación para reducir el riesgo de mezclar datos nominales con indicadores agregados.
+El documento describe la estructura y las responsabilidades del software, la interacción entre servicios, el despliegue y la organización de los datos de Pulse EPIS. Sirve de guía para desarrollo, revisión técnica, pruebas y transferencia a responsables institucionales. Relaciona los requisitos del SRS con mecanismos arquitectónicos y escenarios de aceptación.
 
-| Área | Estado actual del repositorio | Arquitectura objetivo |
-|---|---|---|
-| Frontend | Next.js, TypeScript, Recharts, AuthBoundary/RoleGate y consumo de API | Next.js conectado a una API con contratos versionados |
-| Backend | FastAPI con health checks, OpenAPI, OIDC/RBAC y sesión local de desarrollo | FastAPI modular con OpenAPI, validación y autorización |
-| Datos | ETL reproducible y esquema PostgreSQL versionado | PostgreSQL operacional, staging y modelo analítico |
-| Evidencias | Persistencia privada, hash, URLs temporales y validación | Objetos privados, hash, URLs temporales y retención |
-| Identidad | Google OIDC, login local de desarrollo, sesiones firmadas y RBAC | OIDC institucional, sesiones seguras y RBAC/scopes |
-| Operación | Compose local, CI y workflows de despliegue; la infraestructura requiere host y secretos | Desarrollo, staging y producción reproducibles |
-| Resiliencia | Backup conjunto, verificación aislada y rollback implementados; smoke reproducible. Operación en host institucional pendiente | RPO/RTO definidos, alertas, restauración y rollback |
+Además de explicar el funcionamiento normal, identifica límites que afectan al producto: evidencia almacenada fuera de la base, publicación que puede reemplazar un corte, falta de aislamiento multiescuela y funciones pendientes de interfaz. Estos límites permiten planificar evolución y operación sin atribuir al prototipo garantías que aún deben comprobarse.
 
-El prototipo no se presentará como producción. Las decisiones de este documento son el contrato técnico para los issues de construcción; cada componente pendiente conserva su issue de implementación y criterio de salida.
+### 1.2. Alcance
 
-### 1.2 Alcance incluido
+La arquitectura abarca portal Next.js, API FastAPI, autenticación, padrón, certificaciones, evidencia privada, validación, ETL, analítica, persistencia PostgreSQL y procedimientos de despliegue y respaldo. La primera unidad atendida es EPIS. El producto complementa matrícula y procesos de calidad; no emite certificados ni sustituye la evaluación académica.
 
-- Padrón autorizado por periodo, `student_key` y conciliación.
-- Registro y validación de certificaciones y evidencias.
-- API de indicadores, filtros, estados, calidad y reportes.
-- Vistas nominales restringidas y publicación agregada.
-- ETL idempotente, auditoría, respaldos y observabilidad.
-- Despliegue reproducible con contenedores y promoción entre ambientes.
-
-### 1.3 Fuera de alcance
-
-No se hará scraping de LinkedIn ni búsqueda de identidades en perfiles públicos, no se reemplazará el sistema académico, no se almacenarán contraseñas de terceros y no se publicarán nombres, códigos, correos o rankings nominales sin autorización institucional explícita.
-
-### 1.4 Definiciones siglas y abreviaturas
-
-| Sigla | Significado |
+| **Área** | **Alcance arquitectónico** |
 |---|---|
-| SAD | Documento de arquitectura de software |
-| C4 | Contexto, contenedores, componentes y código |
-| ADR | Registro de decisión arquitectónica |
-| OIDC/RBAC | Identidad federada y permisos por rol |
-| ETL | Extracción, transformación y carga |
-| RPO/RTO | Objetivos de pérdida tolerable de datos y tiempo de recuperación |
+| Presentación | Formularios, restricciones visuales, filtros y gráficos |
+| Aplicación | Permisos efectivos, validación de solicitudes y reglas de dominio |
+| Operación | Padrón, credenciales, evidencia y decisiones de revisión |
+| Analítica | Publicación ETL por periodo y corte, indicadores y CSV |
+| Datos | Tablas operativas, hechos, historial y metadatos de cargas |
+| Infraestructura | Contenedores, configuración externa, persistencia y recuperación |
 
-### 1.5 Organización del documento
+Demanda laboral externa, PDF operativo, vista pública, perfil analítico independiente, notificaciones y operación multiescuela requieren implementación adicional. No existen en Compose un worker distribuido, cola de mensajes ni servicio S3. Su eventual incorporación exige una necesidad medida y contratos definidos.
 
-El apartado 2 contiene objetivos, decisiones y restricciones. El apartado 3 desarrolla las cinco vistas y contratos. El apartado 4 define escenarios de calidad; el apartado 5 cubre operación y recuperación. La planificación y referencias cierran el documento.
+### 1.3. Definición, siglas y abreviaturas
 
-## 2 Objetivos y restricciones arquitectónicas
+| **Término / sigla** | **Definición** |
+|---|---|
+| SAD | Documento de Arquitectura de Software |
+| SRS | Especificación de Requerimientos del Software |
+| BI | Inteligencia de negocios para apoyar decisiones con datos |
+| API REST | Contrato de comunicación HTTP entre portal y servicios |
+| ETL | Extracción, transformación y carga hacia hechos analíticos |
+| Snapshot | Hechos publicados para un periodo y fecha de corte |
+| OIDC | OpenID Connect utilizado para autenticación con Google |
+| RBAC | Autorización por roles y permisos |
+| HMAC | Código autenticado mediante clave secreta; genera la identidad seudónima del padrón |
+| ORM | Mapeo entre objetos de aplicación y tablas relacionales |
+| Idempotencia | Repetición de una operación con la misma entrada sin duplicar su efecto |
+| RPO / RTO | Objetivos de pérdida máxima de datos y tiempo de recuperación |
+| OLTP | Datos transaccionales que soportan el registro y la revisión |
+| Hecho analítico | Registro preparado para cálculo de indicadores |
+| p95 | Tiempo que no supera el 95% de solicitudes de la muestra |
 
-### 2.1 Priorización de requerimientos
+### 1.4. Organización del documento
 
-RF-01 a RF-05, RF-08 y RF-11 protegen identidad, población, evidencia y conteo. RNF-03, RNF-04 y RNF-10 son bloqueantes para usar datos reales. Rendimiento, disponibilidad, recuperación y accesibilidad exigen medición en un ambiente acordado. La matriz completa se mantiene en [FD03](FD03-Especificacion-Requerimientos.md).
+El documento se organiza en cuatro apartados. La introducción define propósito, alcance y vocabulario. El segundo apartado prioriza los requisitos y establece las restricciones que orientan el diseño. El tercero desarrolla las vistas de casos de uso, lógica, implementación, procesos y despliegue. El cuarto presenta escenarios de calidad con respuestas y criterios verificables.
 
-### 2.2 Decisiones arquitectónicas
+Las vistas se complementan: los casos de uso explican las necesidades de los actores; los subsistemas y clases muestran responsabilidades; los procesos describen la ejecución; y el despliegue identifica recursos y fronteras de acceso. La trazabilidad relaciona padrón, estudiante, credencial, evidencia, decisión y corte analítico. Las limitaciones de conservación histórica y crecimiento se explican en las vistas correspondientes.
 
-| ID | Decisión | Elección | Razón y consecuencia |
+Los documentos del proyecto utilizados para mantener consistencia son los siguientes:
+
+| **Documento / recurso** | **Uso** |
+|---|---|
+| [FD01 — Factibilidad](FD01-Informe-Factibilidad.md) | Recursos y condiciones de operación |
+| [FD02 — Visión](FD02-Informe-Vision.md) | Alcance, actores y prioridades |
+| [FD03 — Requerimientos](FD03-Especificacion-Requerimientos.md) | RF, RNF y casos de uso |
+| [Modelo de datos](../proyecto/05-Modelo-de-datos.md) | Entidades y organización relacional |
+| [Diccionario de indicadores](../proyecto/09-Diccionario-indicadores.md) | Fórmulas y significado de los resultados |
+| [API y contratos](../proyecto/15-API-y-contratos.md) | Interfaces entre componentes |
+| Código de `backend/app`, `compose.yaml` y `deploy/operations.sh` | Comportamiento implementado y operación |
+
+Los detalles físicos se contrastan con modelos y migraciones. Cuando un manual conserva una descripción anterior, se utiliza el código correspondiente para describir el comportamiento de esta versión del SAD.
+
+## 2. OBJETIVOS Y RESTRICCIONES ARQUITECTÓNICAS
+
+La arquitectura busca producir información de gestión sobre certificaciones tecnológicas verificadas de una población académica definida. La captura y revisión de credenciales alimentan ese propósito: la cobertura, las habilidades acreditadas, la vigencia y la evolución se interpretan con un periodo, una población y un corte identificables.
+
+Se priorizan identidad, autorización, calidad de datos y publicación consistente antes de ampliar consultas o integración externa. Una interfaz operativa no basta para aceptar datos reales si no están resueltas las responsabilidades de validación y recuperación.
+
+### 2.1. Priorización de requerimientos
+
+La prioridad expresa el impacto de un requisito sobre la operación y la confiabilidad del análisis. Crítica corresponde a una condición indispensable de integridad, identidad o protección. Alta corresponde a una condición necesaria para operar o interpretar los indicadores; media corresponde a una ampliación relevante que no debe introducirse antes de asegurar el flujo principal. La prioridad no equivale a un estado de implementación. Los identificadores se conservan respecto del FD03.
+
+#### 2.1.1. Requerimientos Funcionales
+
+| **ID** | **Requerimiento** | **Prioridad** | **Respuesta arquitectónica / estado** |
 |---|---|---|---|
-| ADR-001 | Forma de despliegue | Monolito modular y ETL CLI/programado | Reduce complejidad para el volumen inicial; el worker dedicado y los microservicios se difieren hasta que una métrica los justifique |
-| ADR-002 | Frontend | Next.js y TypeScript | Reutiliza el prototipo; el cliente no será una frontera de seguridad |
-| ADR-003 | API | FastAPI y Pydantic | Contratos tipados, validación explícita y afinidad con el ETL Python |
-| ADR-004 | Persistencia | PostgreSQL con migraciones versionadas | Integridad transaccional, consultas por corte y trazabilidad |
-| ADR-005 | Evidencias | Almacenamiento de objetos privado | Evita guardar PDFs en la base; permite hash, retención y URLs temporales |
-| ADR-006 | Identidad | OIDC institucional | Centraliza altas, bajas y autenticación; la aplicación autoriza con claims/scopes |
-| ADR-007 | Analítica | Hechos, dimensiones y vistas materializadas | KPIs rápidos y reproducibles sin copiar PII innecesaria |
-| ADR-008 | Integración | Lotes idempotentes por hash y fecha de corte | Reintentos seguros y errores aislados sin publicar datos parciales |
-| ADR-009 | Publicación | Agregados con umbrales de grupo | Reduce el riesgo de reidentificación en vistas públicas |
+| RF-01 | Autenticar y autorizar | test_auth y dependencias RBAC | OIDC, sesión y dependencias RBAC implementadas |
+| RF-02 | Importar padrón | test_roster y pantalla padrón | Parser, servicio y lote transaccional; periodo inicial requiere preparación |
+| RF-03 | Identidad analítica | HMAC y test_roster | HMAC estable y separación de identificadores |
+| RF-04 | Credencial y evidencia propia | test_certifications y formulario | Servicio y almacenamiento privado; captura de habilidades en UI pendiente |
+| RF-05 | Revisar y decidir | test_validation y bandeja | Bloqueo de fila, estados, decisión e historial |
+| RF-06 | Duplicados | Pruebas de unicidad/idempotencia | Restricciones de unicidad y controles de carga y ETL |
+| RF-07 | Normalización | test_etl y catálogos | Catálogos y reglas del ETL |
+| RF-08 | KPI por corte | test_analytics y useAnalytics | Hechos publicados y servicio analítico |
+| RF-09 | Filtros | test_analytics y filtros | Periodo, corte, cohorte, ciclo, emisor y nivel; área pendiente |
+| RF-10 | Evolución | Evolución por cortes y pruebas | Cortes del mismo periodo; comparación entre periodos pendiente |
+| RF-11 | Restringir datos | Pruebas de agregado y acceso | Permisos, titularidad y respuestas agregadas; vista pública pendiente |
+| RF-12 | CSV y PDF | ExportButton CSV | CSV disponible; PDF operativo y metadatos completos pendientes |
+| RF-13 | Auditoría | Auditoría e historial en pruebas | Eventos en operaciones cubiertas; UI general pendiente |
+| RF-14 | Vigencia | Estados derivados y ventana 90 días | Estado efectivo al corte y ventana de 90 días; sin notificación automática |
+| RF-15 | Demanda laboral | Sin integración laboral externa | Fuente y método aún pendientes; brecha interna no satisface este RF |
+| RF-16 | ETL y calidad | test_etl y CLI | CLI y workflow; gestión web de corridas pendiente |
+| RF-17 | Corregir observación | PATCH propio y test_validation | API propia y reenvío; interfaz pendiente |
+| RF-18 | Paquete de acreditación | Sin paquete institucional | Pendiente; PDFs académicos no lo sustituyen |
 
-Las decisiones ADR son revisables mediante una nueva versión del documento. Cambiar de proveedor, finalidad, población o frontera de datos exige actualizar el ADR afectado y la matriz de riesgos de FD01.
+#### 2.1.2. Requerimientos No Funcionales – Atributos de Calidad
 
-### 2.3 Restricciones y estado de implementación
+| **ID** | **Atributo** | **Prioridad** | **Mecanismo / criterio** |
+|---|---|---|---|
+| RNF-01 | Rendimiento | Alta | p95 menor a 2 s, volumen y concurrencia definidos |
+| RNF-02 | Disponibilidad | Media | 99,5% de ventana acordada y monitoreo verificable |
+| RNF-03 | Seguridad | Alta | Denegación sin sesión, permiso o titularidad |
+| RNF-04 | Privacidad | Alta | Agregados sin identificadores; evidencia con acceso temporal |
+| RNF-05 | Usabilidad y accesibilidad | Media | Flujos claros y objetivo WCAG 2.1 AA, por evaluar |
+| RNF-06 | Mantenibilidad | Media | Módulos, migraciones, contratos y controles de CI |
+| RNF-07 | Recuperación | Alta | Base y evidencia; RPO 24 h, RTO 4 h y ensayo documentado |
+| RNF-08 | Observabilidad | Media | Correlación de solicitudes y alertas sin datos nominales |
+| RNF-09 | Portabilidad | Media | Contenedores, variables externas y despliegue reproducible |
+| RNF-10 | Calidad de datos | Alta | Completitud ≥95%, duplicados <1% y publicación atómica |
 
-Se reutilizan Next.js, FastAPI, PostgreSQL y almacenamiento privado local de evidencia. Compose no contiene un servicio de worker dedicado ni S3; son alternativas de evolución. La identidad institucional depende de credenciales OIDC y cuentas provisionadas. El cifrado por campo, respaldo cifrado externo, purga automática y métricas operativas completas no se presentan como implementados.
+Estas métricas son criterios del piloto, no resultados medidos de producción. La calidad del ETL debe interpretarse según sus conteos y reglas; el reporte técnico no sustituye la conciliación institucional de población y evidencia.
 
-## 3 Representación de la arquitectura del sistema
+### 2.2. Restricciones
 
-### 3.1 Vista de casos de uso
+Las restricciones delimitan las decisiones posibles y deben revisarse cuando cambien el alcance, la infraestructura o la población. El sistema necesita conexión al servicio; no existe operación sin conexión ni sincronización diferida de expedientes.
 
-CU-01 a CU-08 cubren padrón, registro, revisión, analítica, CSV, corrección, ETL y sesión. Los escenarios de éxito, alternativas y fallas se mantienen en el SRS. La exportación PDF institucional y demanda externa son escenarios objetivo pendientes.
+| ID | Restricción | Consecuencia arquitectónica |
+|---|---|---|
+| RES-01 | Población institucional autorizada por periodo | El padrón define el denominador; los registros sintéticos no miden cobertura real. |
+| RES-02 | Acceso por cuentas habilitadas y permisos | El dominio de correo por sí solo no concede acceso ni atribuciones. |
+| RES-03 | Revisión humana de evidencia | No se presume autenticidad por adjuntar un archivo ni se consulta automáticamente a todos los emisores. |
+| RES-04 | Protección de datos personales | Los expedientes son restringidos y las consultas de gestión deben minimizar datos identificables. |
+| RES-05 | Tecnologías del repositorio | Portal Next.js/React/TypeScript; API Python/FastAPI; persistencia PostgreSQL con SQLAlchemy y Alembic. |
+| RES-06 | Almacenamiento privado de evidencias | El disco y la base requieren respaldo y recuperación coordinados. |
+| RES-07 | Recursos iniciales limitados | No se asume alta disponibilidad, autoscaling, cola ni un almacén analítico independiente. |
+| RES-08 | Implementación progresiva | PDF operativo, paquete de acreditación, demanda laboral e interfaz de ciertos flujos requieren desarrollo adicional. |
+| RES-09 | Historia analítica parcialmente mutable | Un corte reemplazable y dimensiones operacionales mutables no garantizan reproducir todas las publicaciones anteriores. |
+| RES-10 | Despliegue condicionado al ambiente | Los archivos de configuración no demuestran la existencia de un servicio institucional activo. |
+
+El alcance excluye emitir certificaciones de terceros, sustituir el sistema académico y publicar expedientes nominales sin autorización. La ampliación a otras escuelas requiere definir ámbitos de datos, administración y responsabilidades; no se logra únicamente agregando usuarios.
+
+## 3. REPRESENTACIÓN DE LA ARQUITECTURA DEL SISTEMA
+
+La representación combina vistas de uso, lógica, procesos, desarrollo y despliegue. Cada vista responde a una pregunta distinta: quién utiliza el sistema, qué responsabilidades contiene, cómo se ejecutan operaciones, cómo se organiza el código y dónde se alojan los recursos. Esta organización permite evaluar seguridad y datos a través del flujo completo.
+
+### 3.1. Vista de Caso de uso
+
+Los casos de uso conservan la identificación del FD03 y representan operaciones del producto. La ejecución de ETL corresponde a un operador autorizado de infraestructura, no a un nuevo rol seleccionable desde el portal. La Dirección consume reportes; no necesita administrar expedientes para acceder a información de gestión.
+
+#### 3.1.1. Diagramas de Casos de Uso
 
 ```mermaid
 flowchart LR
-    A[ADMIN] --> P[Importar padrón CU-01]
-    A --> I[Consultar indicadores CU-04]
-    A --> E[Exportar CSV CU-05]
-    S[STUDENT] --> C[Registrar CU-02]
-    S --> R[Corregir por API CU-06]
-    V[VALIDATOR] --> D[Decidir CU-03]
-    V --> I
-    O[Operador] --> T[Publicar ETL CU-07]
+    A[Administrador] --> C1([CU-01 Importar padrón])
+    E[Estudiante] --> C2([CU-02 Registrar certificación y evidencia])
+    E --> C6([CU-06 Corregir observación])
+    V[Validador] --> C3([CU-03 Revisar y decidir])
+    A --> C4([CU-04 Consultar indicadores])
+    V --> C4
+    A --> C5([CU-05 Exportar reporte])
+    V --> C5
+    O[Operador autorizado] --> C7([CU-07 Publicar snapshot ETL])
+    A --> C8([CU-08 Iniciar y cerrar sesión])
+    E --> C8
+    V --> C8
 ```
 
-### 3.2 Vista lógica
 
-#### 3.2.1 Contexto y subsistemas
 
-El siguiente diagrama está escrito como código Mermaid y representa el sistema, sus actores y sus dependencias externas. Las líneas discontinuas indican una entrada que debe estar autorizada y documentada antes de incorporarse a los indicadores.
+| **Caso de uso** | **Precondición** | **Resultado y límite** |
+|---|---|---|
+| CU-01 | Cuenta ADMIN, permiso y periodo preparado | Lote aplicado o rechazado con causas; repetición exacta sin duplicación |
+| CU-02 | STUDENT vinculado al padrón | Credencial pendiente; adjunto se realiza por solicitud separada |
+| CU-03 | VALIDATOR y credencial revisable | Decisión e historial; no permite aprobar directamente desde PENDING |
+| CU-04 | Permiso ANALYTICS_READ y corte publicado | Agregados con filtros; no devuelve expedientes individuales |
+| CU-05 | Vista analítica habilitada | CSV de datos disponibles; PDF y paquete completo pendientes |
+| CU-06 | Expediente propio observado | API corrige y reenvía; interfaz pendiente |
+| CU-07 | Base migrada, periodo y operador autorizado | Corrida y publicación válida o rechazo; no botón web general |
+| CU-08 | Cuenta provisionada y proveedor configurado | Sesión, consulta de identidad y cierre |
+
+Un rol restringe acciones y alcance de datos. `STUDENT` no dispone actualmente de lectura analítica y `ADMIN` no posee validación por defecto. La provisión de cuentas debe respetar esa separación, evitando conceder permisos de más para compensar una función de interfaz ausente.
+
+### 3.2. Vista Lógica
+
+| **Capa** | **Componentes** | **Responsabilidad** |
+|---|---|---|
+| Presentación | Next.js, React, TypeScript, Tailwind y Recharts | Formularios, estado de interfaz y visualización |
+| Interfaces | Rutas FastAPI y esquemas Pydantic | Contratos HTTP, validación y errores |
+| Servicios | Auth, roster, certifications, validation, evidence, ETL y analytics | Reglas, coordinación y autorización |
+| Persistencia | SQLAlchemy, PostgreSQL y Alembic | Transacciones, integridad y evolución del esquema |
+| Operación | Compose, scripts y workflows | Construcción, despliegue y continuidad |
+
+La aplicación utiliza servicios por dominio, sin imponer un repositorio independiente a todas las operaciones. Los servicios trabajan con sesiones de base y aplican reglas antes de persistir. La analítica consume hechos publicados, aunque algunas consultas todavía relacionan esos hechos con tablas operacionales; la independencia del histórico es parcial.
+
+#### 3.2.1. Diagrama de Subsistemas
+
+Los subsistemas agrupan responsabilidades del backend modular. Comparten el esquema PostgreSQL, pero mantienen reglas y contratos diferenciados. La seguridad es transversal: no constituye una autorización concedida por el navegador.
 
 ```mermaid
 flowchart LR
-  subgraph Publico["Fuera de la frontera institucional"]
-    Visitor["Visitante"]
-    Labor["Fuentes laborales documentadas"]
-    Badge["Proveedores de credenciales"]
-  end
-
-  subgraph EPIS["Frontera EPIS"]
-    Student["Estudiante"]
-    Validator["Validador"]
-    Admin["ADMIN autorizado"]
-    Analyst["Analista / Comité"]
-    Pulse["Pulse EPIS"]
-    Registry["Padrón oficial EPIS"]
-    Identity["Proveedor OIDC institucional"]
-  end
-
-  Student --> Pulse
-  Validator --> Pulse
-  Admin --> Pulse
-  Analyst --> Pulse
-  Visitor --> Pulse
-  Registry -. "lote autorizado" .-> Pulse
-  Identity -. "autenticación y claims" .-> Pulse
-  Badge -. "URL/archivo permitido" .-> Pulse
-  Labor -. "fuente, consulta, lugar y fecha" .-> Pulse
-  Pulse --> Reports["Reportes y KPIs agregados"]
+ P[Presentación y navegación] --> I[Interfaces HTTP y esquemas]
+ I --> A[Identidad y autorización]
+ I --> R[Padrón y población académica]
+ I --> C[Certificaciones y habilidades]
+ I --> V[Revisión y decisiones]
+ C --> E[Evidencias privadas]
+ R --> D[(Persistencia operacional)]
+ C --> D
+ V --> D
+ E --> D
+ D --> T[ETL y controles de calidad]
+ T --> H[(Hechos analíticos)]
+ H --> N[Indicadores y reportes]
+ I --> N
+ V --> B[Historial y auditoría]
+ B --> D
 ```
 
-Reglas del contexto:
+La separación permite revisar cambios de catálogos o validación sin mezclar su responsabilidad con la presentación de indicadores. La analítica utiliza hechos publicados y algunas relaciones con dimensiones operacionales; por ello, la separación lógica no implica independencia histórica completa.
 
-1. El padrón EPIS es la autoridad del denominador; el portal público no identifica personas.
-2. Las certificaciones entran a los KPIs solo después de validación, deduplicación y verificación de corte.
-3. OIDC autentica, pero Pulse EPIS decide autorización, alcance de datos y auditoría.
-4. Las fuentes externas entregan evidencia o señales documentadas; no reciben el padrón nominal.
+#### 3.2.2. Diagrama de Secuencia
 
-#### 3.2.2 Modelo de clases y base de datos
+Las solicitudes del portal se ejecutan como operaciones HTTP de la API. La autorización precede al acceso al expediente. Las decisiones de validación utilizan una transacción y bloqueo de la credencial para impedir transiciones incompatibles. Registro y adjunto son solicitudes separadas: una falla del archivo puede dejar una credencial pendiente sin binario y debe comunicarse al usuario.
 
-El modelo físico completo se documenta en [Modelo de datos](../proyecto/05-Modelo-de-datos.md) y tiene 18 tablas en `backend/app/db/models.py`. Incluye identidad, padrón, evidencias, decisión, auditoría, corrida ETL y hechos. `student_key` es HMAC, y `users.email` es un campo restringido; no se declara cifrado por campo inexistente.
+El ETL extrae información, normaliza y comprueba calidad antes de publicar. Si la fuente ya fue procesada para el mismo periodo y corte, devuelve la corrida existente. Si hay rechazos, registra el resultado sin reemplazar hechos; si es válida, publica dentro de una transacción. El estado rechazado se conserva para diagnóstico en lugar de ocultar errores mediante un indicador parcial.
+
+```mermaid
+sequenceDiagram
+    actor E as Estudiante
+    participant P as Portal
+    participant A as API FastAPI
+    participant D as PostgreSQL
+    participant F as Evidencia privada
+    actor V as Validador
+    E->>P: Declarar credencial
+    P->>A: Solicitud con sesión
+    A->>A: Verificar permiso y titularidad
+    A->>D: Guardar credencial PENDING e historial
+    A-->>P: Identificador de credencial
+    P->>A: Adjuntar evidencia
+    A->>F: Guardar archivo privado
+    A->>D: Guardar metadatos y auditoría
+    V->>A: Iniciar revisión
+    A->>D: Bloquear fila y cambiar a UNDER_REVIEW
+    V->>A: Aprobar, observar o rechazar
+    A->>D: Decisión e historial en transacción
+    A-->>V: Estado actualizado
+```
+
+#### 3.2.3. Diagrama de Colaboración
+
+El diagrama de colaboración representa los objetos participantes de una decisión de validación y numera sus mensajes. Complementa la secuencia anterior al mostrar quién coordina la operación y qué dependencias participan. Los nodos representan participantes de ejecución, no servidores independientes.
+
+```mermaid
+flowchart LR
+ V[Validador] -->|1. Enviar decisión| P[Portal]
+ P -->|2. Solicitud autenticada| R[Ruta de validación]
+ R -->|3. Comprobar permiso| A[Dependencias de sesión y RBAC]
+ R -->|4. Solicitar transición| S[Servicio de validación]
+ S -->|5. Bloquear y consultar credencial| D[Sesión PostgreSQL]
+ S -->|6. Validar estado y comentario| C[Credencial]
+ S -->|7. Guardar decisión e historial| D
+ S -->|8. Registrar evento| B[Auditoría]
+ B --> D
+ R -->|9. Responder estado confirmado| P
+```
+
+El servicio concentra las reglas de transición. La persistencia de decisión e historial se completa dentro de la transacción; si falla, el sistema no debe mostrar una aprobación como confirmada. El bloqueo de fila impide que dos revisiones concurrentes produzcan transiciones incompatibles sobre la misma credencial.
+
+#### 3.2.4. Diagrama de Objetos
+
+La siguiente instantánea ilustra un expediente y sus relaciones después de una aprobación. Los identificadores son simbólicos y no pertenecen a personas reales. Se emplean objetos concretos para distinguir la instancia del estudiante, su matrícula y la credencial de las clases que los representan.
+
+```mermaid
+flowchart LR
+ U["usuario_01 : User<br/>role = STUDENT<br/>is_active = true"]
+ S["estudiante_01 : Student<br/>student_key = clave_seudonimizada"]
+ P["periodo_01 : AcademicPeriod<br/>periodo académico definido"]
+ M["matricula_01 : Enrollment<br/>estudiante y periodo asociados"]
+ C["credencial_01 : Certification<br/>status = APPROVED"]
+ I["emisor_01 : Issuer<br/>emisor registrado"]
+ E["evidencia_01 : Evidence<br/>object_key privado<br/>hash SHA-256"]
+ V["decision_01 : Validation<br/>decisión = APPROVED"]
+ R["revisor_01 : User<br/>role = VALIDATOR"]
+ U --- S
+ S --- M
+ M --- P
+ S --- C
+ I --- C
+ C --- E
+ C --- V
+ R --- V
+```
+
+Una aprobación identifica una decisión realizada por un usuario autorizado y una evidencia asociada. No representa emisión de un certificado por Pulse EPIS. La matrícula define la pertenencia a una población académica, mientras que el ETL determina cómo la credencial se incorpora a un corte analítico.
+
+#### 3.2.5. Diagrama de Clases
+
+El modelo de clases resume las entidades del dominio y sus asociaciones principales. Se omiten atributos secundarios para facilitar la lectura; el esquema físico y las restricciones se presentan en el siguiente apartado. Las operaciones de autorización y transición se implementan en servicios, por lo que no se inventan métodos dentro de los modelos de persistencia.
+
+```mermaid
+classDiagram
+ class User {
+  UUID id
+  Role role
+  bool is_active
+ }
+ class Student {
+  UUID id
+  string student_key
+  UUID user_id
+ }
+ class AcademicPeriod {
+  UUID id
+ }
+ class Enrollment {
+  UUID student_id
+  UUID period_id
+ }
+ class Issuer {
+  UUID id
+  string name
+ }
+ class Certification {
+  UUID id
+  UUID student_id
+  UUID issuer_id
+  string credential_name
+  date issued_on
+  CertificationStatus status
+ }
+ class Skill {
+  UUID id
+  string name
+ }
+ class CertificationSkill {
+  UUID certification_id
+  UUID skill_id
+ }
+ class Evidence {
+  UUID id
+  string object_key
+  string sha256
+ }
+ class Validation {
+  UUID id
+  UUID validator_user_id
+ }
+ class CertificationStatusHistory {
+  UUID id
+ }
+ User "0..1" -- "0..1" Student : vincula
+ Student "1" -- "0..*" Enrollment : integra
+ AcademicPeriod "1" -- "0..*" Enrollment : delimita
+ Student "1" -- "0..*" Certification : declara
+ Issuer "1" -- "0..*" Certification : identifica emisor
+ Certification "1" -- "0..*" CertificationSkill : relaciona
+ Skill "1" -- "0..*" CertificationSkill : clasifica
+ Certification "1" -- "0..*" Evidence : sustenta
+ Certification "1" -- "0..*" Validation : recibe
+ User "1" -- "0..*" Validation : decide
+ Certification "1" -- "0..*" CertificationStatusHistory : conserva estados
+```
+
+La relación entre usuario y estudiante es opcional y única: una cuenta puede ser administrativa y un estudiante puede existir en el padrón antes de habilitar su acceso. Una credencial admite varias habilidades; esa multiplicidad no debe duplicar el conteo de certificaciones o estudiantes en los indicadores.
+
+#### 3.2.6. Diagrama de Base de datos
+
+PostgreSQL conserva dieciocho tablas que relacionan identidad, matrícula, credenciales, revisión, cargas, auditoría y hechos. La evidencia binaria reside fuera de la base; `evidences` conserva su ubicación, tamaño, tipo y hash. Una recuperación correcta debe restablecer tanto metadatos como archivos.
+
+El esquema operacional y el analítico comparten instancia. Se separan por responsabilidad y granularidad, no por un data warehouse externo. Las respuestas analíticas son agregadas y omiten códigos, correos y `student_key` aunque la vinculación interna utilice esta clave.
+
+Para mantener legibilidad, la misma vista se divide en identidad, expediente y publicación. Los nombres corresponden a tablas implementadas; las relaciones de actor admiten ausencia del usuario cuando la FK utiliza `SET NULL`.
+
+**Identidad y población**
 
 ```mermaid
 erDiagram
-    USERS ||--o| STUDENTS : representa
-    STUDENTS ||--o{ ENROLLMENTS : matricula
-    ACADEMIC_PERIODS ||--o{ ENROLLMENTS : contiene
-    STUDENTS ||--o{ CERTIFICATIONS : declara
-    CERTIFICATIONS ||--o{ EVIDENCES : respalda
-    CERTIFICATIONS ||--o{ VALIDATIONS : recibe
-    CERTIFICATIONS ||--o{ CERTIFICATION_STATUS_HISTORY : conserva
-    ACADEMIC_PERIODS ||--o{ FACT_STUDENT_PERIOD : publica
-    CERTIFICATIONS ||--o{ FACT_CERTIFICATION : resume
-    ETL_RUNS ||--o{ ETL_REJECTIONS : explica
+    users o|--o| students : vincula
+    students ||--o{ enrollments : registra
+    academic_periods ||--o{ enrollments : contiene
+    academic_periods ||--o{ roster_imports : recibe
+    users o|--o{ roster_imports : ejecuta
+    roster_imports ||--o{ roster_import_rejections : explica
+    users {
+        uuid id PK
+        string email UK
+        string role
+        boolean is_active
+    }
+    students {
+        uuid id PK
+        uuid user_id FK,UK
+        string student_key UK
+    }
+    enrollments {
+        uuid id PK
+        uuid student_id FK
+        uuid period_id FK
+        string cohort
+        string cycle
+        string status
+    }
+    academic_periods {
+        uuid id PK
+        string code UK
+        date starts_on
+        date ends_on
+    }
 ```
 
-El diagrama de clases del SRS identifica objetos del dominio; el ER anterior representa persistencia. El siguiente diagrama muestra una instancia sintética para diferenciar objetos de clases.
+**Credenciales y revisión**
 
 ```mermaid
-flowchart LR
-    U[usuarioDemo STUDENT] --> S[estudianteDemo student_key opaca]
-    S --> M[matriculaDemo periodo sintético]
-    S --> C[credencialDemo PENDING]
-    C --> E[evidenciaDemo archivo privado]
+erDiagram
+    students ||--o{ certifications : declara
+    issuers ||--o{ certifications : emite
+    certifications ||--o{ evidences : sustenta
+    certifications ||--o{ validations : recibe
+    users ||--o{ validations : decide
+    certifications ||--o{ certification_status_history : conserva
+    users o|--o{ certification_status_history : actua
+    certifications ||--o{ certification_skills : clasifica
+    skills ||--o{ certification_skills : identifica
+    users o|--o{ audit_logs : genera
+    certifications {
+        uuid id PK
+        uuid student_id FK
+        uuid issuer_id FK
+        string credential_name
+        date issued_on
+        date expires_on
+        string status
+    }
+    evidences {
+        uuid id PK
+        uuid certification_id FK
+        string object_key
+        string source_url
+        string sha256
+    }
+    validations {
+        uuid id PK
+        uuid certification_id FK
+        uuid validator_user_id FK
+        string decision
+        datetime decided_at
+    }
+    certification_skills {
+        uuid certification_id PK,FK
+        uuid skill_id PK,FK
+        string level
+    }
 ```
 
-#### 3.2.3 Secuencia y colaboración
+**Publicación y hechos analíticos**
 
 ```mermaid
-sequenceDiagram
-    actor Usuario
-    participant Web
-    participant Auth
-    participant Analytics
-    participant DB
-    Usuario->>Web: Seleccionar periodo y corte
-    Web->>Auth: Comprobar sesión y permiso
-    Auth-->>Web: ADMIN o VALIDATOR
-    Web->>Analytics: GET indicators overview
-    Analytics->>DB: Consultar hechos del corte
-    DB-->>Analytics: Población y credenciales elegibles
-    Analytics-->>Web: Agregados y filtros aplicados
-    Web-->>Usuario: KPIs y CSV autorizado
+erDiagram
+    academic_periods ||--o{ etl_runs : delimita
+    users o|--o{ etl_runs : ejecuta
+    etl_runs ||--o{ etl_rejections : registra
+    academic_periods ||--o{ fact_student_period : contiene
+    academic_periods ||--o{ fact_certification : contiene
+    certifications ||--o{ fact_certification : representa
+    issuers ||--o{ fact_certification : clasifica
+    skills ||--o{ fact_certification : clasifica
+    etl_runs {
+        uuid id PK
+        uuid period_id FK
+        date cutoff_date
+        string source_sha256
+        string status
+    }
+    fact_student_period {
+        string student_key PK
+        uuid period_id PK,FK
+        date cutoff_date PK
+        string enrollment_status
+        int approved_certification_count
+    }
+    fact_certification {
+        uuid certification_id PK,FK
+        uuid skill_id PK,FK
+        date cutoff_date PK
+        uuid period_id FK
+        uuid issuer_id FK
+        string status
+        string level
+    }
 ```
 
-```mermaid
-flowchart LR
-    W[Web] -->|1 petición con cookie| R[Router]
-    R -->|2 permiso| A[AuthService y RBAC]
-    R -->|3 consulta| S[AnalyticsService]
-    S -->|4 lectura de hechos| D[PostgreSQL]
-    D -->|5 filas| S
-    S -->|6 agregado| R
-    R -->|7 respuesta JSON| W
-```
+`fact_student_period.student_key` permite vincular lógicamente con el estudiante, pero no declara una FK hacia `students`. Los hechos tampoco tienen FK hacia `etl_runs`; la asociación actual se realiza por periodo y corte. No debe dibujarse un vínculo físico inexistente para aparentar linaje completo.
 
-#### 3.2.4 Datos idempotencia y contratos
-
-##### 3.2.4.1 Modelo operacional y analítico
-
-El esquema operacional conserva la trazabilidad de la captura y decisión. El esquema analítico se construye desde cierres versionados y no debe ser la fuente de identidad.
-
-| Entidad o hecho | Campos principales | Regla de protección |
+| **Grupo** | **Tablas** | **Función** |
 |---|---|---|
-| `Student` | `id`, `student_key`, HMAC de código y correo operacional restringido, estado | Código/correo restringidos |
-| `Enrollment` | estudiante, periodo, ciclo, cohorte, escuela, plan y estado | El padrón define el denominador y conserva el contexto por periodo |
-| `Certification` | estudiante, credencial, emisor, nivel, emisión, expiración y estado | Solo estados aprobados entran al KPI |
-| `Evidence` | certificación, tipo, URL, `object_key`, hash, tipo/tamaño y retención | Archivo privado y URL temporal firmada |
-| `Validation` | certificación, validador, decisión, comentario y fecha | Inmutable; nuevas decisiones agregan historial |
-| `CertificationStatusHistory` | certificación, actor, estado anterior/nuevo, comentario y corte | Append-only para reconstruir transiciones |
-| `Issuer` / `Skill` | nombres canónicos, alias y categorías | Catálogos versionados |
-| `MarketDemand` | habilidad, fuente, consulta, ubicación, periodo y conteo | Nunca contiene identidades estudiantiles |
-| `AuditLog` | principal, rol, scope, acción, entidad, antes, después y fecha | Sin documentos, códigos o correos |
-| `EtlRun` | fuente, hash, inicio, fin, estado, filas y errores | Idempotencia por lote y corte |
-| `fact_student_period` | estudiante seudonimizado, periodo, estado | Denominador por cierre |
-| `fact_certification` | certificación, estado, proveedor, nivel y corte | Hecho reproducible |
-| `fact_market_demand` | habilidad, fuente, ubicación, periodo y valor normalizado | Procedencia obligatoria |
+| Identidad | `users`, `students` | Cuenta, rol y clave seudónima |
+| Población | `academic_periods`, `enrollments` | Matrícula y población por periodo |
+| Carga | `roster_imports`, `roster_import_rejections` | Fuente y causas del lote |
+| Credencial | `issuers`, `skills`, `certifications`, `certification_skills` | Emisor, habilidad y logro |
+| Evidencia y decisión | `evidences`, `validations`, `certification_status_history` | Sustento y transiciones |
+| Auditoría | `audit_logs` | Actor, acción, entidad y cambios |
+| ETL | `etl_runs`, `etl_rejections` | Calidad e identificación de corrida |
+| Hechos | `fact_student_period`, `fact_certification` | Población y certificaciones al corte |
 
-No se copiarán nombres, correos ni códigos sin cifrar al esquema analítico. Los reportes públicos aplicarán umbrales mínimos de grupo y conservarán fecha de corte, filtros y metodología.
+La matrícula impide repetir estudiante y periodo. La credencial restringe repetición por estudiante, emisor, nombre y emisión, y por identificador externo del emisor. Las fechas impiden vencimiento anterior a emisión. La tabla de evidencia exige URL u objeto y limita repetición de hash dentro de la credencial. Estas restricciones complementan las reglas del servicio, sin demostrar por sí solas autenticidad.
 
-##### 3.2.4.2 Idempotencia y consistencia
+`fact_student_period` utiliza como PK clave de estudiante, periodo y corte. `fact_certification` utiliza credencial, habilidad y corte; `period_id` es FK pero no integra esa PK. Esa diferencia debe revisarse si la evolución exige representar la misma credencial y habilidad en varios periodos con la misma fecha de corte. El esquema actual no incorpora esa multiplicidad como una garantía.
 
-1. Cada lote recibe un `batch_id`, hash del archivo, fuente, periodo y fecha de corte.
-2. La misma combinación de hash, fuente y periodo no se aplica dos veces.
-3. La validación ocurre en staging; un lote con errores bloqueantes no se publica parcialmente.
-4. Las promociones a tablas operacionales y hechos se realizan en transacción.
-5. Los cierres publicados son inmutables; una corrección crea una nueva versión y conserva la anterior.
+Una credencial con varias habilidades aparece en varios hechos, pero se cuenta una sola vez en el KPI de certificaciones mediante identificadores distintos. La cobertura también cuenta estudiantes distintos. Los filtros de cohorte y ciclo afectan población; emisor y nivel restringen credenciales sin cambiar el denominador activo elegido.
 
-| Método y ruta | Propósito | Autorización | Entrada principal | Salida |
-|---|---|---|---|---|
-| `POST /api/v1/padron/imports` | Importar padrón | `ADMIN` + `PADRON_MANAGE` | CSV y periodo | `import_id`, totales y rechazos |
-| `GET /api/v1/padron/imports?period_code=...` | Consultar historial de cargas | `ADMIN` + `PADRON_MANAGE` | Código de periodo | Estado, filas, causas y timestamps |
-| `POST /api/v1/certifications` | Registrar credencial | `STUDENT` + `CERTIFICATION_WRITE_OWN` | Emisor, nombre, fechas y URL/archivo | ID y estado `PENDING` |
-| `GET /api/v1/certifications` | Listar registros propios | `STUDENT` + `CERTIFICATION_READ_OWN` | Sesión institucional | Certificaciones sin datos de terceros |
-| `PATCH /api/v1/certifications/{id}` | Corregir registro observado | `STUDENT` propietario | Campos corregibles y habilidades | Estado `RESUBMITTED` y decisión previa preservada |
-| `POST /api/v1/certifications/{id}/evidence` | Adjuntar evidencia | `STUDENT` propietario | Archivo o URL permitida | Hash, metadatos y retención |
-| `POST /api/v1/certifications/{id}/evidence/{evidence_id}/access` | Emitir acceso temporal | `STUDENT` propietario | Evidencia propia | URL firmada con expiración |
-| `GET /api/v1/certifications/evidence/{evidence_id}/download` | Descargar o redirigir | Token firmado | Token temporal | Archivo privado o URL externa |
-| `GET /api/v1/validations` | Consultar bandeja al corte | `VALIDATOR` + `CERTIFICATION_VALIDATE` | Fecha de corte opcional | Registros sin PII nominal |
-| `POST /api/v1/validations/{id}` | Registrar transición | `VALIDATOR` + `CERTIFICATION_VALIDATE` | Acción, comentario y evidencia | Estado e historial |
-| `GET /api/v1/validations/{id}/history` | Consultar historial | `VALIDATOR` + `CERTIFICATION_VALIDATE` | Identificador de certificación | Transiciones append-only |
-| `GET /api/v1/indicators/overview` | Consultar KPIs y desgloses | `ANALYTICS_READ` | Periodo, corte y filtros | Agregados y filtros aplicados |
-| `GET /api/v1/indicators/periods` | Periodos publicados | `ANALYTICS_READ` | Sesión | Periodos con último corte |
-| `GET /api/v1/indicators/dictionary` | Diccionario vigente | `ANALYTICS_READ` | Sesión | Fórmulas, fuente y notas |
-| Paquete de acreditación objetivo | Reporte institucional aún sin endpoint | Permiso por definir | Corte, filtros y evidencia | Capacidad pendiente |
+La fecha de corte no vuelve inmutable toda la información. Los hechos del mismo corte pueden reemplazarse y algunas dimensiones siguen en tablas mutables. Para reportes históricos plenamente reproducibles se requiere definir versión de publicación, contexto metodológico y conservación de atributos necesarios. El linaje disponible cubre decisiones y corridas, con esas limitaciones explícitas.
 
-La API usa esquemas validados, identificadores opacos, límites de archivo y autorización. La paginación general es un objetivo pendiente, y no hay scopes arbitrarios asignables a una cuenta en el RBAC actual. Los códigos de error y el formato de respuesta se mantienen alineados con [FD03](FD03-Especificacion-Requerimientos.md).
+### 3.3. Vista de Implementación
 
-Los contratos objetivo anteriores se complementan con [API y contratos](../proyecto/15-API-y-contratos.md): la API corriente usa nombres snake_case, errores planos y listados sin paginación general. El esquema de respuesta vigente se extrae de Pydantic, y el esquema histórico de dashboard se conserva como propuesta.
+La implementación mantiene portal y backend en el mismo repositorio, con dependencias y construcción propias. El backend organiza módulos por dominio y expone contratos HTTP; el frontend consume esos contratos y controla el estado de presentación. La infraestructura y las migraciones completan la entrega. Esta división permite evolucionar módulos sin exigir convertirlos en servicios distribuidos.
 
-### 3.3 Vista de implementación
+#### 3.3.1. Diagrama de arquitectura software (paquetes)
 
-#### 3.3.1 Arquitectura software de paquetes
+| **Ubicación** | **Contenido** |
+|---|---|
+| `dashboard-app/src/app` | Páginas y composición del portal |
+| `dashboard-app/src/features/access` | Sesión y restricciones visuales |
+| `dashboard-app/src/features/analytics` | Consulta y filtros analíticos |
+| `backend/app/api/routes` | Endpoints por dominio |
+| `backend/app/auth`, `roster`, `certifications`, `validation` | Servicios operativos |
+| `backend/app/evidence`, `etl`, `analytics` | Archivos, transformación y consulta |
+| `backend/app/db`, `backend/migrations` | Modelos y migraciones |
+| `backend/tests` y pruebas frontend | Verificación de contratos y flujos |
+| `deploy` y `.github/workflows` | Infraestructura y automatización |
 
-El diagrama siguiente distingue servicios actuales y el módulo de reportes objetivo. Object Storage representa la abstracción de evidencia; su adaptador actual es filesystem privado, no un servicio S3 activo.
+Los contratos y las pruebas permiten modificar módulos con control del impacto. El cambio de una fórmula debe actualizar diccionario, API, pruebas y documentación. Las migraciones acompañan modificaciones de esquema y deben evaluarse por compatibilidad antes del despliegue.
 
 ```mermaid
 flowchart LR
-  Router["API Router"] --> Auth["Auth y scopes"]
-  Router --> Roster["Módulo padrón"]
-  Router --> Certs["Módulo certificaciones"]
-  Router --> Validation["Módulo validación"]
-  Router --> Analytics["Módulo analítica"]
-  Router --> Reports["Reportes PDF objetivo pendiente"]
-  Router --> Audit["Módulo auditoría"]
-
-  Roster --> DB[("PostgreSQL")]
-  Certs --> DB
-  Validation --> DB
-  Validation --> Evidence[("Object Storage privado")]
-  Analytics --> Views[("Vistas / hechos analíticos")]
-  Reports --> Views
-  Reports --> Audit
-  Auth --> OIDC["OIDC"]
-  Roster --> Audit
-  Certs --> Audit
-  Validation --> Audit
+    subgraph PORTAL[Portal Next.js]
+        UI[Páginas y formularios]
+        ACC[AuthProvider y RoleGate]
+        AN[useAnalytics y filtros]
+    end
+    subgraph API[Backend FastAPI]
+        R[Rutas y esquemas]
+        AUTH[Auth y RBAC]
+        ROS[Servicio de padrón]
+        CERT[Certificaciones]
+        VAL[Validación]
+        EVI[Evidencia]
+        ETL[ETL y catálogos]
+        BI[Analítica]
+        DBM[Modelos y sesiones SQLAlchemy]
+    end
+    UI --> R
+    ACC --> R
+    AN --> R
+    R --> AUTH
+    R --> ROS
+    R --> CERT
+    R --> VAL
+    R --> BI
+    CERT --> EVI
+    ROS --> DBM
+    CERT --> DBM
+    VAL --> DBM
+    BI --> DBM
+    ETL --> DBM
+    EVI --> FILE[(Archivos privados)]
+    DBM --> DB[(PostgreSQL)]
+    CLI[Comando ETL] --> ETL
+    MIG[Alembic] --> DB
 ```
 
-| Componente | Responsabilidad | Entradas | Salidas y errores críticos |
-|---|---|---|---|
-| Auth y scopes | Validar sesión, rol y scopes; denegar por defecto | Token OIDC | `401 UNAUTHENTICATED`, `403 FORBIDDEN` |
-| Módulo padrón | Cargar, conciliar y cerrar el universo por periodo | CSV/lote autorizado | Resultado de lote, `422 VALIDATION_ERROR`, `409 PERIOD_CLOSED` |
-| Módulo certificaciones | Registrar credenciales y evidencias | Formulario, URL o archivo | `PENDING`, `409 DUPLICATE_RECORD`, `413 FILE_TOO_LARGE` |
-| Módulo validación | Registrar decisiones y transiciones | Evidencia y decisión del validador | Historial, `422 EVIDENCE_UNSUPPORTED` |
-| Módulo analítica | Aplicar fórmulas, filtros y fecha de corte | Hechos y dimensiones | KPIs, calidad y `N/D` cuando no hay comparación |
-| Reportes objetivo | Construir paquete/PDF autorizado aún pendiente | KPIs, filtros y fuentes | Actualmente solo CSV en navegador |
-| Módulo auditoría | Registrar quién, qué, cuándo y sobre qué entidad | Evento de dominio | `AuditLog` inmutable para el alcance definido |
+| **Componente** | **Contrato / responsabilidad** | **Verificación disponible** |
+|---|---|---|
+| Auth y RBAC | Identidad, sesión, permisos y usuario activo | `test_auth.py` |
+| Padrón | CSV, lote y vinculación HMAC | `test_roster.py` |
+| Certificaciones y evidencia | Registro propio, fechas y acceso a archivos | `test_certifications.py` |
+| Validación | Estados, bloqueo y decisiones | `test_validation.py` |
+| ETL | Fuente, calidad, idempotencia y transacción | `test_etl.py` |
+| Analítica | Población, filtros, vigencia y agregados | `test_analytics.py` |
+| Migraciones | Esquema consistente y evolución | `test_database_migrations.py` |
+| Despliegue | Compose y configuración Render | Pruebas de configuración y scripts de operación |
 
-Los servicios implementados pertenecen al mismo backend; reportes PDF y endpoints administrativos completos de auditoría permanecen pendientes. Si el volumen o la frecuencia lo exige, el worker y la analítica podrán separarse sin cambiar los contratos públicos.
+Las suites representan cobertura automatizada del comportamiento definido, no una certificación de seguridad ni medición operativa de producción. Al modificar reglas deben actualizarse pruebas de frontera: duplicidad, denominador cero, vencimiento, titularidad y conservación de un corte válido ante errores.
 
-#### 3.3.2 Arquitectura del sistema y contenedores objetivo
-
-El siguiente diseño C4 conserva la alternativa objetivo de separar ETL y almacenamiento de objetos. La composición actual se explica después del diagrama.
+#### 3.3.2. Diagrama de arquitectura del sistema
 
 ```mermaid
 flowchart TB
-  subgraph Client["Zona cliente / Internet"]
-    Browser["Navegador"]
-    PublicView["Vista pública agregada"]
-  end
-
-  subgraph AppZone["Zona de aplicación"]
-    Web["Next.js Web<br/>UI y navegación"]
-    API["FastAPI API<br/>contratos y autorización"]
-    Worker["ETL Worker<br/>validación y cargas"]
-    Scheduler["Scheduler<br/>periodos y reintentos"]
-  end
-
-  subgraph DataZone["Zona de datos restringida"]
-    OIDC["OIDC institucional"]
-    DB[("PostgreSQL<br/>OLTP + analítica")]
-    Objects[("Object Storage<br/>privado")]
-    Queue[("Cola / staging")]
-  end
-
-  subgraph OpsZone["Zona de operación"]
-    Logs["Logs y métricas"]
-    Backup["Backups cifrados"]
-    CI["CI/CD y registro de imágenes"]
-  end
-
-  Browser --> Web
-  PublicView --> Web
-  Web --> API
-  API --> OIDC
-  API --> DB
-  API --> Objects
-  API --> Queue
-  Scheduler --> Worker
-  Worker --> Queue
-  Worker --> DB
-  Worker --> Objects
-  Web -. "telemetría" .-> Logs
-  API -. "telemetría" .-> Logs
-  Worker -. "telemetría" .-> Logs
-  DB --> Backup
-  Objects --> Backup
-  CI -. "promueve versión" .-> Web
-  CI -. "promueve versión" .-> API
-  CI -. "promueve worker" .-> Worker
+    E[Estudiante] -->|Declara y consulta lo propio| P[Pulse EPIS]
+    V[Validador] -->|Revisa y decide| P
+    A[Administrador] -->|Importa padrón y consulta indicadores| P
+    U[Unidad autorizada de matrícula] -->|CSV por periodo| A
+    G[Google OIDC] <-->|Autenticación| P
+    M[Emisor de credencial] -->|URL o evidencia verificable| E
+    M -->|Consulta autorizada de evidencia| V
+    O[Operador de infraestructura] -->|ETL y continuidad| P
+    P -->|Reportes agregados autorizados| D[Dirección y Comité de Calidad]
 ```
 
-| Contenedor | Responsabilidad | Interfaz principal | Datos que puede manejar |
-|---|---|---|---|
-| Next.js Web | Renderizar paneles, formularios y vistas públicas | HTTPS hacia API | No confía en el cliente para autorización; evita PII innecesaria |
-| FastAPI API | Autenticar sesión, autorizar, validar entradas y exponer casos de uso | REST/JSON y descarga controlada | Nominales solo según scope |
-| ETL Worker | Importar, normalizar, deduplicar y cargar por lote | Cola/staging y PostgreSQL | Padrón y evidencias durante ventanas restringidas |
-| Scheduler | Lanzar cierres, reintentos y tareas de calidad | Cola / jobs | Metadatos de ejecución, no credenciales |
-| PostgreSQL | Persistencia operacional, auditoría y consultas analíticas | SQL privado | Padrón, certificaciones, decisiones y hechos |
-| Object Storage | Guardar PDFs y archivos originales | API de objetos con URLs temporales | Evidencias cifradas y privadas |
-| OIDC institucional | Autenticar y entregar claims | OIDC/OAuth 2.0 | Identidad mínima, nunca evidencia |
-| Logs y métricas | Observabilidad y alertas | Exportador interno | IDs técnicos, sin códigos/correos/documentos |
-| CI/CD | Construir, probar y promover artefactos | GitHub Actions/registro | Código y artefactos, nunca datos productivos |
+El diagrama no presupone integración automática con sistemas de matrícula o emisores. La entrada inicial del padrón es CSV; el validador contrasta evidencia por los medios autorizados. OIDC proporciona identidad y no recibe el padrón ni documentos de certificación como parte de su finalidad de autenticación.
 
-#### 3.3.3 Composición implementada
+| **Frontera** | **Control** | **Información intercambiada** |
+|---|---|---|
+| Navegador → API | Sesión, permiso y validación | Solicitudes y datos admitidos por contrato |
+| API → PostgreSQL | Credenciales externas y consultas parametrizadas | Registros operativos y hechos |
+| API → evidencia | Clave privada y acceso temporal | Binarios y metadatos vinculados |
+| Fuentes → padrón | Autorización y conciliación | Población por periodo |
+| Analítica → reporte | Lectura autorizada y agregación | Indicadores, filtros y corte |
+
+Las vistas nominales y analíticas tienen finalidades distintas. El identificador HMAC permite relacionar hechos sin exponer el código original; no elimina la sensibilidad de las tablas que permiten vincular al titular.
+
+### 3.4. Vista de procesos
+
+La vista de procesos describe el recorrido del dato desde el padrón y la declaración del estudiante hasta el indicador publicado. Las operaciones interactivas se ejecutan mediante API; el ETL se ejecuta por lotes. Separar ambos recorridos evita que una credencial recién declarada sea interpretada como un resultado validado antes de pasar por revisión y publicación.
 
 ```mermaid
 flowchart TD
-    B[Navegador] --> F[frontend Next.js]
-    F --> API[backend FastAPI]
-    API --> DB[(database PostgreSQL)]
-    API --> VOL[evidence-data volumen privado]
-    CLI[ETL CLI en backend o workflow] --> DB
-    C[Caddy perfil staging] --> F
-    C --> API
+    A[Estudiante obtiene una credencial] --> B[Entrega evidencia por canales existentes]
+    B --> C[Responsable reúne archivos y registros]
+    C --> D[Conciliación manual con población académica]
+    D --> E{Información suficiente y consistente}
+    E -->|No| F[Solicitar aclaración o completar datos]
+    F --> C
+    E -->|Sí| G[Consolidar conteos y elaborar reporte]
+    G --> H[Revisión por responsables académicos]
+    H --> I{Se requiere nueva información o corrección}
+    I -->|Sí| C
+    I -->|No| J[Conservar resultado y sus fuentes]
 ```
 
-Código: `dashboard-app/src/features` contiene sesión y analítica; `backend/app/api/routes` expone operaciones; auth, roster, certifications, validation, analytics y etl contienen servicios; `backend/app/db` conserva modelos y sesiones. El ETL se ejecuta por CLI/workflow, y el adaptador de evidencia actual usa filesystem privado.
+La dificultad reside en conservar vínculos uniformes entre población, evidencia y estado, además de reconstruir cambios de una consolidación. Deben identificarse los canales realmente usados y medir esfuerzo antes de atribuir ahorro al sistema. La falta de una cifra registrada no permite inferir un valor de cobertura institucional.
 
-### 3.4 Vista de procesos
+#### 3.4.1. Diagrama de Procesos del sistema
 
 ```mermaid
-sequenceDiagram
-  participant R as Responsable de datos
-  participant A as API FastAPI
-  participant S as Staging
-  participant W as ETL Worker
-  participant D as PostgreSQL
-  participant V as Validador
-  participant B as Dashboard
-
-  R->>A: Carga padrón o lote autorizado
-  A->>A: Verifica scope, hash y esquema
-  A->>S: Guarda lote RECIBIDO
-  W->>S: Lee lote VALIDANDO
-  W->>W: Normaliza, deduplica y aplica reglas
-  W->>D: Promueve solo lote válido
-  V->>A: Decide evidencia
-  A->>D: Guarda decisión y auditoría
-  B->>D: Consulta fecha de corte
-  D-->>B: KPIs y calidad reproducibles
+flowchart TD
+    A[Autorizar padrón, periodo y corte] --> B[ADMIN importa y concilia]
+    B --> C{Lote válido}
+    C -->|No| D[Registrar causas y corregir fuente]
+    D --> B
+    C -->|Sí| E[Estudiante declara credencial y evidencia]
+    E --> F[VALIDATOR inicia revisión]
+    F --> G{Decisión}
+    G -->|Observada| H[Corregir y reenviar por procedimiento disponible]
+    H --> F
+    G -->|Rechazada| I[Conservar decisión y excluir del KPI]
+    G -->|Aprobada| J[Conservar decisión y evaluar vigencia al corte]
+    I --> K[Operador ejecuta ETL]
+    J --> K
+    K --> L{Calidad de fuente válida}
+    L -->|No| M[Registrar rechazos y preservar publicación anterior]
+    L -->|Sí| N[Publicar hechos en una transacción]
+    N --> O[API entrega indicadores con filtros]
+    O --> P[Reporte y revisión institucional]
 ```
 
-Los archivos externos se reciben únicamente por un canal autorizado. El worker no consulta identidades desde perfiles públicos. Una fuente de insignias puede entregar una URL o credencial verificable, pero no recibe el padrón completo.
+El diagrama admite una diferencia entre aprobación y vigencia: una credencial aprobada que venció al corte se conserva históricamente y no incrementa cobertura vigente. La observación puede corregirse por API, aunque la interfaz de reenvío aún requiere cierre. El operador publica ETL según procedimiento y los responsables deben confirmar el significado institucional del reporte.
 
-En la implementación actual no existe cola distribuida dedicada: el operador o workflow invoca el comando ETL. La publicación es transaccional. El registro de certificación y el adjunto de archivo son dos solicitudes, por lo que el fallo del adjunto no elimina automáticamente la credencial PENDING.
+La publicación es atómica para hechos del corte, no para todo el expediente distribuido entre base y archivos. El backup captura ambos recursos, pero no impide por sí mismo escrituras intercaladas; para un cierre recuperable se necesita una ventana consistente o mecanismo equivalente y comprobar vínculos después de restaurar.
 
-### 3.5 Vista de despliegue
+### 3.5. Vista de Despliegue
+
+En Compose se ejecutan frontend, backend y PostgreSQL, con volúmenes distintos para base y evidencia. PostgreSQL permanece en una red interna sin puerto publicado al host. Frontend y API se enlazan a loopback; el perfil de publicación incorpora Caddy como entrada HTTPS. Los secretos son configuración externa y no forman parte de imágenes o documentos.
+
+Render constituye otra topología: portal y API se empaquetan en un servicio y PostgreSQL se aloja como recurso administrado. La demo usa evidencia temporal; la alternativa persistente incorpora disco. Ambas necesitan configuración y verificación externas, y no se presumen desplegadas por existir un archivo YAML.
+
+#### 3.5.1. Diagrama de despliegue
+
+El siguiente diagrama representa la topología Compose de publicación con el perfil correspondiente. El ETL se muestra como ejecución del código de backend mediante CLI o workflow, no como un contenedor de worker ya disponible.
 
 ```mermaid
-flowchart LR
-  subgraph Developer["Desarrollo local"]
-    DevWeb["Next.js"]
-    DevApi["FastAPI"]
-    DevDb[("PostgreSQL local")]
-    DevObjects[("Evidencias locales privadas")]
-  end
-
-  subgraph Staging["Staging protegido"]
-    StWeb["Web imagen versionada"]
-    StApi["API imagen versionada"]
-    StDb[("DB staging")]
-    StObj[("Objetos staging")]
-    StMon["Checks y métricas"]
-  end
-
-  subgraph Production["Producción institucional"]
-    PrWeb["Web"]
-    PrApi["API"]
-    PrDb[("PostgreSQL HA según necesidad")]
-    PrObj[("Objetos privados")]
-    PrMon["Monitoreo y alertas"]
-    PrBack["Backups cifrados"]
-  end
-
-  Git["GitHub + revisión"] --> CI["CI/CD"]
-  CI --> StWeb
-  CI --> StApi
-  CI -. "promoción aprobada" .-> PrWeb
-  CI -. "promoción aprobada" .-> PrApi
-  DevWeb --> DevApi --> DevDb
-  DevApi --> DevObjects
-  StWeb --> StApi --> StDb
-  StApi --> StObj
-  StApi -.-> StMon
-  PrWeb --> PrApi --> PrDb
-  PrApi --> PrObj
-  PrApi -.-> PrMon
-  PrDb --> PrBack
-  PrObj --> PrBack
+flowchart TB
+    B[Navegador] -->|HTTPS| C[Caddy - perfil de publicación]
+    C --> F[Frontend Next.js]
+    C --> A[API FastAPI]
+    F -->|HTTP / JSON y sesión| A
+    A <-->|OIDC| G[Google]
+    subgraph PRIV[Red interna]
+        DB[(PostgreSQL)]
+    end
+    A --> DB
+    A --> E[(Volumen privado de evidencia)]
+    DB --> V[(Volumen de base)]
+    T[ETL CLI o workflow autorizado] --> DB
+    O[Operaciones de respaldo y verificación] --> DB
+    O --> E
+    O --> R[(Copias y manifiesto en el host)]
 ```
 
-| Ambiente | Propósito | Datos permitidos | Promoción |
-|---|---|---|---|
-| Desarrollo | Construcción y pruebas rápidas | Sintéticos únicamente | Rama/PR y checks locales |
-| Staging | Validar migraciones, contratos, seguridad y rendimiento | Sintéticos o anonimizados | CI exitoso y revisión |
-| Producción | Piloto o servicio institucional | Datos autorizados reales | Aprobación, backup verificado y rollback preparado |
-
-La arquitectura objetivo requiere contenedores, un entorno PostgreSQL operativo, almacenamiento privado, CI/CD y monitoreo. El repositorio ya contiene el esquema, la migración inicial de [#10 base de datos](https://github.com/Kiara1616/pulse-epis/issues/10), el flujo privado de [#13 evidencias](https://github.com/Kiara1616/pulse-epis/issues/13), la máquina de validación de [#14](https://github.com/Kiara1616/pulse-epis/issues/14), Compose y workflows de despliegue. La ejecución de staging o producción todavía depende de un host, DNS, secretos y configuración de GitHub Environments fuera del repositorio.
-
-La vista de despliegue anterior describe ambientes objetivo. El archivo `compose.yaml` declara database, backend, frontend y Caddy con perfil staging. PostgreSQL no publica puerto al host; frontend y API publican en loopback. Staging y producción usan el mismo perfil de proxy, con archivos de entorno distintos y secretos de GitHub Environments.
-
-
-## 4 Atributos de calidad del software
-
-Los escenarios se vinculan con RNF del SRS. Sus valores son objetivos de aceptación; un workflow o una prueba sintética no los convierte en un SLA institucional alcanzado.
-
-| Escenario | Fuente y estímulo | Entorno y artefacto | Respuesta y medida |
-|---|---|---|---|
-| Funcionalidad | STUDENT registra y VALIDATOR decide | Sesiones válidas y expediente | Estado correcto, historial y evidencia; RF-04/RF-05 |
-| Usabilidad | Usuario corrige campo inválido | Formulario y navegación por teclado | Error identificable y flujo completado; RNF-05 |
-| Confiabilidad | Falla durante publicación ETL | Transacción de hechos | Rollback y conservación del último snapshot; RNF-10 |
-| Rendimiento | Consultas simultáneas de indicadores | Dataset y host dimensionados | p95 menor a 2 s medido; RNF-01 |
-| Mantenibilidad | Cambia ruta o contrato de API | PR y pipeline CI | Prueba/validador detecta regresión y documentos regenerados; RNF-06 |
-| Escalabilidad | Crecen credenciales y cortes | Base, índices y volumen de evidencia | Medir almacenamiento/latencia y ajustar capacidad antes de agotar recursos |
-| Seguridad | Se intenta consultar expediente ajeno | API con sesión STUDENT | Denegar acceso, cero datos ajenos y cero modificación; RNF-03 |
-| Portabilidad | Se inicia mismo commit en host limpio | Compose y secretos externos | Servicios healthy y migraciones aplicadas; RNF-09 |
-| Recuperación | Se pierde conjunto base/evidencias | Copias y ambiente de ensayo | Restauración coherente con RPO 24 h y RTO 4 h como objetivos; RNF-07 |
-
-### 4.1 Pruebas de arquitectura
-
-| Nivel | Prueba | Criterio de salida | Estado actual |
-|---|---|---|---|
-| Diagramas | Mermaid en revisión y render de cada vista | Contexto, contenedores, componentes y despliegue sin referencias huérfanas | Generación Mermaid automatizada y validación de artefactos en CI |
-| Contratos | OpenAPI/JSON Schema y respuestas de error | Cliente y API validan el mismo contrato | Esquema de AnalyticsOverview contrastado con Pydantic y OpenAPI exportado; API analítica implementada |
-| Seguridad | RBAC horizontal/vertical y acceso a objetos | `STUDENT` no ve terceros, `VALIDATOR` no administra y visitante solo ve agregados | Backend base de #11 y permisos de certificación/validación de #13/#14; analítica pública pendiente |
-| Datos | Lotes, deduplicación, fórmulas y cortes | Resultados idempotentes y reproducibles | ETL e indicadores implementados; pruebas sintéticas de cortes y fórmulas disponibles |
-| Integración | API, PostgreSQL, storage y worker | Flujo completo con errores controlados | Flujos persistentes y ETL disponibles; pruebas de backend, piloto sintético y smoke de operaciones. Storage duradero y proveedor OIDC real pendientes en el despliegue público |
-| Rendimiento | p95, lotes y consultas materializadas | Cumple metas de FD03 | Pendiente |
-| Recuperación | Backup, restore y rollback | RPO/RTO verificados en staging | Verificación aislada y smoke disponibles; ensayo con host real y RPO/RTO medidos pendientes |
-
-## 5 Seguridad operación y recuperación
-
-### 5.1 Fronteras de confianza
-
-#### 5.1.1 Fronteras
-
-| Frontera | Activos que cruza | Amenaza principal | Control obligatorio |
-|---|---|---|---|
-| B1 navegador ↔ aplicación | Sesión, filtros y respuestas | Manipulación del cliente o XSS | HTTPS, cookies seguras, CSP y no confiar en roles del frontend |
-| B2 aplicación ↔ OIDC | Tokens y claims | Token robado o claim excesivo | OIDC validado, expiración, audience/issuer y rotación |
-| B3 API ↔ datos | Padrón, decisiones y KPIs | Acceso horizontal/vertical | RBAC/scopes en servidor, consultas parametrizadas y auditoría |
-| B4 API ↔ evidencias | PDFs y URLs | Descarga no autorizada | Bucket privado, cifrado, hash y URLs firmadas temporales |
-| B5 externos ↔ ingestión | CSV, URL y señales laborales | Fuente falsa o payload malicioso | Validación de esquema, límites, antivirus y revisión humana |
-| B6 CI/CD ↔ ambientes | Imágenes, migraciones y secretos | Despliegue de código no revisado | Branch protection, revisión, secretos fuera del repo y promoción aprobada |
-
-#### 5.1.2 Autorización
-
-El MVP implementa `ADMIN`, `VALIDATOR` y `STUDENT`. `PADRON_MANAGE` permite administrar el padrón dentro de `ADMIN`; `ANALYTICS_READ` permite leer indicadores sin administrar ni validar. La vista pública para visitantes es un objetivo pendiente. La autorización se verifica en cada endpoint y el frontend usa AuthBoundary/RoleGate con la sesión del servidor.
-
-#### 5.1.3 Privacidad
-
-- El `student_key` no contiene código ni correo.
-- Padrón, evidencias y decisiones nominales quedan fuera de las vistas públicas.
-- Logs, trazas y métricas no contienen documentos, códigos o correos.
-- La retención y eliminación se configuran por finalidad y periodo.
-- Los grupos pequeños se suprimen o agregan para reducir reidentificación.
-- Las exportaciones incluyen solo los campos permitidos por el scope solicitado.
-
-### 5.2 Respaldo monitoreo y rollback
-
-#### 5.2.1 Objetivos de recuperación
-
-| Activo | Backup | RPO objetivo | RTO objetivo | Prueba de restauración |
-|---|---|---:|---:|---|
-| PostgreSQL | Diario completo + WAL según infraestructura | 24 h en MVP | 4 h en piloto | Trimestral y antes de migraciones mayores |
-| Evidencias | Versionado/copia diaria de objetos | 24 h | 4 h en piloto | Muestra mensual de descarga y hash |
-| Configuración/secrets | Secret manager y exportación controlada | 24 h | 4 h | Semestral, sin exponer valores |
-| Imágenes y migraciones | Registro inmutable y repositorio Git | 0 h frente a commit | 1 h para volver a imagen previa | Cada release |
-
-Los RPO/RTO son objetivos iniciales; el responsable institucional debe confirmarlos antes de producción. Las copias deben cifrarse, tener acceso restringido, conservar retención definida y estar separadas del ambiente principal.
-
-#### 5.2.2 Monitoreo y alertas
-
-| Señal | Umbral inicial | Acción |
+| **Contenedor / recurso** | **Responsabilidad** | **Persistencia / límite** |
 |---|---|---|
-| Salud de API | 3 fallos consecutivos o p95 > 2 s | Alertar soporte y retirar instancia no saludable |
-| Errores 5xx | > 2% durante 5 min | Abrir incidente, revisar logs y evaluar rollback |
-| Lotes ETL | Estado `RECHAZADO` o retraso sobre ventana | No publicar KPI y notificar a responsable de datos |
-| Base de datos | Conexiones, espacio o réplica sobre umbral | Escalar capacidad o pausar cargas |
-| Storage | Fallo de firma, espacio o hash inconsistente | Bloquear descarga/promoción y revisar evidencia |
-| Seguridad | Intentos 401/403 anómalos | Revisar auditoría, revocar sesión o bloquear origen |
-| Backups | Falta de ejecución o restore fallido | Incidente crítico; no promover cambios destructivos |
+| Frontend | Portal, formularios y gráficos | Consume API; no conserva archivos privados públicos |
+| Backend | Permisos y servicios de dominio | Usa PostgreSQL y volumen de evidencia |
+| PostgreSQL | Operación, auditoría y hechos | Volumen dedicado, sin puerto al host en Compose |
+| Caddy | Entrada HTTPS de la topología Compose | Configuración y certificados en volúmenes propios |
+| ETL | Transformación y publicación | Proceso CLI/workflow sobre la base configurada |
+| Operaciones | Backup y prueba aislada | Copias locales; destino externo por completar |
 
-Cada alerta debe incluir servicio, ambiente, timestamp, `request_id`/`batch_id`, severidad, responsable y enlace al runbook. Nunca debe incluir PII.
+En la alternativa Render, frontend y API se ejecutan en un servicio Docker y PostgreSQL se proporciona por separado. La demo guarda evidencia en ruta temporal; la configuración persistente usa un disco con otra ruta. Un procedimiento de respaldo de Compose que utiliza `/app/.data/evidence` no debe aplicarse sin adaptación a esa topología.
 
-#### 5.2.3 Estrategia de rollback
+No se representa una cola, object storage o balanceador como componente instalado. El escalamiento horizontal exige revisar evidencia compartida, límites de conexión y comportamiento de sesiones, además de capacidad de base. La disponibilidad y los costos deben comprobarse para el plan finalmente seleccionado.
 
-1. Detectar el incidente y congelar importaciones o publicaciones afectadas.
-2. Identificar la última versión saludable de imagen, migración y contrato.
-3. Si el problema es de aplicación, volver a la imagen anterior manteniendo migraciones compatibles.
-4. Si el problema es de datos, restaurar a un ambiente aislado, validar integridad y promover solo después de aprobación.
-5. Verificar health checks, RBAC, consultas KPI, evidencia y auditoría.
-6. Comunicar el alcance, preservar logs y registrar causa raíz.
+## 4. ATRIBUTOS DE CALIDAD DEL SOFTWARE
 
-Las migraciones destructivas no se ejecutan en la misma promoción que el código que las requiere. Se prefiere expand/contract: agregar columnas compatibles, desplegar código, migrar datos y retirar lo antiguo después de una ventana de seguridad.
+Los escenarios expresan situaciones del proyecto, la respuesta esperada y el criterio para comprobarla. Las metas no se presentan como resultados medidos. La aceptación debe registrar ambiente, datos, usuarios participantes y evidencia de prueba, de manera que un resultado local pueda distinguirse del funcionamiento institucional.
 
-La alternativa Linux utiliza `deploy/operations.sh`: el backup reúne dump PostgreSQL, evidencias privadas y hashes, con retención local de 30 días; `verify-backup` comprueba integridad y restaura en una base y directorio temporales. El smoke reproducible ejecuta las operaciones contra contenedores Docker descartables, comprueba que el rollback conserva datos y rechaza un respaldo corrupto; no acredita recuperación en un servidor institucional. Rollback revierte aplicación y no sustituye la restauración de datos. El cifrado, las copias externas y la medición de RPO/RTO se verifican antes de producción. La [guía de producción y aceptación](../12-Produccion-y-aceptacion.md) describe la implementación vigente y distingue Compose del piloto gratuito en Render, cuyo filesystem efímero no ofrece durabilidad de evidencias.
+La funcionalidad evalúa el resultado del negocio; la confiabilidad, la integridad y recuperación; el rendimiento, el tiempo y consumo de recursos; y la mantenibilidad, el impacto de cambios. Escalabilidad, seguridad y portabilidad completan las condiciones necesarias para sostener el servicio.
 
-## 6 Evolución y estructura documental
+### 4.1. Escenario de Funcionalidad
 
-La secuencia recomendada mantiene la aplicación demostrativa ejecutable mientras se incorpora el backend:
+El escenario principal comprueba que el sistema transforme una declaración sustentada en información institucional interpretable. Cada resultado debe conservar su vínculo con la población y la decisión de revisión. El éxito no consiste únicamente en cargar certificados, sino en obtener indicadores cuyo numerador y denominador puedan explicarse.
 
-1. Proteger `main`, activar CI y mantener datos sintéticos en desarrollo.
-2. Crear PostgreSQL, migraciones y contratos de datos.
-3. Inicializar FastAPI con health check, configuración por entorno y OpenAPI.
-4. Consolidar en todos los flujos del frontend la sesión real y los permisos OIDC/RBAC de #11, retirando cualquier selector de rol demostrativo residual.
-5. Implementar certificaciones, evidencias, validación y auditoría sobre el padrón de #12 (registro privado en #13 y máquina de estados en #14).
-6. Convertir el ETL en worker idempotente con staging y controles de calidad.
-7. Llevar KPIs, filtros, brechas y fecha de corte al backend.
-8. Conectar Next.js a la API y retirar JSON duplicados de producción.
-9. Validar Compose, desplegar staging, probar restauración y ejecutar un rollback controlado.
-10. Ejecutar el piloto, conciliar indicadores y decidir la publicación institucional.
+| Atributo | Estímulo / Escenario | Respuesta del Sistema | Métrica / Meta |
+|---|---|---|---|
+| Funcionalidad — Población | ADMIN importa el padrón de un periodo. | Valida estructura, normaliza identidad y aplica el lote sin duplicar una carga repetida. | Conciliación entre filas aceptadas, rechazadas y población aplicada; repetición exacta sin nuevas matrículas. |
+| Funcionalidad — Registro | STUDENT declara una credencial y adjunta evidencia propia. | Conserva datos, titularidad y archivo privado; informa por separado errores del adjunto. | Registro consultable por su titular y ausencia de acceso a expedientes ajenos. |
+| Funcionalidad — Revisión | VALIDATOR revisa una credencial y decide. | Exige transición válida y comentario cuando corresponde; registra decisión e historial. | Una decisión confirmada conserva actor, credencial y transición; aprobación directa desde PENDING rechazada. |
+| Funcionalidad — Inteligencia de negocios | Usuario autorizado consulta cobertura al corte. | Utiliza población académica activa y certificaciones admitidas por las reglas analíticas. | Coincidencia con cálculo de control; una credencial con varias habilidades no duplica el conteo de certificaciones. |
 
-La fuente académica se conserva en docs/academico, los manuales de mantenimiento en docs/proyecto y contratos/plantillas en docs/recursos. Un generador produce ambos conjuntos sin omitir diagramas ni depender de archivos PDF versionados. La guía técnica no queda encerrada únicamente en FD04.
+La prueba debe incluir población sin certificaciones, credenciales observadas, aprobadas, vencidas y con varias habilidades. El cálculo de control se realiza sobre un conjunto conocido y documentado. Los datos sintéticos permiten comprobar la fórmula, pero no demostrar cobertura real de la escuela.
 
-## 7 Conclusiones y referencias
+### 4.2. Escenario de Usabilidad
 
-El sistema implementa un monolito modular con frontend conectado, base migrable, evidencia privada, validación y ETL. La operación institucional requiere configuración externa, autorización y ensayos documentados. Los escenarios de calidad definen criterios medibles y responsables, sin declarar un SLA ya probado.
+Un estudiante debe comprender los datos que declara y el estado de su expediente; un usuario de gestión debe interpretar los indicadores sin confundir registros pendientes con certificaciones verificadas. La interfaz debe explicar errores y filtros en el contexto de la tarea.
 
-- [SRS y casos de uso](FD03-Especificacion-Requerimientos.md).
-- [Arquitectura técnica](../proyecto/11-Arquitectura-tecnica.md).
-- [Modelo de datos](../proyecto/05-Modelo-de-datos.md).
-- [Configuración y seguridad](../proyecto/13-Autenticacion-y-seguridad.md).
-- [Despliegue y recuperación](../proyecto/16-Despliegue-y-recuperacion.md).
+| Atributo | Estímulo / Escenario | Respuesta del Sistema | Métrica / Meta |
+|---|---|---|---|
+| Usabilidad — Registro | Estudiante utiliza por primera vez el formulario. | Identifica campos obligatorios, informa errores recuperables y confirma el registro. | Medir finalización sin ayuda, tiempo y errores; acordar umbral y muestra antes del piloto. |
+| Usabilidad — Evidencia | Se adjunta un tipo de archivo no admitido o uno demasiado grande. | Explica la restricción y permite corregir sin aparentar un envío completo. | Todos los casos de prueba informan el rechazo de forma comprensible y conservan el expediente recuperable. |
+| Usabilidad — Analítica | Usuario cambia periodo, corte y filtros. | Hace visible el contexto seleccionado y distingue ausencia de datos de falla del servicio. | El usuario identifica población y corte del resultado en la prueba de interpretación. |
+| Accesibilidad | Usuario navega mediante teclado y tecnologías de apoyo. | Ofrece etiquetas, foco visible y controles operables. | Objetivo WCAG 2.1 AA; comprobar con revisión automática y tareas manuales. |
+
+La corrección de una observación requiere verificar el flujo completo en la interfaz. Un endpoint de reenvío implementado no demuestra una experiencia terminada. El piloto debe incluir computadora y dispositivo móvil, y registrar los problemas que impidan completar las tareas principales.
+
+### 4.3. Escenario de confiabilidad
+
+La confiabilidad protege decisiones y cortes frente a fallas y concurrencia. La recuperación comprende PostgreSQL y las evidencias: restaurar solo las tablas puede producir expedientes sin sustento, y recuperar únicamente archivos pierde asociaciones y decisiones.
+
+| Atributo | Estímulo / Escenario | Respuesta del Sistema | Métrica / Meta |
+|---|---|---|---|
+| Confiabilidad — Transacciones | Dos validadores intentan cambiar una credencial simultáneamente. | Bloquea la fila y verifica el estado antes de persistir la decisión. | Ninguna transición incompatible confirmada; historial coherente con el estado final. |
+| Confiabilidad — Publicación | ETL falla durante el reemplazo de hechos. | Revierte la transacción y evita un corte parcialmente publicado. | El corte válido anterior permanece íntegro ante una falla inducida. |
+| Confiabilidad — Recuperación | Una falla exige restaurar el servicio. | Recupera base y evidencias y verifica relaciones antes de habilitar el acceso. | Metas RPO máximo 24 h y RTO máximo 4 h, sujetas a simulacro documentado. |
+| Disponibilidad | Se interrumpe una dependencia. | Salud y readiness detectan indisponibilidad y el monitoreo alerta al responsable. | Meta 99,5% en la ventana mensual acordada, medida con historial del ambiente. |
+
+Los scripts existentes producen dump de base, paquete de evidencias y hashes, y verifican el respaldo con restauración aislada. Esto no demuestra consistencia simultánea mientras siguen las escrituras ni reemplaza una prueba de archivos contra sus registros. Se requieren destino protegido fuera del servidor, conservación definida y ensayo conjunto. El rollback de código no revierte automáticamente una migración incompatible.
+
+La conservación de historia también afecta la confiabilidad del análisis. El reemplazo de hechos del mismo corte y el uso de dimensiones mutables impiden afirmar que toda publicación anterior pueda reproducirse sin una política adicional de versionado.
+
+### 4.4. Escenario de rendimiento
+
+El rendimiento debe medirse con el volumen y la concurrencia previstos para el piloto. Las consultas analíticas deben responder sin bloquear las operaciones de registro y revisión. La arquitectura actual carga conjuntos en memoria para algunas agregaciones; su capacidad necesita evaluación antes de aumentar años o población.
+
+| Atributo | Estímulo / Escenario | Respuesta del Sistema | Métrica / Meta |
+|---|---|---|---|
+| Rendimiento — Consulta | Usuarios autorizados consultan indicadores con filtros combinados. | Recupera hechos y calcula agregados del contexto elegido. | Percentil 95 inferior a 2 segundos bajo volumen y concurrencia acordados. |
+| Rendimiento — Lote | Operador ejecuta ETL sobre un periodo representativo. | Procesa, identifica calidad y publica de forma transaccional. | Medir duración, memoria y filas procesadas; definir ventana operativa con la medición inicial. |
+| Rendimiento — Concurrencia | Consulta y revisión coinciden con procesamiento del corte. | Mantiene integridad y evita agotamiento de conexiones. | Registrar latencias, errores, bloqueos y conexiones durante la prueba. |
+
+La prueba incluirá credenciales con varias habilidades y cortes de diferentes tamaños. Se documentarán recursos, índices, configuración y distribución de tiempos. Si la meta no se cumple, se revisarán consultas y agregaciones antes de añadir cachés; cualquier caché futura deberá respetar permisos, filtros y versión del corte.
+
+### 4.5. Escenario de mantenibilidad
+
+La mantenibilidad depende de que los cambios de regla se localicen, se revisen y se verifiquen. La separación modular reduce el impacto, pero una modificación de fórmula también afecta contratos, documentación y expectativas de reportes.
+
+| Atributo | Estímulo / Escenario | Respuesta del Sistema | Métrica / Meta |
+|---|---|---|---|
+| Mantenibilidad — Catálogos | Se incorpora un emisor o habilidad. | Utiliza los mecanismos de catálogo y relaciones existentes. | La credencial nueva se procesa sin alterar resultados esperados de casos previos. |
+| Mantenibilidad — Indicadores | Se cambia una regla de vigencia o cobertura. | Actualiza servicio, pruebas, contrato y diccionario de indicadores. | Casos de control explican el resultado antes y después; versión metodológica definida si cambia la interpretación. |
+| Mantenibilidad — Esquema | Se añade un atributo persistente. | Incluye migración y evalúa compatibilidad con despliegue y recuperación. | Migración verificada en un ambiente de prueba y estrategia de reversión o recuperación documentada. |
+
+No se impone un tiempo arbitrario para cualquier cambio. El esfuerzo se evalúa por el alcance de módulos afectados, la claridad de las pruebas y la compatibilidad. La aceptación exige que una modificación no conceda permisos adicionales ni altere denominadores de forma silenciosa.
+
+### 4.6. Otros Escenarios
+
+Estos escenarios consideran crecimiento, protección y traslado entre ambientes. Cada uno requiere comprobar tanto el comportamiento funcional como las condiciones operativas. La existencia de contenedores o de una configuración de infraestructura no demuestra por sí sola capacidad de escala o despliegue institucional.
+
+
+#### 4.6.1. Escalabilidad
+
+La escala debe considerar estudiantes por periodo, número de credenciales, habilidades asociadas, tamaño de evidencias, cortes conservados y consultas simultáneas. El aumento de cuentas no es el único factor: una credencial con varias habilidades genera varios hechos, y cada corte agrega volumen. La capacidad de la infraestructura debe acompañar la política de conservación.
+
+| Atributo | Estímulo / Escenario | Respuesta del Sistema | Métrica / Meta |
+|---|---|---|---|
+| Escalabilidad — Datos | Aumentan periodos, credenciales y cortes. | Mantiene integridad y mide consultas, memoria y almacenamiento. | Comparar cargas crecientes con la línea base; conservar la meta de consulta bajo la carga aceptada. |
+| Escalabilidad — Usuarios | Aumentan consultas concurrentes. | Ajusta recursos y conexiones según mediciones. | Ausencia de agotamiento sostenido de conexiones y tasa de errores dentro del umbral acordado. |
+| Escalabilidad — Evidencias | Crece el volumen de archivos privados. | Dimensiona almacenamiento y respaldo; evita depender del disco de una instancia si se requieren réplicas. | Recuperación conjunta comprobada con el volumen representativo y sin pérdida de asociaciones. |
+| Escalabilidad — Ámbito | Se propone incorporar otra escuela. | Define separación institucional, permisos, población y catálogos antes de habilitar acceso. | Pruebas de aislamiento entre ámbitos; indicadores con denominadores identificables. |
+
+El punto de partida admite crecimiento vertical mediante recursos de cómputo, memoria y base, sujeto a medición. El crecimiento horizontal exige resolver evidencias compartidas, configuración consistente, conexiones y coordinación del ETL. El disco privado actual no se convierte automáticamente en almacenamiento compartido entre instancias.
+
+La API modular permite evolucionar responsabilidades, pero no existe una cola ni un worker dedicado que puedan darse por implementados. La migración a almacenamiento de objetos, las agregaciones en SQL, la paginación y una política de publicaciones históricas son alternativas que deben priorizarse con evidencia de carga. Además, la clave actual de `fact_certification` requiere revisión antes de representar la misma credencial y habilidad en varios periodos con el mismo corte.
+
+#### 4.6.2. Seguridad (OWASP Top 10)
+
+La revisión utiliza las categorías de [OWASP Top 10:2025](https://top10.owasp.org/2025/en/) para organizar riesgos de la aplicación. Su uso orienta controles y pruebas; no constituye una certificación de seguridad ni demuestra que todos los riesgos estén resueltos.
+
+| Riesgo | Escenario en Pulse EPIS | Control o verificación requerida |
+|---|---|---|
+| A01 — Control de acceso | Usuario solicita un expediente ajeno o una decisión sin permiso. | RBAC y titularidad en API; pruebas de acceso directo y denegación. |
+| A02 — Configuración | Ambiente publicado con secretos de desarrollo o acceso innecesario a base. | Variables externas, revisión del ambiente, PostgreSQL privado y configuración HTTPS. |
+| A03 — Cadena de suministro | Dependencia o imagen incorpora una vulnerabilidad. | Revisar dependencias, archivos de bloqueo, imágenes y actualización de componentes. |
+| A04 — Criptografía | Se expone una cookie, archivo o copia de respaldo. | HTTPS y manejo seguro de claves; evaluar cifrado y destino de respaldos. |
+| A05 — Inyección | Entrada maliciosa llega a filtros o consultas. | Validación de esquemas y consultas parametrizadas; no concatenar entrada en SQL. |
+| A06 — Diseño inseguro | Una declaración se trata como verificación o dos decisiones entran en conflicto. | Máquina de estados, revisión humana y bloqueo transaccional. |
+| A07 — Autenticación | Correo del dominio se interpreta como acceso concedido. | OIDC, cuenta habilitada y vinculación; autenticación local limitada a desarrollo y pruebas. |
+| A08 — Integridad | Se altera un archivo o una publicación analítica. | Hashes, metadatos y publicación transaccional; verificar evidencia y asociaciones. |
+| A09 — Registro y alertas | Una operación sensible no deja evidencia o un incidente pasa inadvertido. | Auditoría de operaciones cubiertas; revisar alertas, conservación y ausencia de secretos en logs. |
+| A10 — Condiciones excepcionales | Falla de adjunto o ETL deja una operación aparente como completa. | Errores explícitos, reversión y pruebas de fallas sin publicación parcial. |
+
+El escenario de aceptación incluye un visitante sin sesión, un estudiante que cambia el identificador del expediente y un usuario que intenta decidir sin permiso. Todas las solicitudes no autorizadas deben rechazarse sin entregar evidencia ni modificar estado. También se probarán enlaces de descarga vencidos o alterados y archivos que incumplan límites.
+
+Las sesiones y enlaces temporales reducen exposición, pero requieren claves y configuración adecuadas. El hash de un archivo permite comprobar integridad; no demuestra autenticidad del emisor. El uso de HMAC para identidad analítica depende de una clave estable y no elimina la necesidad de controlar el acceso a los datos de origen. La revisión de seguridad debe cubrir API, portal, infraestructura y procedimientos de operación.
+
+#### 4.6.3. Portabilidad
+
+La portabilidad permite trasladar la solución entre ambientes conservando comportamiento y datos. Los contenedores reducen diferencias de runtime, mientras que variables externas y migraciones permiten configurar conexiones y evolucionar el esquema. Los recursos persistentes requieren procedimientos propios.
+
+| Atributo | Estímulo / Escenario | Respuesta del Sistema | Métrica / Meta |
+|---|---|---|---|
+| Portabilidad — Aplicación | Se instala el sistema en un nuevo host compatible. | Construye imágenes, aplica configuración y comprueba servicios. | Autenticación, registro, validación y consulta pasan las pruebas de humo. |
+| Portabilidad — Datos | Se trasladan base y evidencias. | Restaura ambos recursos y verifica integridad y acceso privado. | Los expedientes de control conservan archivo, historial y asociaciones. |
+| Portabilidad — Topología | Se cambia Compose por otra infraestructura. | Ajusta rutas persistentes, conexión, proxy y recuperación. | Prueba conjunta del nuevo ambiente; no reutilizar supuestos de rutas sin revisión. |
+| Portabilidad — Navegador | Se accede desde navegadores de escritorio y móviles admitidos. | Mantiene formularios, sesión y visualizaciones operables. | Matriz de navegadores y tareas principales verificada para la entrega. |
+
+Una configuración de Render y una de Compose no son intercambiables sin adaptación. El script de respaldo de Compose utiliza rutas concretas del contenedor; la topología con disco persistente debe contar con una recuperación equivalente. La migración debe conservar las claves necesarias para sesiones e identidad analítica mediante un procedimiento seguro y comprobar los permisos sobre archivos antes de habilitar el servicio.
+
+La aceptación del traslado exige una prueba funcional y de recuperación en el destino. Una demo que guarda evidencias en almacenamiento temporal sirve para demostrar el flujo, pero no satisface la persistencia necesaria para una operación institucional.

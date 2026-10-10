@@ -1,0 +1,16 @@
+flowchart TB
+    U(("«actor»<br/>Validador"))
+    B["«boundary»<br/>Bandeja de validación"]
+    A("«control»<br/>Autorización CERTIFICATION_VALIDATE")
+    S("«control»<br/>Servicio de validación")
+    F("«control»<br/>Acceso temporal a evidencia")
+    C[("«entity»<br/>Certification")]
+    V[("«entity»<br/>Validation e historial")]
+    L[("«entity»<br/>AuditLog")]
+    U -->|"1. Seleccionar expediente"| B
+    B -->|"2. Solicitar revisión"| A
+    A -->|"3. Autorizar acceso a evidencia"| F
+    A -->|"4. Iniciar y decidir revisión"| S
+    S -->|"5. Bloquear y verificar estado"| C
+    S -->|"6. Conservar decisión y transición"| V
+    S -->|"7. Auditar operación"| L

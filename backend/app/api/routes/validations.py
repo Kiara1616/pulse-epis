@@ -68,6 +68,9 @@ def _queue_response(item: ValidationQueueItem) -> ValidationQueueResponse:
         ],
         latest_comment=item.latest_comment,
         updated_at=item.updated_at,
+        external_id=item.external_id,
+        issuer_url=item.issuer_url,
+        skills=list(item.skills),
     )
 
 

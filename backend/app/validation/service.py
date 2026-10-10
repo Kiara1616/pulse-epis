@@ -23,6 +23,8 @@ from ..core.config import Settings
 from ..db.models import (
     Certification,
     CertificationStatusHistory,
+    CertificationSkill,
+    Skill,
     Evidence,
     Issuer,
     Student,
@@ -93,6 +95,9 @@ class ValidationQueueItem:
     evidences: tuple[ValidationEvidenceView, ...]
     latest_comment: str | None
     updated_at: datetime
+    external_id: str | None = None
+    issuer_url: str | None = None
+    skills: tuple[dict, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -249,6 +254,13 @@ class ValidationService:
             ),
             latest_comment=latest.comment if latest is not None else None,
             updated_at=_as_utc(certification.updated_at),
+            external_id=certification.external_id,
+            issuer_url=issuer.website_url,
+            skills=tuple({"name": name, "level": level} for name, level in session.execute(
+                select(Skill.name, CertificationSkill.level).join(
+                    CertificationSkill, CertificationSkill.skill_id == Skill.id
+                ).where(CertificationSkill.certification_id == certification.id)
+            )),
         )
 
     def list_queue(
@@ -333,6 +345,11 @@ class ValidationService:
                     )
 
                 now = _utc_now()
+                if action == "APPROVE" and session.scalar(select(Evidence.id).where(
+                    Evidence.certification_id == certification.id,
+                    Evidence.retention_until >= now,
+                ).limit(1)) is None:
+                    raise ValidationInvalid("Adjunta y revisa al menos una evidencia vigente antes de aprobar.")
                 certification.status = target_status
                 certification.updated_at = now
                 if action in {"APPROVE", "OBSERVE", "REJECT"}:

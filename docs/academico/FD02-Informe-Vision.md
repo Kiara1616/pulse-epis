@@ -1,253 +1,508 @@
+<p align="center">
+  <img src="../recursos/imagenes/upt-logo.png" alt="Escudo institucional" width="150">
+</p>
+
+<p align="center">
+  <strong>UNIVERSIDAD PRIVADA DE TACNA</strong><br>
+  <strong>FACULTAD DE INGENIERÍA</strong><br>
+  <strong>Escuela Profesional de Ingeniería de Sistemas</strong>
+</p>
+
+<p align="center">
+  <strong>Pulse EPIS: plataforma de inteligencia de negocios para la gestión y análisis de certificaciones tecnológicas verificadas de estudiantes de la EPIS</strong>
+</p>
+
+<p align="center">
+  Curso: Inteligencia de Negocios<br>
+  Docente: Patrick Cuadros Quiroga
+</p>
+
+<p align="center">
+  Integrantes:<br>
+  <strong>Zapana Murillo, Kiara Holly (2023077087)</strong><br>
+  <strong>Lllanos Niño, Vincenzo Rafael (2023076796)</strong>
+</p>
+
+<p align="center">
+  <strong>Tacna – Perú</strong><br>
+  <strong><em>2026</em></strong>
+</p>
+
+---
+
+<p align="center">
+  <strong>Pulse EPIS</strong><br>
+  Plataforma de inteligencia de negocios para la gestión y análisis de certificaciones tecnológicas verificadas
+</p>
+
 # Documento de Visión
 
-![Escudo institucional](../recursos/imagenes/upt-logo.png)
+<p align="center">Código FD02<br>Versión <em>3.4</em></p>
 
-**Proyecto:** Pulse EPIS Dashboard de certificaciones tecnológicas verificadas de estudiantes de la EPIS<br>
-**Institución:** Universidad Privada de Tacna Facultad de Ingeniería Escuela Profesional de Ingeniería de Sistemas<br>
-**Curso:** Inteligencia de Negocios<br>
-**Docente:** Patrick Cuadros Quiroga<br>
-**Integrantes:** Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796)<br>
-**Código:** FD02<br>
-**Versión:** 3.3<br>
-**Fecha:** 06/10/2026<br>
-**Base técnica:** main d123bea; implementación, piloto sintético y documentación de Pulse EPIS
+**CONTROL DE VERSIONES**
 
-**Escenario de presentación académica:** se asume como estado final Pulse EPIS desplegado y funcionando públicamente, con autenticación y almacenamiento duradero. Este supuesto se desarrolla en FD05, apartado 4.5; las tablas de implementación y resultados distinguen la evidencia técnica comprobada de la aceptación institucional.
+| Versión | Hecha por | Revisada por | Aprobada por | Fecha | Motivo |
+|---|---|---|---|---|---|
+| 2.x | KHZM / VRLN | — | — | Septiembre 2026 | Elaboración inicial |
+| 3.0 | VRLN | — | — | 01/10/2026 | Elaboración de los informes académicos |
+| 3.1 | KHZM / VRLN | — | — | 02/10/2026 | Organización del documento |
+| 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de la presentación |
+| 3.4 | — | — | — | 08/10/2026 | Revisión de visión, perfiles, capacidades y prioridades |
 
-## Control de versiones
+**ÍNDICE GENERAL**
 
-| Versión | Fecha | Autores | Motivo |
-|---|---|---|---|
-| 2.x | Septiembre 2026 | Kiara Zapana y Vincenzo Lllanos | Desarrollo de las fuentes del proyecto |
-| 3.0 | 01/10/2026 | Vincenzo Lllanos | Generación académica FD01 a FD04 en PR 51 |
-| 3.1 | 02/10/2026 | Equipo del proyecto | Organización documental y actualización contra el código |
-| 3.3 | 06/10/2026 | Equipo del proyecto | Carátula institucional, formato de informe y actualización de resultados técnicos |
+- [1. Introducción](#1-introducción)
+  - [1.1. Propósito](#11-propósito)
+  - [1.2. Alcance](#12-alcance)
+  - [1.3. Definiciones, Siglas y Abreviaturas](#13-definiciones-siglas-y-abreviaturas)
+  - [1.4. Referencias](#14-referencias)
+  - [1.5. Visión General](#15-visión-general)
+- [2. Posicionamiento](#2-posicionamiento)
+  - [2.1. Oportunidad de negocio](#21-oportunidad-de-negocio)
+  - [2.2. Definición del problema](#22-definición-del-problema)
+- [3. Descripción de los interesados y usuarios](#3-descripción-de-los-interesados-y-usuarios)
+  - [3.1. Resumen de los interesados](#31-resumen-de-los-interesados)
+  - [3.2. Resumen de los usuarios](#32-resumen-de-los-usuarios)
+  - [3.3. Entorno de usuario](#33-entorno-de-usuario)
+  - [3.4. Perfiles de los interesados](#34-perfiles-de-los-interesados)
+    - [3.4.1. Dirección EPIS y Comité de Calidad](#341-dirección-epis-y-comité-de-calidad)
+    - [3.4.2. Responsable del padrón académico](#342-responsable-del-padrón-académico)
+    - [3.4.3. Equipo desarrollador](#343-equipo-desarrollador)
+    - [3.4.4. Administrador del sistema](#344-administrador-del-sistema)
+    - [3.4.5. Validador de certificaciones](#345-validador-de-certificaciones)
+    - [3.4.6. Estudiante](#346-estudiante)
+  - [3.5. Necesidades de los interesados y usuarios](#35-necesidades-de-los-interesados-y-usuarios)
+- [4. Vista General del Producto](#4-vista-general-del-producto)
+  - [4.1. Perspectiva del producto](#41-perspectiva-del-producto)
+  - [4.2. Resumen de capacidades](#42-resumen-de-capacidades)
+  - [4.3. Suposiciones y dependencias](#43-suposiciones-y-dependencias)
+  - [4.4. Costos y precios](#44-costos-y-precios)
+  - [4.5. Licenciamiento e instalación](#45-licenciamiento-e-instalación)
+- [5. Características del producto](#5-características-del-producto)
+- [6. Restricciones](#6-restricciones)
+- [7. Rangos de calidad](#7-rangos-de-calidad)
+- [8. Precedencia y Prioridad](#8-precedencia-y-prioridad)
+- [9. Otros requerimientos del producto](#9-otros-requerimientos-del-producto)
+  - [9.1. Estándares aplicables](#91-estándares-aplicables)
+  - [9.2. Estándares legales](#92-estándares-legales)
+  - [9.3. Estándares de comunicación](#93-estándares-de-comunicación)
+  - [9.4. Estándares de cumplimiento de la plataforma](#94-estándares-de-cumplimiento-de-la-plataforma)
+  - [9.5. Estándares de calidad y seguridad](#95-estándares-de-calidad-y-seguridad)
+- [10. Conclusiones](#10-conclusiones)
+- [11. Recomendaciones](#11-recomendaciones)
+- [12. Bibliografía](#12-bibliografía)
+- [13. Webgrafía](#13-webgrafía)
 
-Revisión y aprobación académica: sin acta registrada. La versión del documento no certifica una aprobación ni un despliegue institucional.
+## 1. Introducción
 
-## 1 Introducción
+### 1.1. Propósito
 
-### 1.1 Propósito
+Este documento define la visión de Pulse EPIS, plataforma institucional de inteligencia de negocios para analizar certificaciones tecnológicas verificadas de estudiantes de la EPIS de la Universidad Privada de Tacna. Orienta el producto hacia información útil para acreditación, planificación de capacitación y mejora curricular.
 
-Este documento define la visión de Pulse EPIS, una plataforma institucional para conocer el nivel de certificación tecnológica de los estudiantes, conservar evidencia verificable y producir información útil para acreditación y mejora curricular.
+El registro de certificados es la fuente operativa; su finalidad es producir indicadores de cobertura, vigencia y distribución de habilidades certificadas. El documento se dirige a la Dirección, Comité de Calidad, responsables del padrón, validadores, estudiantes, equipo desarrollador y docente del curso de Inteligencia de Negocios.
 
-### 1.2 Alcance definiciones y referencias
+### 1.2. Alcance
 
-Este documento expresa necesidades, posicionamiento, interesados y capacidades del producto. El SRS precisa los criterios de aceptación y el SAD describe decisiones y vistas. La unidad inicial es EPIS; integración multiescuela, publicación pública y demanda externa son objetivos posteriores.
+La primera implementación atiende a la EPIS y comprende autenticación, importación de padrón, declaración de certificaciones, evidencia privada, revisión humana, ETL e indicadores. Cada actor interviene conforme a su responsabilidad y permiso.
 
-### Definiciones siglas y abreviaturas
-
-| Término | Significado |
+| **Módulo** | **Alcance** |
 |---|---|
-| EPIS | Escuela Profesional de Ingeniería de Sistemas |
-| BI | Inteligencia de negocios |
-| OIDC | OpenID Connect para identidad |
-| RBAC | Autorización basada en roles |
+| Identidad y acceso | Autenticación y permisos por rol |
+| Padrón | Población autorizada por periodo, cohorte y ciclo |
+| Certificaciones | Registro de credencial, emisor y fechas |
+| Evidencia y revisión | Documentos privados, decisiones y observaciones |
+| Integración analítica | Calidad de datos y publicación por corte |
+| Dashboard y reportes | Cobertura, vigencia, distribución, filtros y CSV |
+| Trazabilidad | Historial de decisiones y corridas |
+
+No incluye emisión de certificados, reemplazo de matrícula, cobros ni evaluación automática del rendimiento. PDF operativo, demanda laboral, vista pública y varias escuelas son ampliaciones pendientes de requisitos y aceptación.
+
+### 1.3. Definiciones, Siglas y Abreviaturas
+
+| **Término / sigla** | **Definición** |
+|---|---|
+| EPIS / UPT | Escuela Profesional de Ingeniería de Sistemas / Universidad Privada de Tacna |
+| BI | Integración y análisis de información para decisiones |
+| Padrón | Fuente autorizada de población y matrícula |
+| Evidencia | Archivo, URL o metadatos que sustentan una credencial |
+| KPI | Indicador con fórmula, población y fecha definidos |
 | ETL | Extracción, transformación y carga |
-| Snapshot | Publicación analítica para periodo y fecha de corte |
+| Snapshot | Hechos publicados por periodo y corte |
+| OIDC | OpenID Connect para autenticación |
+| RBAC | Autorización mediante roles y permisos |
+| API REST | Interfaz HTTP entre portal y servicios |
+| CSV | Formato tabular de intercambio |
+| RPO / RTO | Objetivos de pérdida máxima de datos y recuperación |
 
-### Referencias y visión general
+### 1.4. Referencias
 
-La [línea base](../proyecto/00-Problema-y-linea-base.md), los [objetivos medibles](../proyecto/01-Objetivos-medibles.md), el [SRS](FD03-Especificacion-Requerimientos.md) y el [diccionario implementado](../proyecto/09-Diccionario-indicadores.md) delimitan las necesidades. El sistema relaciona padrón, evidencia, revisión y snapshot; no descubre identidades desde servicios externos.
+| **N.°** | **Documento** | **Versión / identificación** | **Uso** |
+|---|---|---|---|
+| 01 | [FD01 — Factibilidad](FD01-Informe-Factibilidad.md) | 3.5; 08/10/2026 | Presupuesto y viabilidad |
+| 02 | [FD03 — Requerimientos](FD03-Especificacion-Requerimientos.md) | Documento del proyecto | Reglas y aceptación |
+| 03 | [FD04 — Arquitectura](FD04-Arquitectura-Software.md) | Documento del proyecto | Componentes y decisiones |
+| 04 | [Problema y línea base](../proyecto/00-Problema-y-linea-base.md) | Fuente del proyecto | Población y fuentes |
+| 05 | [Diccionario de indicadores](../proyecto/09-Diccionario-indicadores.md) | Fuente del proyecto | Definiciones de cálculo |
 
-## 2 Posicionamiento
+### 1.5. Visión General
 
-### 2.1 Oportunidad
+Las nueve secciones principales presentan contexto, posicionamiento, interesados, producto, características, restricciones, calidad, prioridades y estándares. La visión relaciona preguntas de gestión con capacidades verificables. Conclusiones y recomendaciones orientan el piloto; bibliografía y webgrafía identifican las fuentes utilizadas.
 
-La EPIS dispone de información académica y publica algunos datos agregados, mientras que las certificaciones se encuentran distribuidas en distintas plataformas y archivos. La oportunidad consiste en relacionar de forma gobernada el universo oficial de estudiantes con credenciales verificadas para responder cuántos están certificados, en qué tecnologías, nivel y vigencia, y qué brechas existen frente al mercado.
+## 2. Posicionamiento
 
-### 2.2 Definición del problema
+### 2.1. Oportunidad de negocio
 
-| Elemento | Definición |
+La oportunidad es institucional: consolidar credenciales procedentes de emisores y formatos distintos para orientar formación y preparar evidencias académicas. Para ello se necesita población autorizada, revisión de titularidad y distinción entre aprobación y vigencia.
+
+Pulse EPIS responde qué proporción de estudiantes tiene certificación vigente, cómo se distribuye por emisor y habilidad y qué credenciales vencerán próximamente. Estas preguntas orientan talleres y acompañamiento. La falta de certificación registrada no demuestra falta de competencia.
+
+Los expedientes requieren privacidad, mientras los agregados aportan valor a la Escuela. La demanda laboral es una ampliación que necesita fuentes y normalización; la brecha interna existente no representa necesidades del mercado ni garantiza empleabilidad.
+
+### 2.2. Definición del problema
+
+| **El problema** | **Afecta a** | **Cuyo impacto es** | **Una solución exitosa sería** |
+|---|---|---|---|
+| Registros heterogéneos | Estudiantes y validadores | Titularidad y duplicidad difíciles de conciliar | Expedientes revisados y vinculados al padrón |
+| Reportes con poblaciones distintas | Dirección y Calidad | Cobertura no comparable | Denominador oficial y corte explícito |
+| Preparación repetida de reportes | Responsables académicos | Búsqueda y reproceso | Consultas y exportación consistentes |
+| Conteos sin interpretación | Responsables de formación | Juicios incorrectos sobre competencias | Metodología y límites visibles |
+
+El piloto debe confirmar volumen y tiempos institucionales. Los datos sintéticos permiten verificar funcionamiento, pero no prueban la magnitud real del problema ni los beneficios económicos.
+
+## 3. Descripción de los interesados y usuarios
+
+### 3.1. Resumen de los interesados
+
+| **Nombre** | **Descripción** | **Responsabilidad** |
+|---|---|---|
+| Dirección y Comité de Calidad | Consumidores de información | Definir preguntas y evaluar resultados |
+| Responsable del padrón | Custodio de matrícula | Autorizar y conciliar la población |
+| Validadores | Revisores de credenciales | Decidir con evidencia y justificación |
+| Estudiantes | Titulares de los registros | Declarar información y atender observaciones |
+| Soporte institucional | Responsable de continuidad por designar | Respaldos, operación e incidentes |
+| Equipo desarrollador | Kiara Zapana y Vincenzo Lllanos | Desarrollo, pruebas y transferencia |
+
+### 3.2. Resumen de los usuarios
+
+| **Nombre** | **Descripción** | **Interesado representativo** |
+|---|---|---|
+| ADMIN | Padrón y funciones administrativas habilitadas | Responsable de operación y datos |
+| VALIDATOR | Revisión y analítica autorizada | Personal designado |
+| STUDENT | Registro y consulta de expediente propio | Estudiantes del padrón |
+| Consumidor de reportes | Decisiones con resultados autorizados | Dirección y Comité; perfil independiente pendiente |
+| Visitante | Consulta futura de agregados | Comunidad académica; vista pública pendiente |
+
+Existen tres roles técnicos. ADMIN y VALIDATOR disponen de lectura analítica; no hay perfil independiente de analista. Los cargos institucionales no deben convertirse automáticamente en permisos administrativos. Los reportes autorizados pueden atender a la Dirección mientras se define una vista de lectura específica.
+
+### 3.3. Entorno de usuario
+
+El acceso utiliza navegador e internet desde PC, laptop, tablet o smartphone. No requiere instalar herramientas de desarrollo. Google OIDC autentica y el directorio interno habilita cuentas; un dominio permitido no sustituye la vinculación institucional.
+
+La carga aumenta durante campañas y cierres. La revisión depende del personal designado, mientras la consulta puede realizarse fuera de ese horario si el servicio está disponible. No hay modo offline. Compatibilidad y facilidad de carga deben comprobarse con los dispositivos del piloto.
+
+### 3.4. Perfiles de los interesados
+
+#### 3.4.1. Dirección EPIS y Comité de Calidad
+
+| **Campo** | **Detalle** |
 |---|---|
-| Problema | No existe una fuente consolidada y trazable de certificaciones EPIS |
-| Afecta a | Dirección, Comité de Calidad, estudiantes y acreditación |
-| Consecuencia | Reportes manuales e indicadores no reproducibles |
-| Solución | BI con padrón oficial, evidencias, validación, ETL y dashboard por roles |
+| Representante | Autoridades y responsables designados |
+| Descripción | Orientan uso académico de indicadores |
+| Tipo | Interesado institucional |
+| Responsabilidades | Definir necesidades y aprobar condiciones del piloto |
+| Criterio de éxito | Reportes verificables que apoyen decisiones |
+| Grado de participación | Alto en definición y aceptación |
 
-La población de referencia será el padrón EPIS autorizado por periodo. La cobertura se calculará sobre estudiantes activos y solo contabilizará certificaciones válidas según las reglas operativas del documento base.
+#### 3.4.2. Responsable del padrón académico
 
-### 2.3 Visión del producto
-
-Para la Dirección y el Comité de Calidad que necesitan evidencia cuantitativa auditable, Pulse EPIS es un sistema web de inteligencia de negocios que consolida estudiantes y certificaciones verificadas, calcula indicadores y genera reportes por periodo. A diferencia de una hoja aislada, mantiene trazabilidad, reglas de calidad, seguridad por roles e historial.
-
-## 3 Descripción de los interesados y usuarios
-
-Un actor de negocio representa una responsabilidad o interés frente al producto. No equivale automáticamente a un rol técnico de autorización. La solución debe conservar esta distinción para no conceder permisos por el nombre de una persona o por la pantalla que utiliza.
-
-| Actor de negocio | Necesidad o responsabilidad | Interacción con el producto |
-|---|---|---|
-| Administrador | Configurar periodos, catálogos y reglas operativas | Gestiona la configuración autorizada |
-| Responsable de datos | Entregar, importar y corregir el padrón oficial | Solicita cargas y revisa conciliaciones |
-| Validador | Revisar titularidad, emisor, vigencia y evidencia | Decide aprobar, observar o rechazar |
-| Analista | Consultar indicadores y preparar reportes | Usa indicadores de solo lectura |
-| Estudiante | Registrar certificaciones y consultar su estado | Gestiona únicamente sus evidencias |
-| Visitante propuesto | Conocer resultados generales de la EPIS | Vista pública agregada pendiente |
-
-Dirección EPIS y Comité de Calidad son interesados y consumidores de reportes. Pueden solicitar vistas o reportes autorizados, pero no requieren un rol técnico adicional para el MVP. Sus necesidades se atienden mediante alcance de datos, permisos de lectura y exportaciones controladas.
-
-### Roles técnicos de autorización del MVP
-
-La implementación inicial tendrá únicamente tres roles técnicos:
-
-| Rol técnico | Permisos base | Límites |
-|---|---|---|
-| `ADMIN` | Gestionar periodos, catálogos, padrón, configuración y auditoría según permisos asignados | No obtiene automáticamente permiso para validar evidencias ni para publicar datos nominales |
-| `VALIDATOR` | Revisar evidencias, registrar decisiones y consultar indicadores necesarios para validar | No administra usuarios, periodos, catálogos ni el padrón |
-| `STUDENT` | Registrar y consultar sus propias certificaciones y evidencias | No consulta datos de otros estudiantes ni indicadores nominales |
-
-En el RBAC actual, `ANALYTICS_READ` está incluido en los permisos de `ADMIN` y `VALIDATOR`; no existe todavía una cuenta de analista independiente con permisos arbitrarios. Un perfil exclusivamente analítico requiere ampliar la política de autorización. No se creará un cuarto rol técnico hasta que una necesidad institucional y una matriz de permisos lo justifiquen. El **Visitante** solo accederá a endpoints o vistas públicas agregadas, sin datos nominales ni autenticación privilegiada.
-
-### Correspondencia actor–autorización
-
-| Actor de negocio | Rol técnico o alcance MVP | Regla de separación |
-|---|---|---|
-| Administrador | `ADMIN` | Administra solo las capacidades asignadas |
-| Responsable de datos | `ADMIN` + permiso `PADRON_MANAGE` | Puede importar y conciliar; no valida por defecto |
-| Validador | `VALIDATOR` | Decide sobre evidencias; no administra el sistema |
-| Analista | Alcance `ANALYTICS_READ` | Solo lectura de indicadores y reportes autorizados |
-| Estudiante | `STUDENT` | Solo sus datos y evidencias |
-| Visitante propuesto | Acceso público agregado aún no implementado | Nunca recibirá datos nominales |
-
-La aplicación no permitirá que el usuario elija o cambie su rol desde el frontend. La autorización se verificará en el backend y quedará registrada en la auditoría.
-
-### 3.1 Entorno perfiles y responsabilidades
-
-| Perfil | Responsabilidad | Condición de uso |
-|---|---|---|
-| Dirección y Comité de Calidad | Revisar cierres y aprobar piloto | Reporte autorizado; no implica rol técnico propio |
-| Responsable del padrón | Garantizar población por periodo | Cuenta ADMIN y fuente autorizada |
-| Validador | Determinar titularidad y validez | Cuenta VALIDATOR y revisión de evidencia |
-| Estudiante | Declarar credenciales propias | Cuenta STUDENT vinculada al padrón |
-| Equipo desarrollador | Mantener código y pruebas | Entorno de desarrollo con datos sintéticos |
-
-Los usuarios trabajan en navegador. La provisión de cuentas, autorización del padrón y aceptación del cierre dependen de la Universidad. No se inventa una designación nominal de responsables ni un acta de conformidad.
-
-## 4 Vista general del producto
-
-### Perspectiva y capacidades disponibles
-
-El frontend Next.js consume FastAPI mediante cookies de sesión; PostgreSQL conserva operación y snapshots, y un volumen privado conserva evidencias. Se implementan sesión local de desarrollo/OIDC, importación CSV, registro, revisión, ETL, filtros analíticos y exportación CSV. La evolución implementada compara cortes del mismo periodo. Los PDF académicos generados son documentación; no son una exportación PDF de la pantalla.
-
-### Suposiciones y dependencias
-
-Se necesitan cuentas provisionadas, periodos creados, base migrada, catálogos y permisos. La pantalla de importación obtiene sus opciones de periodos publicados; un periodo nuevo puede requerir preparación administrativa en backend. El uso con datos reales depende de autorización y una configuración operativa verificada.
-
-### Costos y precios
-
-El proyecto no comercializa licencias ni tiene una tarifa institucional aprobada. Los costos de planificación y la valorización de horas se desarrollan en [FD01](FD01-Informe-Factibilidad.md). Hosting, dominio, evidencias, respaldo y soporte deben presupuestarse con volumen y cotizaciones.
-
-### Licenciamiento e instalación
-
-No hay archivo LICENSE en el repositorio: no se atribuye una licencia de uso o transferencia de derechos no acordada. La instalación se describe en [Desarrollo local](../proyecto/12-Desarrollo-local.md); Compose incluye frontend, API y PostgreSQL, con Caddy para HTTPS en ambientes externos.
-
-### 4.1 Indicadores
-
-| Indicador | Fórmula |
+| **Campo** | **Detalle** |
 |---|---|
-| Cobertura | estudiantes activos con certificación válida / estudiantes activos |
-| Certificaciones vigentes | validadas con expiración nula o posterior al corte |
-| Crecimiento | variación respecto al periodo anterior |
-| Diversidad | proveedores con al menos una certificación válida |
-| Nivel avanzado | credenciales profesionales o expertas / credenciales válidas |
-| Brecha | demanda normalizada menos oferta certificada |
+| Representante | Unidad autorizada para matrícula |
+| Descripción | Define población de referencia |
+| Tipo | Responsable de fuente |
+| Responsabilidades | Conciliar población, periodo y corte |
+| Criterio de éxito | Al menos 95% de conciliación con rechazos identificados |
+| Grado de participación | Alto en carga y cierre |
 
-Cada indicador mostrará fecha de corte, población y reglas. El total publicado en la web EPIS será referencia agregada; el denominador oficial procederá del padrón.
+#### 3.4.3. Equipo desarrollador
 
-## 5 Características del producto
-
-1. Autenticación institucional y roles.
-2. Importación de padrón mediante CSV o integración autorizada.
-3. Auto registro de certificaciones y evidencias.
-4. Verificación por URL, metadatos o revisión manual.
-5. Clasificación de proveedor, nivel, tecnología y vigencia.
-6. KPIs de cobertura, actividad, crecimiento y diversidad.
-7. Análisis por periodo, cohorte, ciclo, proveedor y área.
-8. Demanda laboral con fuente y fecha.
-9. Exportación PDF, CSV y paquete de evidencias.
-10. Auditoría y calidad de datos.
-
-### Límites de acceso por capacidad
-
-| Capacidad | `ADMIN` | `VALIDATOR` | `STUDENT` | `ANALYTICS_READ` | Visitante |
-|---|:---:|:---:|:---:|:---:|:---:|
-| Gestionar periodos, catálogos y configuración | Sí | No | No | No | No |
-| Importar y conciliar padrón | Con `PADRON_MANAGE` | No | No | No | No |
-| Registrar certificación propia | No | No | Sí | No | No |
-| Revisar y decidir evidencias | No por defecto | Sí | No | No | No |
-| Consultar indicadores agregados | Sí | Sí | No en RBAC actual | Alcance de ADMIN/VALIDATOR | Pendiente |
-| Consultar detalle nominal | Según autorización explícita | Solo lo necesario para validar | Solo propio | No por defecto | No |
-| Exportar CSV | Sí en vistas habilitadas | Según vista habilitada | No | Alcance de ADMIN/VALIDATOR | No |
-| Ver auditoría | Sí, según permiso | Solo acciones propias relacionadas | No | No | No |
-
-### 5.1 Entregas previstas
-
-### MVP
-
-- Padrón CSV con permiso `PADRON_MANAGE`, formulario, revisión manual y dashboard interno.
-- Los tres roles técnicos (`ADMIN`, `VALIDATOR`, `STUDENT`) y el alcance analítico de solo lectura.
-- KPIs, proveedores, estudiantes, vigencia y exportación CSV según permisos.
-- Seudonimización, separación de vistas públicas y auditoría básica.
-
-### Versión 1.0 institucional
-
-- Inicio institucional, evidencias y notificaciones.
-- SSO, integración autorizada de insignias y automatización semestral.
-- PDF de acreditación, seguimiento de metas y matriz de permisos revisada.
-- Pruebas de autorización que demuestren que ningún actor cruza su límite.
-
-### Escalamiento
-
-- Varias escuelas, permisos por unidad y almacén histórico.
-- Catálogo común de competencias y API institucional.
-
-## 6 Restricciones
-
-- EPIS entregará un padrón mínimo y responsable de tratamiento.
-- Los estudiantes podrán registrar evidencia con consentimiento.
-- Los proveedores pueden restringir sus APIs.
-- El portal público no es fuente de identidad individual.
-- No se realizará scraping de LinkedIn ni búsqueda de identidades en perfiles públicos; las señales laborales se cargarán como fuentes documentadas y agregadas.
-- No se almacenan contraseñas externas ni se publican códigos o nombres.
-- Cifras simuladas no se usarán en reportes oficiales.
-- El análisis del mercado es una aproximación documentada, no garantía de empleabilidad.
-
-## 7 Rangos de calidad
-
-| Dimensión | Objetivo | Verificación |
-|---|---|---|
-| Rendimiento | p95 menor a 2 segundos con volumen acordado | Prueba de carga documentada, aún sin medición institucional |
-| Disponibilidad | 99.5% en ventana acordada | Monitoreo con periodo y responsable |
-| Seguridad | Denegación sin sesión o permiso | Pruebas de acceso horizontal y vertical |
-| Recuperación | RPO 24 h y RTO 4 h como objetivos | Ensayo de restauración de base y evidencias |
-| Accesibilidad | WCAG 2.1 AA como objetivo del producto | Auditoría funcional y de accesibilidad pendiente |
-
-Las metas no se presentan como certificaciones alcanzadas. Los contratos usan HTTP/JSON y OpenAPI; OIDC restringe acceso institucional. El tratamiento de datos toma como marco la Ley 29733 y su [Reglamento D.S. 016-2024-JUS](https://www.gob.pe/institucion/anpd/normas-legales/6554453-n-016-2024-jus). La política institucional determinará responsabilidades y conservación.
-
-## 8 Precedencia y prioridad
-
-| Prioridad | Resultado |
+| **Campo** | **Detalle** |
 |---|---|
-| Crítica | Identidad confiable, privacidad, validez y denominador correcto |
-| Alta | Dashboard, filtros, historial y exportación |
-| Media | Automatización y análisis laboral |
-| Posterior | Recomendaciones, permisos por unidad y extensión multiescuela |
+| Representante | Kiara Holly Zapana Murillo y Vincenzo Rafael Lllanos Niño |
+| Descripción | Desarrollo e integración del sistema |
+| Tipo | Equipo técnico |
+| Responsabilidades | Integrar portal, API y ETL; probar y documentar |
+| Criterio de éxito | Flujo central verificable y transferencia documentada |
+| Grado de participación | Alto durante las 16 semanas planificadas |
 
-El MVP estará completo cuando opere con datos sintéticos controlados y luego con un padrón real autorizado, cubra registro y validación, reproduzca indicadores, aplique la matriz de acceso, separe vistas agregadas de nominales y supere pruebas de autorización. La versión 1.0 añadirá operación institucional, respaldo, monitoreo, notificaciones y responsables operativos.
+#### 3.4.4. Administrador del sistema
 
-## 9 Otros requerimientos del producto
+| **Campo** | **Detalle** |
+|---|---|
+| Representante | Operador con rol ADMIN |
+| Descripción | Coordina padrón y configuración |
+| Tipo | Usuario operativo |
+| Responsabilidades | Importar y conciliar; usar funciones habilitadas |
+| Criterio de éxito | Población consistente y cargas trazables |
+| Implicaciones | No valida por defecto; administración general aún tiene brechas |
 
-La exportación PDF operativa, paquete institucional de acreditación, notificaciones, demanda laboral externa, publicación pública y purga automática de evidencias requieren implementación o validación adicional. Deben conservar su prioridad y criterios en el SRS, sin asumirlos satisfechos por una pantalla ni por un workflow versionado.
+#### 3.4.5. Validador de certificaciones
 
-## 10 Conclusiones y recomendaciones
+| **Campo** | **Detalle** |
+|---|---|
+| Representante | Personal con rol VALIDATOR |
+| Descripción | Revisa titularidad, emisor y evidencia |
+| Tipo | Usuario de revisión |
+| Responsabilidades | Aprobar, observar o rechazar con motivo |
+| Criterio de éxito | Credenciales del KPI con decisión y evidencia |
+| Implicaciones | Sin administración de padrón ni cuentas |
 
-Iniciar con un piloto de un semestre y comprobar el flujo completo de la API ya conectada al frontend, con responsables y datos autorizados. El ranking nominal debe ser privado y opcional; para difusión pública se usarán cohortes y porcentajes. La decisión de ampliar capacidades debe partir de la matriz de actores y permisos, no de crear roles técnicos por cada área interesada.
+#### 3.4.6. Estudiante
 
-El producto ya integra los flujos principales, pero su aceptación requiere datos autorizados y evidencia operativa. Se recomienda cerrar las brechas según prioridad del SRS y validar indicadores contra una muestra manual. Las referencias técnicas son el [repositorio](https://github.com/Kiara1616/pulse-epis), el SRS, el SAD y los manuales técnicos enlazados; las fuentes institucionales se registran en la línea base con alcance y fecha de consulta.
+| **Campo** | **Detalle** |
+|---|---|
+| Representante | Estudiante vinculado al padrón |
+| Descripción | Declara sus logros |
+| Tipo | Usuario de registro |
+| Responsabilidades | Información precisa y atención de observaciones |
+| Criterio de éxito | Registro y estado comprensibles |
+| Implicaciones | Solo datos propios; corrección y captura de habilidades en UI por completar |
 
-## 11 Bibliografía y webgrafía
+El visitante se limita a una futura consulta agregada autorizada y no accede a expedientes privados.
 
-- [Repositorio y antecedentes](https://github.com/Kiara1616/pulse-epis).
-- [Fuentes institucionales y línea base](../proyecto/00-Problema-y-linea-base.md).
-- [SRS](FD03-Especificacion-Requerimientos.md) y [SAD](FD04-Arquitectura-Software.md).
-- [Marco de protección de datos](https://www.gob.pe/institucion/anpd/normas-legales/6554453-n-016-2024-jus).
+### 3.5. Necesidades de los interesados y usuarios
+
+| **Necesidad** | **Prioridad** | **Preocupaciones** | **Solución actual / situación por levantar** | **Solución propuesta** |
+|---|---|---|---|---|
+| Población confiable | Crítica | Denominador incompleto | Fuentes por conciliar | Padrón por periodo |
+| Credenciales verificadas | Crítica | Duplicidad y titularidad | Evidencias heterogéneas | Decisión e historial |
+| Cobertura por segmentos | Alta | Conteos sin contexto | Consolidación por evaluar | Filtros y corte |
+| Registro propio | Alta | Falta de seguimiento | Canales por identificar | Portal y observaciones |
+| Reportes de calidad | Alta | Reproducibilidad | Tiempos por medir | ETL y exportación |
+| Comparación laboral | Posterior | Sesgo de fuentes | Sin integración | Método documentado |
+| Varias escuelas | Posterior | Acceso cruzado | Solo EPIS | Aislamiento por unidad |
+
+## 4. Vista General del Producto
+
+### 4.1. Perspectiva del producto
+
+Pulse EPIS complementa la gestión académica. Padrón, credenciales y decisiones forman la base operativa; el ETL produce hechos y el dashboard presenta indicadores. El portal usa Next.js y React, la API FastAPI y la persistencia PostgreSQL, con evidencia privada separada.
+
+La trazabilidad relaciona estudiante, credencial, evidencia, decisión y corrida. La publicación actual puede reemplazar hechos del mismo periodo y corte cuando cambia la fuente. Conservar todas las versiones de un reporte requiere reforzar versionado; registrar corridas no garantiza un archivo inmutable de resultados.
+
+La extensión a otras escuelas exige identificar unidades y aislar datos y permisos. El campo de escuela en matrícula no demuestra esa capacidad. El crecimiento técnico se comprobará con carga y almacenamiento adecuados; contenedores y frameworks no prueban escalabilidad por sí solos.
+
+### 4.2. Resumen de capacidades
+
+| **Beneficio** | **Características que lo soportan** | **Situación** |
+|---|---|---|
+| Población consistente | Importación y conciliación | Implementada; padrón institucional pendiente |
+| Evidencia revisable | Registro privado y decisiones | Implementados; operación por aceptar |
+| Cobertura institucional | Activos, certificados y porcentaje | Disponible desde ETL |
+| Seguimiento de vigencia | Aprobadas y vencimiento próximo en 90 días | Disponible al corte |
+| Segmentación | Periodo, corte, cohorte, ciclo, emisor y nivel | Filtros implementados |
+| Evolución | Cortes publicados | Solo dentro del mismo periodo |
+| Reportes | CSV de consulta | Disponible; PDF operativo pendiente |
+| Cobertura por habilidad | Distribución y brecha interna | No representa demanda externa |
+| Lectura diferenciada | Perfil analítico y vista pública | Pendientes |
+
+La cobertura cuenta alumnos activos distintos con al menos una credencial aprobada vigente, divididos entre activos del padrón. Varias credenciales no multiplican al estudiante. El filtro por emisor o nivel restringe el numerador y mantiene la población activa seleccionada por periodo, cohorte y ciclo.
+
+### 4.3. Suposiciones y dependencias
+
+Se requieren fuente autorizada, periodo, corte, cuentas habilitadas y responsables de revisión. La institución definirá tratamiento, conservación y correcciones. Participación y capacidad de validación se comprobarán en el piloto.
+
+OIDC exige credenciales del proveedor; el ambiente necesita secretos externos, migraciones y persistencia. El ETL se ejecuta mediante procedimiento técnico, sin botón general de publicación. Integraciones externas dependen de permisos del emisor; la disponibilidad del código no acredita un despliegue institucional activo.
+
+### 4.4. Costos y precios
+
+| **Componente** | **Monto estimado (S/)** |
+|---|---:|
+| Costos generales | 383,33 |
+| Costos operativos del desarrollo | 80,00 |
+| Costos del ambiente | 440,00 |
+| Trabajo del equipo valorizado | 8 000,00 |
+| **Inversión económica inicial** | **8 903,33** |
+| **Desembolso adicional inicial con aportes académicos** | **550,00** |
+| Aplicación, PostgreSQL y almacenamiento primario anual | 2 400,00 |
+| Copias separadas anuales | 240,00 |
+| Validación, mantenimiento y administración valorizados por año | 4 500,00 |
+| **Costo económico anual** | **7 140,00** |
+| **Desembolso adicional anual con personal aportado** | **2 640,00** |
+
+Son estimaciones del FD01 pendientes de sustento, no tarifas de venta. Los desembolsos están incluidos en el costo económico y no se suman nuevamente. La reserva se presenta por separado en FD01. No se prevén cobros a estudiantes.
+
+El escenario no recupera inversión por ahorro monetizado en tres años. La continuidad requiere medir beneficio y evaluar utilidad académica; el tiempo liberado no es ingreso efectivo.
+
+### 4.5. Licenciamiento e instalación
+
+El repositorio no declara archivo LICENSE. Uso institucional, mantenimiento y derechos sobre el código deben acordarse, respetando licencias de dependencias y contenidos. No se presume cesión de derechos ni contrato de soporte.
+
+Compose instala portal, API y PostgreSQL con volúmenes para base y archivos. La publicación requiere HTTPS, OIDC y secretos del ambiente. La configuración Render de demo conserva archivos temporales; para archivo institucional se necesita persistencia y recuperación conjunta probadas.
+
+## 5. Características del producto
+
+| **ID** | **Característica** | **Descripción** |
+|---|---|---|
+| CAR-01 | Autenticación y permisos | Sesión y autorización de servidor |
+| CAR-02 | Padrón | CSV, conciliación y población por periodo |
+| CAR-03 | Certificaciones | Credencial, emisor y fechas |
+| CAR-04 | Evidencias | Archivos o URL privados y metadatos |
+| CAR-05 | Validación | Decisión, responsable, motivo e historial |
+| CAR-06 | ETL | Calidad y publicación transaccional |
+| CAR-07 | Dashboard | Indicadores y filtros |
+| CAR-08 | Análisis interno | Cobertura por habilidad y evolución de cortes |
+| CAR-09 | Reportes | CSV; PDF institucional pendiente |
+| CAR-10 | Trazabilidad | Historial y corridas; versiones de reportes por reforzar |
+| CAR-11 | Lectura diferenciada | Perfil analítico y vista pública pendientes |
+| CAR-12 | Extensión | Demanda externa y aislamiento multiescuela futuros |
+
+La aceptación se verifica contra el SRS. Un permiso no implica pantalla completa; corrección, habilidades y administración deben cerrar brechas de interfaz antes de exigir operación autónoma.
+
+## 6. Restricciones
+
+| **ID** | **Restricción** | **Descripción** |
+|---|---|---|
+| RES-01 | Conectividad | Internet y navegador; sin modo offline |
+| RES-02 | Autoridad de datos | Padrón autorizado, sin scraping de identidades |
+| RES-03 | Privacidad | Expedientes y evidencia restringidos |
+| RES-04 | Alcance | Una escuela; sin emisión de certificados ni reemplazo de matrícula |
+| RES-05 | Planificación | Piloto de 16 semanas condicionado a responsables |
+| RES-06 | Dependencias | Proveedores requieren configuración y permisos |
+| RES-07 | Métricas | Datos sintéticos no son resultados institucionales |
+| RES-08 | Interpretación | Falta de credencial no prueba falta de habilidad |
+| RES-09 | Continuidad | Base y evidencia deben recuperarse conjuntamente |
+| RES-10 | Escalamiento | Varias escuelas requieren aislamiento y pruebas |
+
+## 7. Rangos de calidad
+
+| **Atributo** | **Métrica** | **Rango objetivo** |
+|---|---|---|
+| Rendimiento | Percentil 95 de consultas principales | Menor a 2 s con carga acordada |
+| Disponibilidad | Tiempo disponible en ventana mensual | Al menos 99,5%, sujeto a medición |
+| Calidad | Conciliación de filas del padrón | Al menos 95%, con rechazos identificados |
+| Trazabilidad | Credenciales del KPI con evidencia y decisión | 100% |
+| Seguridad | Acceso sin permiso o a expediente ajeno | Denegación en todos los casos probados |
+| Recuperación | Pérdida y tiempo máximo | RPO 24 h y RTO 4 h como metas |
+| Usabilidad | Tareas críticas por usuarios capacitados | Registro y revisión completados |
+| Accesibilidad | Teclado, etiquetas y contraste | WCAG 2.1 AA como objetivo inicial |
+| Escalabilidad | Latencia y errores con mayor carga | Mantener rendimiento con volumen documentado |
+
+Son metas, no certificaciones alcanzadas. La prueba debe fijar población, certificados, archivos y concurrencia. No se anuncia capacidad arbitraria ni disponibilidad garantizada en demo gratuita.
+
+## 8. Precedencia y Prioridad
+
+| **Prioridad** | **ID** | **Característica** | **Justificación** |
+|---|---|---|---|
+| 1 — Crítica | CAR-01, CAR-02 | Identidad y padrón | Acceso y denominador confiables |
+| 1 — Crítica | CAR-03, CAR-04, CAR-05 | Registro y revisión | Sustento de admisión |
+| 1 — Crítica | CAR-06 | ETL y calidad | Evitar cifras inconsistentes |
+| 2 — Alta | CAR-07, CAR-08 | Análisis | Información para gestión |
+| 2 — Alta | CAR-09, CAR-10 | CSV y trazabilidad | Reportes explicables |
+| 3 — Media | CAR-09, CAR-11 | PDF y perfil analítico | Ampliación de uso institucional |
+| 4 — Posterior | CAR-11, CAR-12 | Vista pública, demanda y escuelas | Requieren método y recursos adicionales |
+
+La secuencia prioriza acceso y padrón, registro y revisión, calidad y publicación, indicadores y reportes. Privacidad y recuperación son requisitos de aceptación, no complementos opcionales. El cierre institucional necesita datos autorizados y responsables, además de demostración sintética.
+
+## 9. Otros requerimientos del producto
+
+### 9.1. Estándares aplicables
+
+| **Estándar / criterio** | **Aplicación / especificación** |
+|---|---|
+| OpenID Connect Core 1.0 | Autenticación externa, permisos internos |
+| OpenAPI | Contratos de solicitudes y respuestas |
+| WCAG 2.1 AA | Meta inicial de accesibilidad |
+| 1EdTech Open Badges | Referencia de interoperabilidad futura |
+| Diccionario de KPI | Población, corte y fórmulas documentados |
+
+### 9.2. Estándares legales
+
+| **Estándar / criterio** | **Aplicación / especificación** |
+|---|---|
+| Ley N.° 29733 | Protección de datos personales |
+| D.S. N.° 016-2024-JUS | Reglamento del tratamiento |
+| Políticas UPT | Finalidad, retención y derechos |
+| Condiciones de emisores | Uso de evidencia y consulta autorizada |
+
+La institución definirá base habilitante, aviso de privacidad y rectificación y eliminación. Seudonimizar no elimina el carácter personal de los expedientes; controles técnicos no equivalen a certificación legal.
+
+### 9.3. Estándares de comunicación
+
+| **Estándar / criterio** | **Aplicación / especificación** |
+|---|---|
+| HTTPS / TLS | Protección de tráfico externo |
+| HTTP y JSON | Portal y API |
+| UTF-8 | Textos y datos tabulares |
+| CSV | Esquema de importación y exportación |
+| OIDC | Flujo de identidad |
+
+Errores y exportaciones deben informar contexto sin revelar secretos ni datos ajenos. Notificaciones requieren un servicio implementado; SMTP no se considera operativo por defecto.
+
+### 9.4. Estándares de cumplimiento de la plataforma
+
+| **Componente** | **Aplicación / especificación** |
+|---|---|
+| Frontend | Next.js 16.3.8, React 19.2.8 y TypeScript |
+| Entorno frontend | Node.js 20+, según compatibilidad de lock y contenedor |
+| Backend | Python 3.12+, FastAPI y Uvicorn |
+| Datos | PostgreSQL 16 y migraciones Alembic |
+| Analítica | ETL por periodo y corte |
+| Despliegue | Contenedores y persistencia |
+| Cliente | Navegador actualizado probado en piloto |
+
+Versiones resueltas deben conservarse en artefactos; actualizaciones requieren comprobación de acceso, migraciones y compatibilidad, junto con manuales actualizados.
+
+### 9.5. Estándares de calidad y seguridad
+
+| **Estándar / criterio** | **Aplicación / especificación** |
+|---|---|
+| Sesión | Firma, expiración y cookie segura en producción |
+| Credenciales locales | Argon2id limitado a desarrollo/pruebas |
+| Permisos | ADMIN no valida por defecto; STUDENT solo accede a datos propios |
+| Evidencia | Rutas privadas, claves aleatorias, hash y acceso temporal |
+| Entrada | Validación de servidor |
+| Auditoría | Actor, entidad, acción y fecha; consulta completa pendiente |
+| Respaldo | Copias y ensayo conjunto de base y evidencia |
+| Secretos | Configuración externa y ambientes separados |
+| Prevención de abuso | Rate limiting general y controles de carga por verificar |
+
+El hash comprueba contenido, no autenticidad del emisor. La retención necesita política y procedimiento de eliminación; purga automática permanece pendiente.
+
+## 10. Conclusiones
+
+Pulse EPIS articula registro verificado y análisis institucional. Los expedientes aportan evidencia; los indicadores apoyan cobertura, vigencia y formación. La utilidad depende de población confiable y revisión, no de cantidad de gráficos.
+
+El flujo central permite un piloto, pero la aceptación exige datos, roles, persistencia y recuperación. La evolución actual compara cortes de un periodo; la brecha interna no es demanda laboral. La expansión necesita aislamiento por escuela y publicaciones versionadas.
+
+El escenario económico del FD01 no recupera inversión en tres años. La decisión debe apoyarse en mediciones y utilidad académica, sin afirmar rentabilidad garantizada.
+
+## 11. Recomendaciones
+
+1. Confirmar padrón, periodo, corte y responsables antes de cifras oficiales.
+2. Completar corrección y revisión con usuarios y comprobar permisos.
+3. Contrastar indicadores manualmente y medir ahorro y carga operativa.
+4. Probar recuperación y conservar contexto de exportaciones.
+5. Reforzar versionado de reportes históricos.
+6. Incorporar PDF, perfil analítico y fuentes externas según prioridad.
+7. Evaluar otras escuelas tras definir aislamiento y capacidad.
+
+## 12. Bibliografía
+
+- Equipo Pulse EPIS. (2026). *FD01 — Informe de Factibilidad*. Versión 3.5. UPT.
+- Equipo Pulse EPIS. (2026). *FD03 — Especificación de Requerimientos* y *FD04 — Arquitectura de Software*.
+- Equipo Pulse EPIS. (2026). *Problema y línea base* y *Diccionario de indicadores*.
+- Congreso de la República del Perú. (2011). *Ley N.° 29733*.
+- Ministerio de Justicia y Derechos Humanos. (2024). *D.S. N.° 016-2024-JUS*.
+- OpenID Foundation. (2023). *OpenID Connect Core 1.0 incorporating errata set 2*.
+- W3C. (2018). *Web Content Accessibility Guidelines 2.1*.
+
+## 13. Webgrafía
+
+- [Repositorio Pulse EPIS](https://github.com/Kiara1616/pulse-epis).
+- [Ley N.° 29733](https://www.gob.pe/institucion/congreso-de-la-republica/normas-legales/243470-29733).
+- [Reglamento de protección de datos](https://www.gob.pe/institucion/anpd/normas-legales/6554453-n-016-2024-jus).
+- [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html).
+- [W3C — WCAG 2.1](https://www.w3.org/TR/WCAG21/).
+- [Open Badges](https://www.1edtech.org/standards/open-badges).
+- [Next.js](https://nextjs.org/docs), [FastAPI](https://fastapi.tiangolo.com/) y [PostgreSQL 16](https://www.postgresql.org/docs/16/).

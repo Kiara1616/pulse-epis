@@ -1,0 +1,22 @@
+sequenceDiagram
+ actor U as Estudiante
+ participant P as Carga de evidencia
+ participant A as API y autorización
+ participant S as Servicio de certificaciones
+ participant D as PostgreSQL
+ participant F as Almacenamiento privado
+ U->>P: Elegir archivo o URL
+ P->>A: POST de evidencia al expediente existente
+ A->>S: Adjuntar con permiso de escritura propia
+ S->>D: Comprobar titularidad de Certification
+ alt Archivo
+  S->>S: Verificar tamaño, tipo y duplicado por hash
+  S->>F: Guardar con clave privada
+  F-->>S: Datos del objeto y SHA-256
+ else Fuente por URL
+  S->>S: Validar y conservar URL declarada
+ end
+ S->>D: Guardar Evidence y auditoría
+ A-->>P: Metadatos del adjunto o error contractual
+ P-->>U: Confirmación o corrección requerida
+ Note over S,D: El adjunto no aprueba la credencial

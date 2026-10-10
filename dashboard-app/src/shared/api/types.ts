@@ -17,7 +17,7 @@ export type AnalyticsPeriod = {
   code: string;
   starts_on: string;
   ends_on: string;
-  latest_cutoff_date: string;
+  latest_cutoff_date: string | null;
 };
 
 export type AnalyticsFilters = {
@@ -30,6 +30,7 @@ export type AnalyticsFilters = {
 };
 
 export type AnalyticsOverview = {
+  dataset?: "registered" | "demo";
   filters: {
     period_code: string;
     cutoff_date: string;
@@ -50,6 +51,7 @@ export type AnalyticsOverview = {
   by_cohort: AnalyticsMetric[];
   by_cycle: AnalyticsMetric[];
   by_skill: AnalyticsMetric[];
+  by_credential?: AnalyticsMetric[];
   evolution: Array<{
     cutoff_date: string;
     certified_students: number;
@@ -91,6 +93,7 @@ export type Certification = {
   created_at: string;
   updated_at: string;
   correction_allowed: boolean;
+  latest_comment?: string | null;
 };
 
 export type RosterImport = {

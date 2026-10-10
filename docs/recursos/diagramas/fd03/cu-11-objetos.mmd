@@ -1,0 +1,15 @@
+flowchart TB
+    U(("«actor»<br/>Estudiante titular o validador"))
+    B["«boundary»<br/>Consulta de evidencia"]
+    A("«control»<br/>Autorización por actor")
+    S("«control»<br/>Servicio de acceso a evidencia")
+    E[("«entity»<br/>Evidence y Certification")]
+    T("«control»<br/>Token temporal firmado")
+    F("«control»<br/>Almacenamiento privado")
+    U -->|"1. Solicitar evidencia"| B
+    B -->|"2. Verificar acceso al expediente"| A
+    A -->|"3. Emitir acceso autorizado"| S
+    S -->|"4. Resolver archivo"| E
+    S -->|"5. Firmar enlace temporal"| T
+    B -->|"6. Solicitar descarga"| S
+    S -->|"7. Leer archivo tras validar token"| F

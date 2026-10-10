@@ -10,3 +10,5 @@ google-auth>=2.35,<3
 argon2-cffi>=23.1,<26
 itsdangerous>=2.2,<3
 python-multipart>=0.0.20,<1
+reportlab>=4.2,<5
+XlsxWriter>=3.2,<4

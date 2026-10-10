@@ -1,0 +1,14 @@
+flowchart TB
+    U(("«actor»<br/>Usuario con ANALYTICS_READ"))
+    B["«boundary»<br/>Tablero y filtros"]
+    A("«control»<br/>Autorización de lectura")
+    S("«control»<br/>Servicio analítico")
+    P[("«entity»<br/>AcademicPeriod y cortes")]
+    F[("«entity»<br/>FactStudentPeriod")]
+    C[("«entity»<br/>FactCertification y dimensiones")]
+    U -->|"1. Elegir contexto y filtros"| B
+    B -->|"2. Solicitar indicadores"| A
+    A -->|"3. Autorizar consulta"| S
+    S -->|"4. Resolver periodo y corte"| P
+    S -->|"5. Obtener población activa"| F
+    S -->|"6. Calcular numeradores distintos"| C

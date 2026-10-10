@@ -279,6 +279,7 @@ class EtlService:
                     CertificationSkill.certification_id == Certification.id,
                 )
                 .outerjoin(Skill, Skill.id == CertificationSkill.skill_id)
+                .where(Enrollment.id.is_not(None), Certification.issued_on <= cutoff_date)
                 .order_by(Certification.id, CertificationSkill.skill_id)
             ).all()
 

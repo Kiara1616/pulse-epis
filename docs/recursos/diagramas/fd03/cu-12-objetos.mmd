@@ -1,0 +1,12 @@
+flowchart TB
+    U(("«actor»<br/>Usuario con ANALYTICS_READ"))
+    B["«boundary»<br/>Selector de contexto analítico"]
+    A("«control»<br/>Autorización de lectura")
+    S("«control»<br/>Servicio analítico")
+    P[("«entity»<br/>AcademicPeriod")]
+    F[("«entity»<br/>Hechos y fechas de corte")]
+    U -->|"1. Abrir selector"| B
+    B -->|"2. Solicitar periodos"| A
+    A -->|"3. Autorizar lectura"| S
+    S -->|"4. Consultar periodos"| P
+    S -->|"5. Resolver último corte publicado"| F

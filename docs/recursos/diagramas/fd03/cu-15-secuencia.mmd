@@ -1,0 +1,21 @@
+sequenceDiagram
+ actor U as Administrador
+ participant P as Historial de padrón
+ participant A as API y autorización
+ participant S as Servicio de padrón
+ participant D as PostgreSQL
+ U->>P: Seleccionar periodo
+ P->>A: GET /padron/imports con periodo
+ A->>A: Verificar PADRON_MANAGE
+ A->>S: Consultar historial
+ S->>D: Verificar periodo
+ alt Periodo existente
+  S->>D: Obtener cargas y rechazos asociados
+  D-->>S: Estados, conteos, fechas y causas
+  S-->>A: Historial autorizado
+  A-->>P: Reportes o lista vacía
+ else Periodo inexistente
+  A-->>P: Error contractual
+ end
+ P-->>U: Historial del periodo
+ Note over S,D: Lectura sin reaplicar lotes

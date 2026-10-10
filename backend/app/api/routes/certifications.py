@@ -86,6 +86,7 @@ def _certification_response(item) -> CertificationResponse:
         created_at=item.created_at,
         updated_at=item.updated_at,
         correction_allowed=item.correction_allowed,
+        latest_comment=item.latest_comment,
     )
 
 
@@ -399,6 +400,7 @@ def download_evidence(
             path=item.path,
             media_type=item.content_type or "application/octet-stream",
             filename=item.original_filename,
+            content_disposition_type="inline" if item.content_type in {"image/jpeg", "image/png", "application/pdf"} else "attachment",
             headers={
                 "Cache-Control": "private, no-store",
                 "X-Content-Type-Options": "nosniff",

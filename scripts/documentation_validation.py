@@ -75,13 +75,16 @@ def source_errors() -> list[str]:
         for n in range(1,count+1):
             if not re.search(rf"^\| {prefix}-{n:02d} \|",srs,re.M):
                 errors.append(f"Missing structured requirement: {prefix}-{n:02d}")
-    scenario_blocks = re.split(r"^#### 6\.4\.\d+ CU-\d{2} ",srs,flags=re.M)[1:]
-    if len(scenario_blocks)!=8:
-        errors.append("Expected eight complete use-case scenarios")
-    for i, block in enumerate(scenario_blocks,1):
+    scenarios = re.findall(
+        r"^##### 5\.2\.3\.\d+\. CU-(\d{2}) [^\n]+\n(.*?)(?=^##### |^#### |^### |^## |\Z)",
+        srs, flags=re.M | re.S,
+    )
+    if [number for number, _ in scenarios] != [f"{n:02d}" for n in range(1, 16)]:
+        errors.append("Expected fifteen complete use-case scenarios in order (CU-01 to CU-15)")
+    for number, block in scenarios:
         for field in ("Actor principal", "Precondiciones", "Disparador", "Flujo principal", "Flujos alternativos", "Excepciones y errores", "Postcondiciones", "Verificación"):
-            if f"**{field}" not in block:
-                errors.append(f"CU-{i:02d} lacks {field}")
+            if not re.search(rf"^\| {re.escape(field)} \|\s*\S", block, re.M):
+                errors.append(f"CU-{number} lacks {field}")
     fd01 = (DOCS / "academico/FD01-Informe-Factibilidad.md").read_text(encoding="utf-8")
     required_index = [
         "1. DESCRIPCIÓN DEL PROYECTO", "1.1. NOMBRE DEL PROYECTO",
@@ -127,6 +130,8 @@ def source_errors() -> list[str]:
         errors.append("Financial scenario calculations do not reconcile")
     for file in ("FD01-Informe-Factibilidad.md","FD05-Informe-Final.md"):
         text=(DOCS/"academico"/file).read_text(encoding="utf-8")
+        # Accept Spanish decimal commas and grouped amounts, retaining sign and precision.
+        text = re.sub(r"(?<=\d)[ \u00a0\u202f](?=\d)", "", text).replace(",", ".")
         for value in (f"{result['expected_npv']:.2f}",f"{result['expected_irr_percent']:.2f}%",f"{result['expected_benefit_cost']:.4f}"):
             if value not in text: errors.append(f"{file}: missing or stale financial result {value}")
     return errors
