@@ -34,3 +34,15 @@ def test_missing_use_case_is_rejected(monkeypatch):
                      "##### 5.2.3.15. CU-15", "##### 5.2.3.15. Removed")
     assert any("Expected fifteen complete use-case scenarios" in error
                for error in validation.source_errors())
+
+
+def test_html_covers_use_current_version_and_date():
+    import sys
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from documentation import academic_metadata
+    for path in (ROOT / "docs/academico").glob("FD*.md"):
+        fields = academic_metadata(path.read_text(encoding="utf-8"))
+        assert fields["Código"] == path.name.split("-")[0]
+        assert fields["Curso"] == "Inteligencia de Negocios"
+        assert "2026" in fields["Fecha"]
+        assert "2023077087" in fields["Integrantes"]

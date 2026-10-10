@@ -68,6 +68,26 @@ def title_of(text: str, fallback: str) -> str:
 def academic_metadata(text: str) -> dict[str, str]:
     """Read cover fields from the canonical report, rather than duplicate them."""
     fields = dict(re.findall(r"^\*\*([^*]+):\*\* (.+?)(?:<br>)?$", text, re.M))
+    if not all(fields.get(key) for key in ("Institución", "Curso", "Docente", "Código", "Versión", "Fecha")):
+        # The current academic reports use HTML covers and a version-control table.
+        cover = text.split("**CONTROL DE VERSIONES**", 1)[0]
+        plain = html.unescape(re.sub(r"<[^>]+>", "", re.sub(r"<br\s*/?>", "\n", cover))).strip()
+        for key in ("Curso", "Docente"):
+            match = re.search(rf"^\s*{key}:\s*(.+)$", plain, re.M)
+            if match: fields[key] = match.group(1).strip()
+        institution = re.search(r"^\s*(UNIVERSIDAD[^\n]+)$", plain, re.M)
+        if institution: fields["Institución"] = institution.group(1).strip()
+        authors = re.search(r"Integrantes:\s*(.*?)Tacna", plain, re.S)
+        if authors: fields["Integrantes"] = " / ".join(line.strip() for line in authors.group(1).splitlines() if line.strip())
+        code = re.search(r"Código\s+(FD\d+)", plain)
+        version = re.search(r"Versión\s+([\d.]+)", plain)
+        if code: fields["Código"] = code.group(1)
+        if version:
+            fields["Versión"] = version.group(1)
+            row = re.search(rf"^\| {re.escape(version.group(1))} \|([^\n]+)$", text, re.M)
+            if row:
+                cells = [cell.strip() for cell in row.group(1).split("|")]
+                if len(cells) >= 4: fields["Fecha"] = cells[3]
     required = ("Institución", "Curso", "Docente", "Código", "Versión", "Fecha")
     missing = [key for key in required if not fields.get(key)]
     if missing or not (fields.get("Integrantes") or fields.get("Autores")):
@@ -228,7 +248,10 @@ def inline(value: str, source: str, output: Path, revision: dict) -> str:
     value = value.replace("\u2011", "-").replace("\u2013", "-").replace("\u2014", "-")
     tokens = []
     def link(match):
-        href = html.escape(resolve_link(match.group(3), source, output, revision), quote=True)
+        target = match.group(3)
+        if target.startswith("#"):
+            target = "#" + re.sub(r"-+", "-", target[1:])
+        href = html.escape(resolve_link(target, source, output, revision), quote=True)
         tokens.append(f'<link href="{href}" color="#000000"><u>{html.escape(match.group(2))}</u></link>')
         return f"PULSELINKTOKEN{len(tokens)-1}END"
     value = LINKS.sub(link, value)
@@ -268,6 +291,8 @@ class DocumentTemplate(BaseDocTemplate):
             key = f"section-{self.page}-{self.serial}"
             self.serial += 1
             self.canv.bookmarkPage(key)
+            if getattr(flowable, "_pulse_anchor", None):
+                self.canv.bookmarkPage(flowable._pulse_anchor)
             # TOC supports skipped Markdown levels without invalid PDF outlines.
             self.notify("TOCEntry", (level, flowable.getPlainText(), self.page, key))
 
@@ -363,7 +388,12 @@ def body_flows(text: str, source: str, output: Path, revision: dict, st: dict) -
         if heading:
             level=min(len(heading.group(1))-1,4)
             if level == 0: continue  # Main title is placed once by the builder.
-            story.append(para(heading.group(2),st[f"h{level}"]))
+            heading_text = heading.group(2)
+            anchor = re.sub(r"[^\w\s-]", "", heading_text.lower())
+            anchor = re.sub(r"[-\s]+", "-", anchor).strip("-")
+            paragraph = para(heading_text, st[f"h{level}"])
+            paragraph._pulse_anchor = anchor
+            story.append(paragraph)
             continue
         if raw == "---":
             story.append(Spacer(1,5*mm)); continue
