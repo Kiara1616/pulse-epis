@@ -536,3 +536,13 @@ class FactCertification(Base):
     loaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+class LearningOpportunity(Base):
+    """Reviewed learning sources; no inferred student skills or external fetching."""
+    __tablename__ = "learning_opportunities"
+    __table_args__ = (CheckConstraint("status IN ('DRAFT','PUBLISHED','RETIRED')", name="ck_opportunity_status"),)
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    source_url: Mapped[str] = mapped_column(String(2048), unique=True, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="DRAFT", nullable=False)
+    details: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    history: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
