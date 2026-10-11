@@ -68,3 +68,11 @@ La exportación CSV descarga las filas y los filtros de la vista. El botón PDF 
 ## Privacidad y soporte
 
 No publique CSV reales, correos, códigos, evidencias ni URLs privadas en capturas, issues o repositorios. Comparta solo agregados autorizados. En soporte comunique página, hora, acción y request_id sin datos personales. Las decisiones institucionales y atención de solicitudes se realizan por el canal definido por EPIS.
+
+## VA-09: prototipo del radar de cursos
+
+#75 añade /admin/radar, protegido para ADMIN, y accesos desde sidebar y centro administrativo. Es una demostración con tres cursos sintéticos y fuentes example.invalid: no descarga URLs, no guarda datos y no publica para estudiantes. Las acciones afectan memoria y se reinician al recargar.
+
+DETECTED permite iniciar revisión o descartar; IN_REVIEW permite corregir título/requisitos y definir audiencia y relevancia, publicar o descartar. Publicar exige audiencia no vacía y explicación de al menos 10 caracteres; no ocurre automáticamente. PUBLISHED permite retirar; descartado/retirado son terminales en esta demostración. Cada tarjeta conserva fuente, consulta, requisitos, estado e historial simulado. El filtro contempla vacío.
+
+Audiencia se declara como texto de ejemplo; los catálogos y relaciones finales dependen del modelo #77 y la API #78. Se requiere revisión de #68/#72 antes de consolidar el prototipo con esos cambios. No equivale a inscripción, elegibilidad o recomendación institucional. [Captura sintética](../recursos/imagenes/va75-radar-demo.png). Pruebas: flujo corregir/publicar/retirar, requisito de audiencia/relevancia, descarte, filtro, reinicio y permisos. Rollback: revertir commit y reconstruir frontend; sin migraciones.

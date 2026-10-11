@@ -5,6 +5,7 @@ import { ArrowRight, Database, ShieldCheck, Users } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
 
 const modules = [
+  { title: "Radar de cursos", description: "Prototipo con datos sintéticos para revisar contenido, audiencia y relevancia.", href: "/admin/radar", icon: ShieldCheck, status: "Demostración sin persistencia" },
   { title: "Padrón EPIS", description: "Importa estudiantes activos y revisa la conciliación por periodo.", href: "/admin/estudiantes", icon: Users, status: "API conectada" },
   { title: "Certificaciones", description: "El equipo validador supervisa registros, evidencias, duplicados y vencimientos.", href: null, icon: ShieldCheck, status: "Gestionado por validadores" },
   { title: "Publicar indicadores", description: "Actualiza los indicadores por periodo y fecha de corte, y consulta el historial de publicación.", href: "/admin/publicaciones", icon: Database, status: "Indicadores agregados" },
