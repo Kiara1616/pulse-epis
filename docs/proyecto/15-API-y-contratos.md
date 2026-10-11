@@ -47,3 +47,29 @@ El sobre es plano y se acompaña de X-Request-ID. El siguiente ejemplo muestra u
 ## Uso autorizado y cambios
 
 Utilizar cookie de sesión obtenida por proveedor configurado. No pasar un rol arbitrario como autorización. El CSV del padrón y evidencia se envían como multipart; no fijar manualmente Content-Type de FormData. Para modificar un contrato, actualizar Pydantic, tipos frontend, pruebas y esquema documental; el validador compara el esquema con model_json_schema.
+
+## Radar formativo del administrador
+
+La ruta `/admin/oportunidades` permite registrar fuentes manuales, revisar y publicar o retirar oportunidades. Conserva la navegación, tarjetas y paleta institucional. La publicación actual cambia el catálogo administrativo; la entrega al dashboard del estudiante será una ampliación posterior. No hay recolector automático activo: la issue #64 requiere seleccionar fuentes autorizadas.
+
+El catálogo persiste en `learning_opportunities` mediante la migración `0010_learning_opportunities`. Cada registro tiene título, proveedor, URL HTTPS única sin credenciales, área, nivel, competencias, requisitos, justificación, costo estimado por participante en PEN (null significa desconocido) y fecha de consulta. No se descarga la URL desde el servidor.
+
+### Contrato API del radar
+
+Todos los endpoints requieren sesión y permiso `CATALOG_MANAGE` (ADMIN). Sin sesión: 401; rol ajeno: 403; base no configurada: 503.
+
+- `GET /api/v1/opportunities`: devuelve catálogo e historial.
+- `POST /api/v1/opportunities`: registra los campos anteriores; responde 201 y estado DRAFT. URL duplicada: 409; contrato inválido: 422.
+- `POST /api/v1/opportunities/{id}/decision`: recibe status PUBLISHED o RETIRED y reason (10–1000 caracteres). DRAFT puede publicarse o retirarse; PUBLISHED puede retirarse; RETIRED es terminal. Transición inválida: 409; ID inexistente: 404.
+
+Cada decisión conserva actor, fecha UTC, estado y motivo. En PostgreSQL, la decisión bloquea la fila durante la transacción para evitar publicaciones concurrentes. El historial no admite edición ni eliminación desde esta API. Esta primera versión no modifica borradores: un registro erróneo puede retirarse; la corrección del catálogo será una ampliación posterior.
+
+### Comparación formativa
+
+El administrador selecciona oportunidades publicadas y define competencias objetivo y presupuesto por participante. La vista calcula unión de competencias, cobertura de objetivos por coincidencia exacta sin distinguir mayúsculas y suma de costos conocidos. Un costo desconocido impide confirmar el presupuesto. No es una optimización automática ni estima participantes, dominio, demanda laboral o empleabilidad. La selección de comparación es temporal; el catálogo y las decisiones sí persisten.
+
+Captura con datos sintéticos: [Radar de oportunidades](../recursos/imagenes/admin-radar-demo.png).
+
+### Operación y rollback
+
+Aplicar `python -m alembic -c backend/alembic.ini upgrade head` con la configuración de base habitual antes de iniciar la versión nueva. Para rollback, respaldar primero la tabla, revertir la aplicación y ejecutar downgrade a `0009_roster_student_code`; el downgrade elimina exclusivamente el catálogo nuevo y su historial. No ejecutar contra una base institucional sin el procedimiento de respaldo existente.

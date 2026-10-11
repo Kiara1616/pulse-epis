@@ -102,3 +102,7 @@ El ETL se ejecuta con python -m backend.scripts_etl.main --period-code y --cutof
 Issue, rama, PR, revisión cruzada, CI y merge forman el flujo de [CONTRIBUTING.md](CONTRIBUTING.md) y [Gobierno del repositorio](docs/proyecto/REPOSITORY-GOVERNANCE.md). Actualizar requisitos, manuales y contratos al cambiar comportamiento. No subir secretos, padrones reales, códigos, correos ni evidencias privadas.
 
 Equipo: Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796). Proyecto del curso Inteligencia de Negocios, Universidad Privada de Tacna. El repositorio no declara LICENSE; no se atribuye una licencia o transferencia de derechos no acordada.
+
+### Planificación formativa
+
+El centro de administración incluye un [radar formativo](docs/proyecto/15-API-y-contratos.md#radar-formativo-del-administrador): catálogo manual persistente de oportunidades, revisión auditada y comparación de competencias y costos. La extracción automática de fuentes y la publicación en el perfil del estudiante son ampliaciones posteriores.
