@@ -68,3 +68,9 @@ La exportación CSV descarga las filas y los filtros de la vista. El botón PDF 
 ## Privacidad y soporte
 
 No publique CSV reales, correos, códigos, evidencias ni URLs privadas en capturas, issues o repositorios. Comparta solo agregados autorizados. En soporte comunique página, hora, acción y request_id sin datos personales. Las decisiones institucionales y atención de solicitudes se realizan por el canal definido por EPIS.
+
+## VA-07: estados y navegación por rol
+
+#73 comparte etiquetas y tonos de certificación en estudiante, validador e historial. APPROVED se muestra como Aprobada; desconocidos usan Estado no reconocido y tono neutral. AsyncState unifica carga, error accesible con reintento y vacío, con texto y acción configurables. El encabezado distingue los tres roles sin selector de permisos. La bandeja monta consultas dentro de RoleGate: los otros roles no inician peticiones de validación. Backend conserva la autoridad de acceso.
+
+La integración de futuras pantallas #69/#71/#72 queda pendiente de sus PR. No se modifican datos ni transiciones del servicio. Tests incluyen sesión expirada, consultas bloqueadas, etiquetas, error/reintento/vacío y móvil. [Captura sintética](../recursos/imagenes/va73-feedback-demo.png). Rollback: revertir commit y reconstruir frontend, sin migraciones.
