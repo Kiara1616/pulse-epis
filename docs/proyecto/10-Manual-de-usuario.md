@@ -68,3 +68,17 @@ La exportación CSV descarga las filas y los filtros de la vista. El botón PDF 
 ## Privacidad y soporte
 
 No publique CSV reales, correos, códigos, evidencias ni URLs privadas en capturas, issues o repositorios. Comparta solo agregados autorizados. En soporte comunique página, hora, acción y request_id sin datos personales. Las decisiones institucionales y atención de solicitudes se realizan por el canal definido por EPIS.
+
+## VA-06: centro administrativo y prioridades del corte
+
+La issue #72 reorganiza `/admin` para ADMIN y añade prioridades en el resumen institucional del mismo rol. Reutiliza `/indicators/overview`, filtros y selección de fuente existentes. No añade tablas, fuentes externas, un radar ni permisos de validación al administrador. Los contratos de VA-02 (#68) siguen pendientes de revisión: esta pantalla utiliza los tipos vigentes de AnalyticsOverview, sin duplicar ni consolidar entidades provisionales.
+
+Cada KPI muestra definición y un detalle desplegable de fuente, dataset, periodo y corte. Los próximos vencimientos usan la ventana de 90 días de la API. Estudiantes y credenciales son conteos diferentes. La ausencia de activos se explica antes de interpretar cobertura cero. Las prioridades de habilidades se ordenan por cobertura ascendente, luego cantidad sin evidencia y nombre; se muestran hasta tres, sin umbrales o rankings laborales inventados. La ausencia de brechas registradas no acredita dominio.
+
+Los enlaces a tecnologías y brechas conservan periodo, corte y filtros mediante parámetros URL. useAnalytics reconoce ese alcance al cargar los periodos disponibles. Dataset demo solo se admite bajo autenticación local; un enlace nunca cambia rol ni permisos. Cambiar fuente o periodo reinicia el alcance según el comportamiento existente. Las fichas de estudiantes mantienen su acceso nominal autorizado y no ofrecen un filtro de vencimientos inexistente.
+
+Calidad de datos consulta `/etl/runs?period_code=...` únicamente para ADMIN y datos registrados. Muestra el último intento de publicación del corte exacto según el orden del historial de la API. Si no hay informe, no inventa porcentajes de calidad ni aprobación. El resultado pertenece al periodo completo: filtros de proveedor/cohorte/ciclo no alteran las filas del proceso. Estas filas son registros del ETL, no personas ni credenciales distintas. En demo no se consulta este historial ni se atribuye calidad institucional a datos sintéticos. Error y reintento de calidad son independientes de la carga de indicadores.
+
+Validadores conservan el resumen permitido, pero no reciben gestión, prioridades administrativas ni consultas a calidad. Estudiantes siguen entrando a su espacio. Las tarjetas administrativas llevan a padrón, tecnologías y publicaciones; no hay una tarjeta sin acción que sugiera permiso para validar evidencias.
+
+Pruebas: `npx playwright test e2e/admin-priorities.spec.ts` verifica filtros, navegación con alcance, calidad sin informe/error/reintento, demostración, restricciones de rol, errores de indicadores y selección del corte. Capturas sintéticas: [escritorio](../recursos/imagenes/va72-admin-demo.png) y [móvil](../recursos/imagenes/va72-admin-mobile-demo.png). No hay migraciones; rollback mediante reversión del commit y reconstrucción del frontend.
