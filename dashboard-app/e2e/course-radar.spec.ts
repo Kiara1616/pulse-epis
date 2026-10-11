@@ -47,7 +47,8 @@ test("radar exige revisión, audiencia y relevancia; permite corrección y retir
   await page.getByRole("button", { name: "Publicar oportunidad" }).click();
   await expect(page.getByRole("article").getByText("Publicado", { exact: true })).toHaveCount(1);
   await page.setViewportSize({ width: 1440, height: 960 });
-  await page.evaluate(()=>window.scrollTo(0,0));
+  await page.evaluate(()=>{document.documentElement.style.scrollBehavior="auto";window.scrollTo(0,0);});
+  await page.waitForFunction(()=>window.scrollY===0);
   await page.screenshot({
     path: "../docs/recursos/imagenes/va75-radar-demo.png",
     fullPage: true,
