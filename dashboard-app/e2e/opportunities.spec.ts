@@ -41,6 +41,10 @@ test("admin registra, publica y compara una fuente", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Radar de oportunidades" }),
   ).toBeVisible();
+  await expect(
+    page.getByText("Selecciona al menos una oportunidad del catálogo."),
+  ).toBeVisible();
+  await expect(page.getByText("Costo conocido: S/ 0.00")).toHaveCount(0);
   await page.getByRole("button", { name: "Registrar fuente" }).click();
   await page
     .getByLabel("Título", { exact: true })
@@ -58,6 +62,25 @@ test("admin registra, publica y compara una fuente", async ({ page }) => {
     .getByLabel("Justificación de relevancia")
     .fill("Formación introductoria para la ruta de desarrollo con IA.");
   await page.getByRole("button", { name: "Guardar borrador" }).click();
+  await page.route("**/api/v1/opportunities/course-1", (r) => {
+    const update = r.request().postDataJSON();
+    items[0] = { ...items[0], ...update };
+    return r.fulfill({ json: items[0] });
+  });
+  await page.getByRole("button", { name: "Editar borrador" }).click();
+  await expect(page.getByLabel("Título", { exact: true })).toHaveValue(
+    "IA aplicada — demostración",
+  );
+  await page
+    .getByLabel("Requisitos", { exact: true })
+    .fill("Python y programación básica");
+  await page
+    .getByLabel("Motivo de la corrección")
+    .fill("Se precisaron los requisitos de la fuente.");
+  await page.getByRole("button", { name: "Guardar corrección" }).click();
+  await expect(
+    page.getByText("Requisitos: Python y programación básica"),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Revisar y publicar" }).click();
   await page
     .getByLabel("Motivo de la decisión")
@@ -65,7 +88,11 @@ test("admin registra, publica y compara una fuente", async ({ page }) => {
   await page.getByRole("button", { name: "Confirmar decisión" }).click();
   await page.getByLabel("Comparar", { exact: true }).check();
   await page.getByLabel("Competencias objetivo").fill("python, estadística");
-  await page.getByLabel("Presupuesto por participante").fill("100");
+  await page.getByLabel("Estimar costo para un grupo").check();
+  await page.getByLabel("Participantes previstos").fill("10");
+  await page
+    .getByLabel("Presupuesto total del grupo", { exact: false })
+    .fill("100");
   await expect(
     page.getByText("Sin cubrir: estadística", { exact: false }),
   ).toBeVisible();

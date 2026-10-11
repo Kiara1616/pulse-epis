@@ -2,6 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { BookOpen, Plus, Search, ExternalLink, RefreshCw } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
+import { compareCourses } from "@/features/opportunities/comparison";
 import { apiFetch } from "@/shared/api/client";
 
 type Opportunity = {
@@ -41,6 +42,10 @@ function Radar() {
   const [area, setArea] = useState("");
   const [status, setStatus] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Opportunity | null>(null);
+  const [level, setLevel] = useState("");
+  const [participants, setParticipants] = useState("");
+  const [economic, setEconomic] = useState(false);
   const [decision, setDecision] = useState<{
     item: Opportunity;
     status: "PUBLISHED" | "RETIRED";
@@ -83,20 +88,32 @@ function Radar() {
     setError("");
     setNotice("");
     try {
-      const item = await apiFetch<Opportunity>("/opportunities", {
-        method: "POST",
-        body: JSON.stringify({
-          ...payload,
-          skills: String(payload.skills)
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
-          cost_pen: payload.cost_pen === "" ? null : Number(payload.cost_pen),
-        }),
-      });
-      setItems((old) => [...old, item]);
+      const item = await apiFetch<Opportunity>(
+        editing ? `/opportunities/${editing.id}` : "/opportunities",
+        {
+          method: editing ? "PUT" : "POST",
+          body: JSON.stringify({
+            ...payload,
+            skills: String(payload.skills)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean),
+            cost_pen: payload.cost_pen === "" ? null : Number(payload.cost_pen),
+          }),
+        },
+      );
+      setItems((old) =>
+        editing
+          ? old.map((i) => (i.id === item.id ? item : i))
+          : [...old, item],
+      );
+      setEditing(null);
       setShowForm(false);
-      setNotice("Fuente registrada. Revisa su contenido antes de publicarla.");
+      setNotice(
+        editing
+          ? "Borrador corregido. Los cambios quedaron registrados."
+          : "Fuente registrada. Revisa su contenido antes de publicarla.",
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo registrar.");
     } finally {
@@ -130,6 +147,7 @@ function Radar() {
   const visible = items.filter(
     (i) =>
       (!area || i.area === area) &&
+      (!level || i.level === level) &&
       (!status || i.status === status) &&
       `${i.title} ${i.provider} ${i.skills.join(" ")}`
         .toLowerCase()
@@ -138,18 +156,17 @@ function Radar() {
   const chosen = items.filter(
     (i) => selected.includes(i.id) && i.status === "PUBLISHED",
   );
-  const requested = [
+  const comparison = compareCourses(
+    chosen,
+    targets.split(","),
+    participants,
+    budget,
+  );
+  const availableSkills = [
     ...new Set(
-      targets
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean),
+      items.filter((i) => i.status === "PUBLISHED").flatMap((i) => i.skills),
     ),
-  ];
-  const covered = new Set(chosen.flatMap((i) => i.skills));
-  const missing = requested.filter((s) => !covered.has(s));
-  const knownCost = chosen.reduce((sum, i) => sum + (i.cost_pen ?? 0), 0);
-  const unknownCosts = chosen.filter((i) => i.cost_pen === null).length;
+  ].sort();
   return (
     <div className="space-y-7">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -165,25 +182,38 @@ function Radar() {
             EPIS.
           </p>
         </div>
-        <button className={button} onClick={() => setShowForm(!showForm)}>
+        <button
+          className={button}
+          onClick={() => {
+            setEditing(null);
+            setShowForm(!showForm);
+          }}
+        >
           <Plus size={16} className="mr-2 inline" />
           {showForm ? "Cerrar registro" : "Registrar fuente"}
         </button>
       </header>
       <section className="grid gap-4 sm:grid-cols-3">
         {(["DRAFT", "PUBLISHED", "RETIRED"] as const).map((s) => (
-          <div key={s} className={panel}>
+          <button
+            key={s}
+            type="button"
+            aria-label={`${states[s]}: ${loading ? "cargando" : items.filter((i) => i.status === s).length} oportunidades`}
+            onClick={() => setStatus(status === s ? "" : s)}
+            aria-pressed={status === s}
+            className={`${panel} text-left ${status === s ? "ring-2 ring-blue-600" : "hover:border-blue-200"}`}
+          >
             <p className="text-sm text-gray-500">{states[s]}</p>
             <p className="mt-2 text-3xl font-black text-blue-950">
-              {items.filter((i) => i.status === s).length}
+              {loading ? "…" : items.filter((i) => i.status === s).length}
             </p>
-          </div>
+          </button>
         ))}
       </section>
       <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-        Fuentes registradas manualmente y revisadas por la escuela. La
-        recolección automática aún no está activada. Las competencias describen
-        contenidos formativos; no acreditan dominio del estudiante.
+        Selecciona formación por sus contenidos, nivel y requisitos. Publicar
+        incorpora la oportunidad al catálogo de la escuela para planificar su
+        oferta.
       </div>
       {error && (
         <div role="alert" className="rounded-xl bg-red-50 p-4 text-red-700">
@@ -199,15 +229,16 @@ function Radar() {
         </p>
       )}
       {showForm && (
-        <form onSubmit={create} className={panel}>
+        <form key={editing?.id ?? "new"} onSubmit={create} className={panel}>
           <h2 className="mb-4 text-lg font-bold text-gray-900">
-            Registrar oportunidad
+            {editing ? "Editar borrador" : "Registrar oportunidad"}
           </h2>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="text-sm font-semibold">
               Título
               <input
                 name="title"
+                defaultValue={editing?.title}
                 required
                 minLength={3}
                 maxLength={200}
@@ -218,6 +249,7 @@ function Radar() {
               Proveedor
               <input
                 name="provider"
+                defaultValue={editing?.provider}
                 required
                 minLength={2}
                 maxLength={120}
@@ -228,6 +260,7 @@ function Radar() {
               Fuente HTTPS
               <input
                 name="source_url"
+                defaultValue={editing?.source_url}
                 type="url"
                 pattern="https://.*"
                 required
@@ -237,11 +270,21 @@ function Radar() {
             </label>
             <label className="text-sm font-semibold">
               Fecha de consulta
-              <input name="checked_on" type="date" required className={field} />
+              <input
+                name="checked_on"
+                defaultValue={editing?.checked_on}
+                type="date"
+                required
+                className={field}
+              />
             </label>
             <label className="text-sm font-semibold">
               Área
-              <select name="area" className={field}>
+              <select
+                name="area"
+                defaultValue={editing?.area ?? "IA"}
+                className={field}
+              >
                 {areas.map((a) => (
                   <option key={a}>{a}</option>
                 ))}
@@ -249,7 +292,11 @@ function Radar() {
             </label>
             <label className="text-sm font-semibold">
               Nivel
-              <select name="level" className={field}>
+              <select
+                name="level"
+                defaultValue={editing?.level ?? "Inicial"}
+                className={field}
+              >
                 {["Inicial", "Intermedio", "Avanzado"].map((a) => (
                   <option key={a}>{a}</option>
                 ))}
@@ -259,20 +306,22 @@ function Radar() {
               Competencias separadas por coma
               <input
                 name="skills"
+                defaultValue={editing?.skills.join(", ")}
                 required
                 placeholder="python, evaluación de modelos"
                 className={field}
               />
             </label>
             <label className="text-sm font-semibold">
-              Costo estimado por participante (S/)
+              Precio del curso por persona (S/, opcional)
               <input
                 name="cost_pen"
+                defaultValue={editing?.cost_pen ?? ""}
                 type="number"
                 min="0"
                 max="1000000"
                 step="0.01"
-                placeholder="Vacío si no se conoce"
+                placeholder="0 = gratuito; vacío = no informado"
                 className={field}
               />
             </label>
@@ -280,6 +329,8 @@ function Radar() {
               Requisitos
               <textarea
                 name="prerequisites"
+                aria-label="Requisitos"
+                defaultValue={editing?.prerequisites}
                 required
                 maxLength={1000}
                 placeholder="Describe los requisitos o indica que no están informados"
@@ -290,6 +341,8 @@ function Radar() {
               Justificación de relevancia
               <textarea
                 name="rationale"
+                aria-label="Justificación de relevancia"
+                defaultValue={editing?.rationale}
                 required
                 minLength={10}
                 maxLength={1000}
@@ -297,8 +350,24 @@ function Radar() {
               />
             </label>
           </div>
+          {editing && (
+            <label className="mt-4 block text-sm font-semibold">
+              Motivo de la corrección
+              <textarea
+                name="reason"
+                required
+                minLength={10}
+                maxLength={1000}
+                className={field}
+              />
+            </label>
+          )}
           <button disabled={busy} className={`${button} mt-4`}>
-            {busy ? "Guardando…" : "Guardar borrador"}
+            {busy
+              ? "Guardando…"
+              : editing
+                ? "Guardar corrección"
+                : "Guardar borrador"}
           </button>
         </form>
       )}
@@ -351,7 +420,7 @@ function Radar() {
             <RefreshCw size={18} />
           </button>
         </div>
-        <div className="my-5 grid gap-3 md:grid-cols-3">
+        <div className="my-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="text-sm">
             Buscar
             <Search size={14} className="ml-1 inline" />
@@ -390,13 +459,46 @@ function Radar() {
               ))}
             </select>
           </label>
+          <label className="text-sm">
+            Filtrar nivel
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+              className={field}
+            >
+              <option value="">Todos</option>
+              {["Inicial", "Intermedio", "Avanzado"].map((n) => (
+                <option key={n}>{n}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="mb-4 flex items-center justify-between text-sm text-gray-500">
+          <span>
+            {loading
+              ? "Consultando catálogo…"
+              : `${visible.length} de ${items.length} oportunidades`}
+          </span>
+          <button
+            type="button"
+            className="font-semibold text-blue-600"
+            onClick={() => {
+              setQuery("");
+              setArea("");
+              setStatus("");
+              setLevel("");
+            }}
+          >
+            Limpiar filtros
+          </button>
         </div>
         {loading ? (
           <p role="status">Cargando oportunidades…</p>
         ) : visible.length === 0 ? (
           <p className="py-8 text-center text-gray-500">
-            No hay oportunidades para estos filtros. Registra una fuente para
-            comenzar.
+            {items.length
+              ? "No hay coincidencias. Limpia los filtros o cambia la búsqueda."
+              : "El catálogo está vacío. Registra una oportunidad para comenzar."}
           </p>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
@@ -431,8 +533,10 @@ function Radar() {
                 <p className="mt-2 text-xs text-gray-500">
                   Consulta: {i.checked_on} ·{" "}
                   {i.cost_pen === null
-                    ? "Costo desconocido"
-                    : `S/ ${i.cost_pen.toFixed(2)} por participante`}
+                    ? "Precio no informado"
+                    : i.cost_pen === 0
+                      ? "Curso gratuito"
+                      : `S/ ${i.cost_pen.toFixed(2)} por persona`}
                 </p>
                 <a
                   href={i.source_url}
@@ -444,6 +548,21 @@ function Radar() {
                   <ExternalLink size={14} />
                 </a>
                 <div className="mt-4 flex flex-wrap gap-3">
+                  {i.status === "DRAFT" && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      className="text-sm font-semibold text-blue-600"
+                      onClick={() => {
+                        setEditing(i);
+                        setShowForm(true);
+                        setDecision(null);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      Editar borrador
+                    </button>
+                  )}
                   {i.status === "DRAFT" && (
                     <button
                       disabled={busy}
@@ -500,64 +619,218 @@ function Radar() {
         )}
       </section>
       <section className={panel}>
-        <h2 className="text-lg font-bold text-gray-900">
-          Comparar alternativas
-        </h2>
+        <div className="flex flex-wrap justify-between gap-3">
+          <h2 className="text-lg font-bold text-gray-900">
+            Comparar alternativas
+          </h2>
+          {chosen.length > 0 && (
+            <button
+              className="text-sm font-semibold text-blue-600"
+              onClick={() => setSelected([])}
+            >
+              Limpiar selección
+            </button>
+          )}
+        </div>
         <p className="mt-2 text-sm text-gray-500">
-          Selecciona oportunidades publicadas y escribe competencias usando los
-          mismos nombres del catálogo. Comparación por participante; no estima
-          empleabilidad ni estudiantes elegibles.
+          Define los temas que la escuela quiere fortalecer y marca cursos
+          publicados para comparar sus contenidos y requisitos.
         </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="text-sm font-semibold">
-            Competencias objetivo
-            <input
-              value={targets}
-              onChange={(e) => setTargets(e.target.value)}
-              placeholder="python, evaluación de modelos"
-              className={field}
-            />
-          </label>
-          <label className="text-sm font-semibold">
-            Presupuesto por participante (S/)
-            <input
-              type="number"
-              min="0"
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-              className={field}
-            />
-          </label>
-        </div>
-        <div className="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-950">
-          <p>
-            {chosen.length} oportunidades seleccionadas · {covered.size}{" "}
-            competencias distintas
-          </p>
-          <p className="mt-2">
-            Costo conocido: S/ {knownCost.toFixed(2)}
-            {unknownCosts > 0 &&
-              ` · ${unknownCosts} con costo desconocido; total incompleto`}
-          </p>
-          {requested.length > 0 && (
-            <p className="mt-2">
-              Cobertura de objetivos: {requested.length - missing.length}/
-              {requested.length}.{" "}
-              {missing.length
-                ? `Sin cubrir: ${missing.join(", ")}`
-                : "Todos los temas objetivo están incluidos."}
+        {chosen.length === 0 ? (
+          <div className="mt-5 rounded-xl bg-blue-50 p-5 text-sm text-blue-950">
+            <p className="font-semibold">
+              Selecciona al menos una oportunidad del catálogo.
             </p>
-          )}
-          {budget !== "" && (
             <p className="mt-2">
-              {knownCost > Number(budget)
-                ? "El costo conocido supera el presupuesto."
-                : unknownCosts
-                  ? "No se puede confirmar el presupuesto con costos desconocidos."
-                  : "El costo estimado está dentro del presupuesto."}
+              Usa la casilla «Comparar» de los cursos publicados. Después podrás
+              revisar su aporte académico y, si corresponde, estimar el costo
+              para un grupo.
             </p>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            <label className="mt-4 block text-sm font-semibold">
+              Competencias objetivo
+              <input
+                value={targets}
+                onChange={(e) => setTargets(e.target.value)}
+                placeholder="Escribe temas separados por coma"
+                className={field}
+              />
+            </label>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {availableSkills.map((skill) => (
+                <button
+                  type="button"
+                  key={skill}
+                  aria-pressed={comparison.requested.includes(skill)}
+                  onClick={() =>
+                    setTargets(
+                      comparison.requested.includes(skill)
+                        ? comparison.requested
+                            .filter((s) => s !== skill)
+                            .join(", ")
+                        : [...comparison.requested, skill].join(", "),
+                    )
+                  }
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${comparison.requested.includes(skill) ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}
+                >
+                  {skill}
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <caption className="sr-only">
+                  Alternativas seleccionadas
+                </caption>
+                <thead className="bg-gray-50 text-gray-600">
+                  <tr>
+                    <th className="p-3">Curso</th>
+                    <th className="p-3">Nivel y requisitos</th>
+                    <th className="p-3">Aporte a los objetivos</th>
+                    <th className="p-3">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chosen.map((i) => (
+                    <tr key={i.id} className="border-b border-gray-100">
+                      <td className="p-3 font-semibold">{i.title}</td>
+                      <td className="p-3">
+                        {i.level} · {i.prerequisites}
+                      </td>
+                      <td className="p-3">
+                        {comparison.requested.length
+                          ? i.skills
+                              .filter((s) => comparison.requested.includes(s))
+                              .join(", ") || "Sin coincidencias"
+                          : "Define temas objetivo"}
+                      </td>
+                      <td className="p-3">
+                        <button
+                          className="text-blue-600"
+                          aria-label={`Quitar ${i.title}`}
+                          onClick={() =>
+                            setSelected((old) =>
+                              old.filter((id) => id !== i.id),
+                            )
+                          }
+                        >
+                          Quitar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div
+              className="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-950"
+              role="status"
+            >
+              <p>
+                {chosen.length} oportunidades seleccionadas ·{" "}
+                {comparison.skills.length} competencias distintas
+              </p>
+              <p className="mt-2">
+                {comparison.requested.length
+                  ? `Cobertura de objetivos: ${comparison.requested.length - comparison.missing.length}/${comparison.requested.length}. ${comparison.missing.length ? `Sin cubrir: ${comparison.missing.join(", ")}` : "Todos los temas objetivo están incluidos."}`
+                  : "Selecciona o escribe competencias objetivo para evaluar la cobertura."}
+              </p>
+              <p className="mt-2">
+                {comparison.overlap.length
+                  ? `Temas compartidos: ${comparison.overlap.join(", ")}. Revisa el contenido y nivel para decidir si se complementan.`
+                  : "No hay temas repetidos entre las alternativas seleccionadas."}
+              </p>
+            </div>
+            <label className="mt-5 flex items-center gap-2 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={economic}
+                onChange={(e) => setEconomic(e.target.checked)}
+              />
+              Estimar costo para un grupo
+            </label>
+            {economic && (
+              <div className="mt-4 rounded-xl border border-gray-200 p-4">
+                <p className="text-sm text-gray-500">
+                  Escenario opcional: todas las personas realizarían todos los
+                  cursos seleccionados. Usa precios por persona en soles. La
+                  cantidad es una previsión de la escuela, no una inscripción
+                  confirmada.
+                </p>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <label className="text-sm font-semibold">
+                    Participantes previstos
+                    <input
+                      type="number"
+                      min="1"
+                      max="10000"
+                      step="1"
+                      value={participants}
+                      onChange={(e) => setParticipants(e.target.value)}
+                      className={field}
+                    />
+                  </label>
+                  <label className="text-sm font-semibold">
+                    Presupuesto total del grupo (S/, opcional)
+                    <input
+                      type="number"
+                      min="0"
+                      max="10000000000"
+                      step="0.01"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      className={field}
+                    />
+                  </label>
+                </div>
+                <div className="mt-4 space-y-2 text-sm text-gray-700">
+                  <p>
+                    Suma de precios conocidos por persona: S/{" "}
+                    {comparison.knownPerPerson.toFixed(2)}
+                    {comparison.unknownCosts > 0 &&
+                      ` · ${comparison.unknownCosts} cursos con precio no informado`}
+                  </p>
+                  {comparison.validCount ? (
+                    <p>
+                      {comparison.total === null
+                        ? "Subtotal conocido del grupo"
+                        : "Total estimado del grupo"}
+                      : S/ {comparison.subtotal?.toFixed(2)}
+                      {comparison.total === null && " · Estimación incompleta"}
+                    </p>
+                  ) : (
+                    <p>
+                      Ingresa una cantidad entera de 1 a 10 000 participantes
+                      para estimar el grupo.
+                    </p>
+                  )}
+                  {budget !== "" && !comparison.validBudget && (
+                    <p role="alert">
+                      Ingresa un presupuesto válido entre S/ 0 y S/ 10 000 000
+                      000.
+                    </p>
+                  )}
+                  {comparison.budgetState !== "UNSET" && (
+                    <p>
+                      {comparison.budgetState === "OVER"
+                        ? "El subtotal conocido supera el presupuesto del grupo."
+                        : comparison.budgetState === "UNKNOWN"
+                          ? "No se puede confirmar el presupuesto con costos desconocidos."
+                          : "El total estimado está dentro del presupuesto del grupo."}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    No incluye descuentos, tarifas grupales ni gastos
+                    adicionales. Un precio no informado no significa que el
+                    curso sea gratuito.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </section>
     </div>
   );

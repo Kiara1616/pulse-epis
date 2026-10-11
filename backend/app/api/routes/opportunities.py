@@ -98,3 +98,34 @@ def decide(item_id: UUID, request: Request, payload: Decision, actor: Authentica
         item.history = [*item.history, event(actor, payload.status, payload.reason)]
         session.commit()
         return serialize(item)
+
+class OpportunityUpdate(OpportunityInput):
+    reason: str = Field(min_length=10, max_length=1000)
+
+
+@router.put("/{item_id}")
+def update(item_id: UUID, request: Request, payload: OpportunityUpdate,
+           actor: AuthenticatedUser = Depends(admin)):
+    """Correct a draft only; published decisions cannot be silently changed."""
+    with factory(request)() as session:
+        item = session.scalar(select(LearningOpportunity).where(LearningOpportunity.id == item_id).with_for_update())
+        if item is None:
+            raise HTTPException(404, "Oportunidad no encontrada.")
+        if item.status != "DRAFT":
+            raise HTTPException(409, "Solo se pueden editar borradores.")
+        before = {**item.details, "source_url": item.source_url}
+        after = payload.model_dump(mode="json", exclude={"reason"})
+        changed = [key for key in after if before.get(key) != after[key]]
+        if not changed:
+            return serialize(item)
+        entry = event(actor, "DRAFT", payload.reason)
+        entry.update(action="EDIT", changed_fields=changed, before=before, after=dict(after))
+        item.source_url = after.pop("source_url")
+        item.details = after
+        item.history = [*item.history, entry]
+        try:
+            session.commit()
+        except IntegrityError as exc:
+            session.rollback()
+            raise HTTPException(409, "La fuente ya está registrada.") from exc
+        return serialize(item)

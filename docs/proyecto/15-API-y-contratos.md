@@ -62,14 +62,34 @@ Todos los endpoints requieren sesión y permiso `CATALOG_MANAGE` (ADMIN). Sin se
 - `POST /api/v1/opportunities`: registra los campos anteriores; responde 201 y estado DRAFT. URL duplicada: 409; contrato inválido: 422.
 - `POST /api/v1/opportunities/{id}/decision`: recibe status PUBLISHED o RETIRED y reason (10–1000 caracteres). DRAFT puede publicarse o retirarse; PUBLISHED puede retirarse; RETIRED es terminal. Transición inválida: 409; ID inexistente: 404.
 
-Cada decisión conserva actor, fecha UTC, estado y motivo. En PostgreSQL, la decisión bloquea la fila durante la transacción para evitar publicaciones concurrentes. El historial no admite edición ni eliminación desde esta API. Esta primera versión no modifica borradores: un registro erróneo puede retirarse; la corrección del catálogo será una ampliación posterior.
+Cada decisión conserva actor, fecha UTC, estado y motivo. En PostgreSQL, la decisión bloquea la fila durante la transacción para evitar publicaciones concurrentes. El historial no admite edición ni eliminación desde esta API. Los borradores pueden corregirse mediante PUT `/api/v1/opportunities/{id}` con el contrato de registro más reason (10–1000 caracteres). Solo DRAFT admite edición; se conservan campos modificados, valores anteriores y nuevos, actor y motivo. Una corrección sin cambios no añade eventos. URL duplicada o edición de una oportunidad publicada/retirada: 409.
 
 ### Comparación formativa
 
-El administrador selecciona oportunidades publicadas y define competencias objetivo y presupuesto por participante. La vista calcula unión de competencias, cobertura de objetivos por coincidencia exacta sin distinguir mayúsculas y suma de costos conocidos. Un costo desconocido impide confirmar el presupuesto. No es una optimización automática ni estima participantes, dominio, demanda laboral o empleabilidad. La selección de comparación es temporal; el catálogo y las decisiones sí persisten.
+El administrador selecciona oportunidades publicadas y define competencias objetivo y presupuesto por participante. La vista calcula unión de competencias, cobertura de objetivos por coincidencia exacta sin distinguir mayúsculas y temas compartidos entre alternativas. Sin selección muestra instrucciones, no un costo de cero. Se pueden elegir temas del catálogo o escribir objetivos adicionales. El análisis económico es opcional: se indica cantidad prevista (entero de 1 a 10.000) y presupuesto total del grupo. La suma de precios por persona se multiplica por la cantidad, suponiendo que todas las personas realizarán todos los cursos. Cero significa gratuito; null significa precio no informado. Un costo desconocido impide confirmar el total y presupuesto, aunque el subtotal conocido sí puede superar el límite. No se aplican descuentos, tarifas grupales ni costos adicionales. No es una optimización automática ni estima participantes, dominio, demanda laboral o empleabilidad. La selección de comparación es temporal; el catálogo y las decisiones sí persisten.
 
 Captura con datos sintéticos: [Radar de oportunidades](../recursos/imagenes/admin-radar-demo.png).
 
 ### Operación y rollback
 
 Aplicar `python -m alembic -c backend/alembic.ini upgrade head` con la configuración de base habitual antes de iniciar la versión nueva. Para rollback, respaldar primero la tabla, revertir la aplicación y ejecutar downgrade a `0009_roster_student_code`; el downgrade elimina exclusivamente el catálogo nuevo y su historial. No ejecutar contra una base institucional sin el procedimiento de respaldo existente.
+
+
+## Revisión funcional de espacios ADMIN
+
+Esta revisión corresponde a las secciones existentes, no declara capacidades futuras como implementadas. El centro de administración enlaza siete módulos operativos con su objetivo y siguiente acción.
+
+| Espacio | Datos y propósito | Acciones disponibles | Decisión y límite |
+|---|---|---|---|
+| Resumen | Activos, certificados, cobertura, vencimientos, cortes y evolución | Elegir fuente, periodo y filtros; consultar gráficos y exportar | Observar situación institucional; evolución dentro del periodo, no impacto causal |
+| Tecnologías | Emisores, credenciales y habilidades asociadas | Filtrar, explorar gráficos y exportar | Identificar áreas representadas; una credencial no prueba dominio de cada habilidad |
+| Estudiantes | Directorio autorizado, matrícula, credenciales e historial | Buscar y consultar fichas mediante permisos existentes | Seguimiento individual; datos nominales restringidos, sin modificar trayectoria desde el radar |
+| Brechas | Cobertura por habilidad frente a activos del corte | Filtrar, exportar y abrir radar | Orientar prioridades; ausencia de evidencia no equivale a falta de conocimientos ni demanda laboral |
+| Administrar | Accesos a los siete módulos y responsabilidades | Navegar según tarea: actualizar matrícula, cifras o formación | Elegir el siguiente paso; no contiene indicadores inventados ni tarjetas sin acción |
+| Padrón | Periodos, filas del CSV, resultado de conciliación e historial | Registrar periodo, previsualizar, importar por periodo y revisar rechazos | Mantener población y calidad; la vista previa detecta periodos, no sustituye validación completa al importar |
+| Radar | Fuentes, contenido, nivel, requisitos, precio y decisiones | Registrar, editar borrador, filtrar, revisar/publicar/retirar y comparar | Elegir formación por contenido y presupuesto grupal opcional; publicación administrativa, sin inscripción real |
+| Publicar indicadores | Periodo, corte, resultado de ETL e historial | Ejecutar publicación y consultar resultados | Actualizar tablero con padrón previo; no aprueba credenciales, responsabilidad del validador |
+
+### Auditoría de alcance y continuaciones
+
+#66 completa navegación y comparación del flujo existente. #64 mantiene pendiente evaluación y conexión de fuentes externas. Distribución estudiantil, inscripción a talleres, evaluación de dominio, planes guardados, demanda laboral externa y gestión de cuentas no forman parte de esta entrega. El número de participantes del comparador es un escenario declarado por ADMIN, no un conteo calculado desde matrículas. La selección y parámetros de comparación son temporales; las oportunidades y su auditoría sí persisten.

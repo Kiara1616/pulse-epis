@@ -59,3 +59,27 @@ def test_invalid_sources(change):
     actor(app, Role.ADMIN)
     assert client.post("/api/v1/opportunities", json={**PAYLOAD, **change}).status_code == 422
     assert client.get("/api/v1/opportunities").json() == []
+
+def test_draft_corrections_are_audited_and_published_items_are_locked():
+    app, client = setup()
+    actor(app, Role.ADMIN)
+    item = client.post("/api/v1/opportunities", json=PAYLOAD).json()
+    path = f'/api/v1/opportunities/{item["id"]}'
+    correction = {**PAYLOAD, "title": "IA aplicada corregida", "reason": "Corrección del título según la fuente"}
+    r = client.put(path, json=correction)
+    assert r.status_code == 200
+    history = r.json()["history"]
+    assert history[-1]["action"] == "EDIT"
+    assert history[-1]["before"]["title"] == PAYLOAD["title"]
+    assert history[-1]["after"]["source_url"] == PAYLOAD["source_url"]
+    assert history[-1]["changed_fields"] == ["title"]
+    assert client.put(path, json=correction).json()["history"] == history
+    other = {**PAYLOAD, "source_url": "https://example.org/other"}
+    assert client.post("/api/v1/opportunities", json=other).status_code == 201
+    assert client.put(path, json={**correction, "source_url":other["source_url"]}).status_code == 409
+    assert client.get("/api/v1/opportunities").json()[0]["title"] == correction["title"]
+    assert client.post(path+'/decision', json={"status":"PUBLISHED", "reason":"Revisión de contenido completada"}).status_code == 200
+    assert client.put(path, json=correction).status_code == 409
+    for role in (Role.STUDENT, Role.VALIDATOR):
+        actor(app, role)
+        assert client.put(path, json=correction).status_code == 403

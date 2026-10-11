@@ -186,7 +186,10 @@ test.describe("navegación por rol", () => {
     await expect(page.getByRole("link", { name: "Administrar" })).toBeVisible();
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Centro de administración" })).toBeVisible();
-    await expect(page.getByText("Indicadores agregados")).toBeVisible();
+    const modules = page.getByRole("region", { name: "Módulos administrativos" });
+    await expect(modules.getByRole("link")).toHaveCount(7);
+    await expect(modules.getByRole("link", { name: /Publicar indicadores/ })).toHaveAttribute("href", "/admin/publicaciones");
+    await expect(modules.getByRole("link", { name: /Radar formativo/ })).toHaveAttribute("href", "/admin/oportunidades");
   });
 
   test("VALIDATOR puede abrir la bandeja y no recibe navegación administrativa", async ({ page }) => {
