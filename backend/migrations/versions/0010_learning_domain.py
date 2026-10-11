@@ -101,6 +101,9 @@ def upgrade():
     op.create_index("ix_learning_applications_student_id", "learning_applications", ["student_id"])
     op.create_index("ix_learning_applications_workshop_id", "learning_applications", ["workshop_id"])
     op.create_table("learning_audit",
+        sa.Column("sequence", sa.Integer(), nullable=False),
+        sa.UniqueConstraint("entity_type", "entity_id", "sequence", name="uq_learning_audit_sequence"),
+        sa.CheckConstraint("sequence > 0", name="ck_learning_audit_sequence"),
         sa.Column("id", sa.Uuid(), primary_key=True),
         sa.Column("actor_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
         sa.Column("entity_type", sa.String(40), nullable=False),

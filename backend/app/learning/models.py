@@ -101,6 +101,8 @@ class LearningApplication(Base):
 
 class LearningAudit(Base):
     __tablename__ = "learning_audit"
+    __table_args__ = (sa.UniqueConstraint("entity_type", "entity_id", "sequence", name="uq_learning_audit_sequence"), sa.CheckConstraint("sequence > 0", name="ck_learning_audit_sequence"))
+    sequence = mapped_column(sa.Integer(), nullable=False)
     id = mapped_column(sa.Uuid(), primary_key=True, default=uuid4)
     actor_id = mapped_column(sa.Uuid(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     entity_type = mapped_column(sa.String(40), nullable=False)
