@@ -18,6 +18,7 @@ export function Sidebar() {
     { href:"/brechas", label:"Brechas", icon:ScanSearch, roles:["ADMIN"] },
     { href:"/admin", label:"Administrar", icon:Settings, roles:["ADMIN"] },
     { href:"/admin/estudiantes", label:"Padrón", icon:UsersRound, roles:["ADMIN"] },
+    { href:"/admin/oportunidades", label:"Radar formativo", icon:ScanSearch, roles:["ADMIN"] },
     { href:"/admin/publicaciones", label:"Publicar indicadores", icon:LayoutDashboard, roles:["ADMIN"] },
     { href:"/validaciones", label:"Validar", icon:BadgeCheck, roles:["VALIDATOR"] },
     { href:"/mi-perfil", label:"Credenciales", icon:Award, roles:["STUDENT"] },
