@@ -112,4 +112,3 @@ class LearningAudit(Base):
     after = mapped_column(sa.JSON(), nullable=False)
     reason = mapped_column(sa.String(2000), nullable=False)
     created_at = mapped_column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
-
