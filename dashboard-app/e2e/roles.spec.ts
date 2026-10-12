@@ -28,6 +28,7 @@ const overview = {
 };
 
 async function mockApi(page: Page, role: Role) {
+  await page.route("**/api/v1/etl/runs**", route => route.fulfill({ json: [] }));
   await page.route("**/api/v1/auth/config", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
