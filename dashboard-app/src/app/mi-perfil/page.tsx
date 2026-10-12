@@ -26,6 +26,11 @@ import {
 } from "@/shared/contracts/types";
 import { studentSummary } from "@/shared/contracts/adapters";
 import { CertificationDetails } from "@/features/certifications/CertificationDetails";
+import {
+  hasCertificationFormErrors,
+  validateCertificationForm,
+  type CertificationFormErrors,
+} from "@/features/certifications/validation";
 
 type NextAction = {
   title: string;
@@ -66,6 +71,7 @@ function StudentProfileContent() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [formErrors, setFormErrors] = useState<CertificationFormErrors>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [skillNames, setSkillNames] = useState("");
   const level = "Other";
@@ -111,9 +117,16 @@ function StudentProfileContent() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitting(true);
     setError(null);
     setMessage(null);
+    const nextFormErrors = validateCertificationForm(
+      { ...form, skills: skillNames },
+      file,
+    );
+    setFormErrors(nextFormErrors);
+    if (hasCertificationFormErrors(nextFormErrors)) return;
+
+    setSubmitting(true);
     try {
       let id = createdId;
       if (!id) {
@@ -180,6 +193,7 @@ function StudentProfileContent() {
       setFile(null);
       setCreatedId(null);
       setSkillNames("");
+      setFormErrors({});
       setShowForm(false);
       setMessage(
         "Certificación registrada. El validador académico revisará la evidencia.",
@@ -290,6 +304,15 @@ function StudentProfileContent() {
     openNewCertification();
   }
 
+  function clearFormError(field: keyof CertificationFormErrors) {
+    setFormErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
   function handleNextAction() {
     if (!nextAction) return;
     if (nextAction.credentialId) {
@@ -359,8 +382,17 @@ function StudentProfileContent() {
             <form
               id="student-certification-form"
               onSubmit={submit}
+              noValidate
               className="scroll-mt-6 rounded-2xl border border-blue-100 bg-white p-6 shadow-sm"
             >
+              {hasCertificationFormErrors(formErrors) && (
+                <p
+                  role="alert"
+                  className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                >
+                  Revisa los campos marcados antes de enviar la certificación.
+                </p>
+              )}
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">
@@ -388,6 +420,8 @@ function StudentProfileContent() {
                       credential_name: value,
                     }))
                   }
+                  onEdited={() => clearFormError("credential_name")}
+                  error={formErrors.credential_name}
                   required
                 />
                 <Field
@@ -396,6 +430,8 @@ function StudentProfileContent() {
                   onChange={(value) =>
                     setForm((current) => ({ ...current, issuer_name: value }))
                   }
+                  onEdited={() => clearFormError("issuer_name")}
+                  error={formErrors.issuer_name}
                   required
                 />
                 <Field
@@ -405,6 +441,8 @@ function StudentProfileContent() {
                   onChange={(value) =>
                     setForm((current) => ({ ...current, issued_on: value }))
                   }
+                  onEdited={() => clearFormError("issued_on")}
+                  error={formErrors.issued_on}
                   required
                 />
                 <Field
@@ -414,6 +452,8 @@ function StudentProfileContent() {
                   onChange={(value) =>
                     setForm((current) => ({ ...current, expires_on: value }))
                   }
+                  onEdited={() => clearFormError("expires_on")}
+                  error={formErrors.expires_on}
                 />
                 <Field
                   label="URL pública de verificación (opcional)"
@@ -422,24 +462,40 @@ function StudentProfileContent() {
                   onChange={(value) =>
                     setForm((current) => ({ ...current, source_url: value }))
                   }
+                  onEdited={() => clearFormError("source_url")}
+                  error={formErrors.source_url}
                 />
                 <Field
                   label="Habilidades, separadas por comas"
                   value={skillNames}
                   onChange={setSkillNames}
+                  onEdited={() => clearFormError("skills")}
+                  error={formErrors.skills}
                   required
                 />
               </div>
               <label className="mt-4 block text-sm font-semibold text-gray-700">
-                Evidencia privada
+                Evidencia privada (PDF, PNG o JPEG; máximo 10 MB)
                 <input
                   type="file"
                   accept=".pdf,image/png,image/jpeg"
-                  onChange={(event) =>
-                    setFile(event.target.files?.[0] ?? null)
-                  }
+                  aria-invalid={Boolean(formErrors.file)}
+                  aria-describedby={formErrors.file ? "student-evidence-error" : undefined}
+                  onChange={(event) => {
+                    setFile(event.target.files?.[0] ?? null);
+                    clearFormError("file");
+                  }}
                   className="mt-2 block w-full rounded-lg border border-dashed border-gray-300 p-4 text-sm"
                 />
+                {formErrors.file && (
+                  <span
+                    id="student-evidence-error"
+                    role="alert"
+                    className="mt-1 block text-xs font-medium text-rose-700"
+                  >
+                    {formErrors.file}
+                  </span>
+                )}
               </label>
               <div className="mt-5 flex justify-end gap-2">
                 <button
@@ -450,6 +506,7 @@ function StudentProfileContent() {
                   Cancelar
                 </button>
                 <button
+                  type="submit"
                   disabled={submitting}
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 font-bold text-white disabled:opacity-60"
                 >
@@ -816,25 +873,48 @@ function Field({
   label,
   value,
   onChange,
+  onEdited,
   type = "text",
   required = false,
+  error,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onEdited?: () => void;
   type?: string;
   required?: boolean;
+  error?: string;
 }) {
+  const fieldId = `student-field-${label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .toLowerCase()}`;
+  const errorId = `${fieldId}-error`;
   return (
-    <label className="text-sm font-semibold text-gray-700">
+    <label htmlFor={fieldId} className="text-sm font-semibold text-gray-700">
       {label}
       <input
+        id={fieldId}
         required={required}
         type={type}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-2 block w-full rounded-lg border border-gray-200 px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
+        onChange={(event) => {
+          onChange(event.target.value);
+          onEdited?.();
+        }}
+        className={`mt-2 block w-full rounded-lg border px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${
+          error ? "border-rose-300" : "border-gray-200"
+        }`}
       />
+      {error && (
+        <span id={errorId} role="alert" className="mt-1 block text-xs font-medium text-rose-700">
+          {error}
+        </span>
+      )}
     </label>
   );
 }

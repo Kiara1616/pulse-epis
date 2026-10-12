@@ -313,6 +313,61 @@ test.describe("navegación por rol", () => {
     await expect(page.getByRole("button", { name: "Nueva certificación", exact: true })).toBeVisible();
   });
 
+  test("valida fechas, URL y formato de evidencia antes de registrar", async ({ page }) => {
+    await mockApi(page, "STUDENT");
+    let createCalls = 0;
+    let evidenceCalls = 0;
+    await page.route("**/api/v1/certifications/new-cert/evidence", async (route) => {
+      evidenceCalls += 1;
+      await route.fulfill({ status: 201, json: { id: "evidence-1" } });
+    });
+    await page.route("**/api/v1/certifications", async (route) => {
+      if (route.request().method() === "POST") {
+        createCalls += 1;
+        const payload = route.request().postDataJSON();
+        expect(payload.expires_on).toBe("2026-09-20");
+        expect(payload.source_url).toBe("https://verify.example.test/aws");
+        return route.fulfill({ status: 201, json: { id: "new-cert" } });
+      }
+      return route.fulfill({ json: [] });
+    });
+
+    await page.goto("/mi-perfil");
+    await page.getByRole("button", { name: "Nueva certificación", exact: true }).click();
+    await page.getByLabel("Nombre de la certificación").fill("AWS Cloud Practitioner");
+    await page.getByLabel("Entidad emisora").fill("AWS");
+    await page.getByLabel("Fecha de emisión").fill("2026-09-10");
+    await page.getByLabel("Fecha de vencimiento (opcional)").fill("2026-09-01");
+    await page.getByLabel("URL pública de verificación (opcional)").fill("ftp://invalid.example.test");
+    await page.getByLabel("Habilidades, separadas por comas").fill("Cloud");
+    await page.getByRole("button", { name: "Enviar a validación" }).click();
+
+    await expect(page.getByText("La fecha de vencimiento no puede ser anterior a la emisión.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Usa una URL HTTP(S) válida", { exact: false })).toBeVisible();
+    expect(createCalls).toBe(0);
+
+    await page.getByLabel("Fecha de vencimiento (opcional)").fill("2026-09-20");
+    await page.getByLabel("URL pública de verificación (opcional)").fill("https://verify.example.test/aws");
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "evidence.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("not an accepted evidence format"),
+    });
+    await page.getByRole("button", { name: "Enviar a validación" }).click();
+    await expect(page.getByText("Formato no admitido. Usa un archivo PDF, PNG o JPEG.", { exact: true })).toBeVisible();
+    expect(createCalls).toBe(0);
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "evidence.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4\nsynthetic evidence\n%%EOF"),
+    });
+    await page.getByRole("button", { name: "Enviar a validación" }).click();
+    await expect(page.getByText("Certificación registrada. El validador académico revisará la evidencia.", { exact: true })).toBeVisible();
+    expect(createCalls).toBe(1);
+    expect(evidenceCalls).toBe(1);
+  });
+
   test("el espacio del estudiante comunica carga, error y sesión expirada", async ({ page }) => {
     await mockApi(page, "STUDENT");
     let releaseRequest!: () => void;
