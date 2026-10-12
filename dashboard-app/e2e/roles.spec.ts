@@ -71,10 +71,13 @@ test.describe("navegación por rol", () => {
   test("estudiante puede corregir una observación conservando habilidades", async ({ page }) => {
     await mockApi(page, "STUDENT");
     let item = { id: "observada", credential_name: "Cloud", issuer_name: "AWS", issued_on: "2026-09-01", expires_on: null, source_url: null, status: "OBSERVED", correction_allowed: true, evidences: [], skills: [{ name: "Cloud Computing", level: "Fundamentals" }], latest_comment: "Completa el nombre de la certificación" };
+    let patchCalls = 0;
     await page.route("**/api/v1/certifications", (route) => route.fulfill({ json: [item] }));
     await page.route("**/api/v1/certifications/observada", (route) => {
+      patchCalls += 1;
       const update = route.request().postDataJSON();
       expect(update.skills).toEqual([{ name: "Cloud Computing", level: "Fundamentals" }]);
+      expect(update.source_url).toBe(null);
       item = { ...item, ...update, status: "RESUBMITTED" };
       return route.fulfill({ json: item });
     });
@@ -83,8 +86,20 @@ test.describe("navegación por rol", () => {
     const detail = page.getByRole("region", { name: "Detalle de certificación" });
     await expect(detail.getByText("Completa el nombre de la certificación")).toBeVisible();
     await detail.getByLabel("Nombre de la certificación").fill("AWS Cloud Fundamentals");
+    await detail.getByLabel("URL de verificación (opcional)").fill("https:example.com");
+    await detail.getByRole("button", { name: "Reenviar corrección" }).click();
+    await expect(detail.getByText("Usa una URL HTTP(S) válida", { exact: false })).toBeVisible();
+    expect(patchCalls).toBe(0);
+
+    await detail.getByLabel("URL de verificación (opcional)").fill("https:///example.com");
+    await detail.getByRole("button", { name: "Reenviar corrección" }).click();
+    await expect(detail.getByText("Usa una URL HTTP(S) válida", { exact: false })).toBeVisible();
+    expect(patchCalls).toBe(0);
+
+    await detail.getByLabel("URL de verificación (opcional)").fill("   ");
     await detail.getByRole("button", { name: "Reenviar corrección" }).click();
     await expect(detail.getByText("Corrección reenviada al validador.")).toBeVisible();
+    expect(patchCalls).toBe(1);
     await expect(page.getByRole("article").getByText("Reenviada", { exact: true })).toBeVisible();
   });
 
@@ -347,6 +362,13 @@ test.describe("navegación por rol", () => {
     expect(createCalls).toBe(0);
 
     await page.getByLabel("Fecha de vencimiento (opcional)").fill("2026-09-20");
+    for (const invalidUrl of ["https:example.com", "https:///example.com"]) {
+      await page.getByLabel("URL pública de verificación (opcional)").fill(invalidUrl);
+      await page.getByRole("button", { name: "Enviar a validación" }).click();
+      await expect(page.getByText("Usa una URL HTTP(S) válida", { exact: false })).toBeVisible();
+      expect(createCalls).toBe(0);
+    }
+
     await page.getByLabel("URL pública de verificación (opcional)").fill("https://verify.example.test/aws");
     await page.locator('input[type="file"]').setInputFiles({
       name: "evidence.txt",
@@ -366,6 +388,34 @@ test.describe("navegación por rol", () => {
     await expect(page.getByText("Certificación registrada. El validador académico revisará la evidencia.", { exact: true })).toBeVisible();
     expect(createCalls).toBe(1);
     expect(evidenceCalls).toBe(1);
+  });
+
+  test("normaliza una URL opcional vacía al registrar", async ({ page }) => {
+    await mockApi(page, "STUDENT");
+    let submittedSourceUrl: unknown = "not-submitted";
+    await page.route("**/api/v1/certifications", async (route) => {
+      if (route.request().method() === "POST") {
+        submittedSourceUrl = route.request().postDataJSON().source_url;
+        return route.fulfill({ status: 201, json: { id: "without-url" } });
+      }
+      return route.fulfill({ json: [] });
+    });
+
+    await page.goto("/mi-perfil");
+    await page.getByRole("button", { name: "Nueva certificación", exact: true }).click();
+    await page.getByLabel("Nombre de la certificación").fill("AWS Cloud Practitioner");
+    await page.getByLabel("Entidad emisora").fill("AWS");
+    await page.getByLabel("Fecha de emisión").fill("2026-09-10");
+    await page.getByLabel("URL pública de verificación (opcional)").fill("   ");
+    await page.getByLabel("Habilidades, separadas por comas").fill("Cloud");
+    await page.getByRole("button", { name: "Enviar a validación" }).click();
+
+    await expect(
+      page.getByText("Certificación registrada. El validador académico revisará la evidencia.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    expect(submittedSourceUrl).toBe(null);
   });
 
   test("el espacio del estudiante comunica carga, error y sesión expirada", async ({ page }) => {

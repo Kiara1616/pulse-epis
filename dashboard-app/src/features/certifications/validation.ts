@@ -25,11 +25,13 @@ function isDateInput(value: string) {
 }
 
 function validateUrl(value: string) {
-  if (!value) return null;
-  if (value.length > 2048) return "La URL no puede superar 2048 caracteres.";
+  const normalized = value.trim();
+  if (!normalized) return null;
+  if (normalized.length > 2048) return "La URL no puede superar 2048 caracteres.";
   try {
-    const url = new URL(value);
+    const url = new URL(normalized);
     if (
+      !/^https?:\/\/[^/]/i.test(normalized) ||
       !["http:", "https:"].includes(url.protocol) ||
       !url.hostname ||
       url.username ||

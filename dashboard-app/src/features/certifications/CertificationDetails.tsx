@@ -89,12 +89,13 @@ export function CertificationDetails({
       }
 
       const { skills, level, ...values } = form;
+      const normalizedSourceUrl = values.source_url.trim() || null;
       await apiFetch(`/certifications/${item.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           ...values,
           expires_on: values.expires_on || null,
-          source_url: values.source_url || null,
+          source_url: normalizedSourceUrl,
           skills: skills
             .split(",")
             .map((name) => name.trim())

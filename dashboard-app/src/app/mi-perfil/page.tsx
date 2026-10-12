@@ -127,6 +127,7 @@ function StudentProfileContent() {
     if (hasCertificationFormErrors(nextFormErrors)) return;
 
     setSubmitting(true);
+    const normalizedSourceUrl = form.source_url.trim() || null;
     try {
       let id = createdId;
       if (!id) {
@@ -135,7 +136,7 @@ function StudentProfileContent() {
           body: JSON.stringify({
             ...form,
             expires_on: form.expires_on || null,
-            source_url: form.source_url || null,
+            source_url: normalizedSourceUrl,
             skills: skillNames
               .split(",")
               .map((name) => name.trim())
@@ -164,9 +165,9 @@ function StudentProfileContent() {
             throw uploadError;
           }
         }
-      } else if (form.source_url) {
+      } else if (normalizedSourceUrl) {
         const body = new FormData();
-        body.append("source_url", form.source_url);
+        body.append("source_url", normalizedSourceUrl);
         try {
           await apiFetch(`/certifications/${id}/evidence`, {
             method: "POST",
