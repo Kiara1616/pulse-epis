@@ -84,3 +84,9 @@ Calidad de datos consulta `/etl/runs?period_code=...` únicamente para ADMIN y d
 Validadores conservan el resumen permitido, pero no reciben gestión, prioridades administrativas ni consultas a calidad. Estudiantes siguen entrando a su espacio. Las tarjetas administrativas llevan a padrón, tecnologías y publicaciones; no hay una tarjeta sin acción que sugiera permiso para validar evidencias.
 
 Pruebas: `npx playwright test e2e/admin-priorities.spec.ts` verifica filtros, navegación con alcance, calidad sin informe/error/reintento, demostración, restricciones de rol, errores de indicadores y selección del corte. Capturas sintéticas: [escritorio](../recursos/imagenes/va72-admin-demo.png) y [móvil](../recursos/imagenes/va72-admin-mobile-demo.png). No hay migraciones; rollback mediante reversión del commit y reconstrucción del frontend.
+
+## VA-07: estados y navegación por rol
+
+#73 comparte etiquetas y tonos de certificación en estudiante, validador e historial. APPROVED se muestra como Aprobada; desconocidos usan Estado no reconocido y tono neutral. AsyncState unifica carga, error accesible con reintento y vacío, con texto y acción configurables. El encabezado distingue los tres roles sin selector de permisos. La bandeja monta consultas dentro de RoleGate: los otros roles no inician peticiones de validación. Backend conserva la autoridad de acceso.
+
+El centro administrativo de #72 ya está integrado desde main. La integración de futuras pantallas #69/#71 queda pendiente de sus PR. No se modifican datos ni transiciones del servicio. Tests incluyen sesión expirada, consultas bloqueadas, etiquetas, error/reintento/vacío y móvil. [Captura sintética](../recursos/imagenes/va73-feedback-demo.png). Rollback: revertir commit y reconstruir frontend, sin migraciones.
