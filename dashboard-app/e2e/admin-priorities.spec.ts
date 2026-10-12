@@ -113,6 +113,12 @@ test("admin conecta indicadores, prioridades y calidad del corte", async ({
   await expect(
     page.getByRole("region", { name: "Calidad de datos" }),
   ).toContainText("Proceso rechazado por calidad");
+  const modules = page.getByRole("region", { name: "Gestión administrativa" });
+  await expect(modules.getByRole("link", { name: /Certificaciones/ }))
+    .toHaveAttribute("href", "/tecnologias");
+  const radar = modules.getByRole("link", { name: /Radar de cursos/ });
+  await expect(radar).toHaveAttribute("href", "/admin/radar");
+  await expect(radar).toContainText("Demostración sin persistencia");
   await page.getByText("Fuente y corte", { exact: true }).first().click();
   await expect(page.getByText("GET /api/v1/indicators/overview").first()).toBeVisible();
   await page.getByLabel("Ciclo", { exact: true }).selectOption("VI");
