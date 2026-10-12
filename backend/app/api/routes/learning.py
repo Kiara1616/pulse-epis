@@ -41,6 +41,10 @@ def serialize(session, item):
     data = {c.name: primitive(getattr(item, c.name)) for c in item.__table__.columns}
     if isinstance(item, Route):
         data['steps'] = [serialize(session, s) for s in session.scalars(select(Step).where(Step.route_id == item.id).order_by(Step.position))]
+    if isinstance(item, Workshop):
+        occupied=session.scalar(select(func.count()).select_from(Application).where(Application.workshop_id==item.id, Application.status.in_(['ACCEPTED','COMPLETED'])))
+        data['occupied_places']=occupied
+        data['available_places']=max(0,item.capacity-occupied)
     if isinstance(item, Profile):
         data['interest_ids'] = [str(v) for v in session.scalars(select(StudentInterest.interest_id).where(StudentInterest.student_id == item.student_id).order_by(StudentInterest.interest_id))]
     if isinstance(item, Offer):

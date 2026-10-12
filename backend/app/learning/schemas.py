@@ -100,6 +100,8 @@ class OfferOutput(OfferInput):
     created_at: datetime
 
 class WorkshopOutput(WorkshopInput):
+    occupied_places: int
+    available_places: int
     id: UUID
     status: Literal['DRAFT', 'OPEN', 'CLOSED', 'COMPLETED']
     created_at: datetime
