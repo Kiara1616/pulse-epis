@@ -311,3 +311,21 @@ Extraído de backend/app/db/models.py para el corte documentado. Las ocho migrac
 | `decision` | VARCHAR(20) | No | - |
 | `comment` | VARCHAR(2000) | Sí | - |
 | `decided_at` | TIMESTAMP WITH TIME ZONE | No | - |
+
+## VA-11: dominio persistente de formación complementaria
+
+#77 añade migración `0010_learning_domain`, posterior a 0009, sin alterar estudiantes, matrículas ni credenciales. Catálogos: learning_interests (nombre único/activo), learning_routes (título único y DRAFT/PUBLISHED/RETIRED), learning_steps (FK ruta, orden positivo único por ruta, competencias/requisitos). El objetivo profesional se representa por la ruta seleccionada; no se duplica una identidad estudiantil ni se infiere dominio.
+
+student_learning_profiles conserva una fila por estudiante y ruta opcional; student_learning_interests conserva pares únicos estudiante/interés. Las FK reutilizan students y catálogos existentes. El progreso deberá distinguir evidencia registrada de dominio y no se guarda como un porcentaje autodeclarado.
+
+learning_courses conserva fuente HTTPS, proveedor, fecha de consulta, requisitos, competencias y DETECTED/IN_REVIEW/PUBLISHED/DISCARDED/RETIRED. Fuente única evita duplicados. learning_offers vincula un curso único con audiencia por ciclos y relevancia; learning_offer_interests normaliza los intereses con FK y unicidad. La fecha de consulta no demuestra vigencia. El prototipo #75 usa audiencia textual; la API sustituye ese texto por ciclos válidos e IDs de catálogo.
+
+learning_workshops vincula oferta y requisitos, cupos positivos y DRAFT/OPEN/CLOSED/COMPLETED. learning_applications conserva FK estudiante/taller, solicitud única por par y SUBMITTED/ACCEPTED/REJECTED/COMPLETED. Los cupos se controlan transaccionalmente al aceptar, no mediante un conteo JSON. learning_audit conserva actor, entidad, acción, antes/después y motivo; sin códigos, correos ni documentos. Solo la API administrativa puede exponer auditoría.
+
+Las listas de competencias/requisitos y ciclos se almacenan en JSON y son validadas por contrato; intereses y asociaciones estudiantiles tienen integridad relacional. No hay endpoints ni semilla institucional en esta entrega. #78 añade autorización y transiciones. #74 permanece pendiente de revisión: cambios en representación de objetivos o pasos requieren una revisión del contrato antes de merge, no cambios retroactivos en migraciones aplicadas.
+
+Verificación: prueba sintética de upgrade/downgrade/reupgrade, unicidad de orden y restricciones de estado, más la migración existente. Para rollback, respaldar tablas nuevas y bajar a 0009 antes de revertir aplicación; eliminará exclusivamente el dominio nuevo y su auditoría. Se requiere además prueba en PostgreSQL antes de integración institucional.
+
+Secuencia de auditoría: learning_audit añade un ordinal positivo y único por tipo/ID de entidad. La API genera la secuencia dentro de la misma transacción de decisión y bajo el bloqueo de la entidad. No se usa UUID como sustituto del orden de las decisiones de una misma entidad.
+
+También se verificó manualmente upgrade/downgrade/reupgrade en un esquema aislado PostgreSQL 16: quedaron preservadas las tablas existentes y se reconstruyeron las once tablas nuevas. La prueba SQLite automatizada permanece en backend/tests/test_learning_model.py.
