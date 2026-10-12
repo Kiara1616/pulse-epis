@@ -536,3 +536,6 @@ class FactCertification(Base):
     loaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+# Register learning metadata for Base.metadata and Alembic.
+from ..learning import models as learning_models  # noqa: E402,F401

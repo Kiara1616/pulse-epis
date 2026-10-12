@@ -136,6 +136,10 @@
     {
       "source": "docs/proyecto/21-Correcciones-dashboard.md",
       "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/22-Recorridos-y-criterios-por-rol.md",
+      "group": "proyecto"
     }
   ]
 }

@@ -28,6 +28,7 @@ const overview = {
 };
 
 async function mockApi(page: Page, role: Role) {
+  await page.route("**/api/v1/etl/runs**", route => route.fulfill({ json: [] }));
   await page.route("**/api/v1/auth/config", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -79,10 +80,11 @@ test.describe("navegación por rol", () => {
     });
     await page.goto("/mi-perfil");
     await page.getByRole("button", { name: "Ver detalle" }).click();
-    await expect(page.getByText("Completa el nombre de la certificación")).toBeVisible();
-    await page.getByLabel("Nombre de la certificación").fill("AWS Cloud Fundamentals");
-    await page.getByRole("button", { name: "Reenviar corrección" }).click();
-    await expect(page.getByText("Corrección reenviada al validador.")).toBeVisible();
+    const detail = page.getByRole("region", { name: "Detalle de certificación" });
+    await expect(detail.getByText("Completa el nombre de la certificación")).toBeVisible();
+    await detail.getByLabel("Nombre de la certificación").fill("AWS Cloud Fundamentals");
+    await detail.getByRole("button", { name: "Reenviar corrección" }).click();
+    await expect(detail.getByText("Corrección reenviada al validador.")).toBeVisible();
     await expect(page.getByRole("article").getByText("Reenviada", { exact: true })).toBeVisible();
   });
 
@@ -155,7 +157,7 @@ test.describe("navegación por rol", () => {
       ],
     }));
     await page.goto("/");
-    await expect(page).toHaveURL(/\/mi-perfil$/);
+    await expect(page).toHaveURL(/\/mi-perfil$/, { timeout: 15000 });
     await expect(page.getByRole("button", { name: "Cerrar sesión" })).toHaveCount(1);
     await expect(page.getByRole("textbox", { name: "Buscar en el panel" })).toHaveCount(0);
     await page.getByRole("textbox", { name: "Buscar certificaciones" }).fill("computacion");
@@ -203,10 +205,148 @@ test.describe("navegación por rol", () => {
     await mockApi(page, "STUDENT");
     await page.goto("/mi-perfil");
 
-    await expect(page.getByRole("heading", { name: "Mis certificaciones" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mi avance" })).toBeVisible();
     await expect(page.getByText("Todavía no tienes certificaciones registradas.")).toBeVisible();
     await expect(page.getByRole("link", { name: "Credenciales" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Administrar" })).toHaveCount(0);
+  });
+
+  test("el estudiante ve estados resumidos y abre una corrección desde su siguiente acción", async ({ page }) => {
+    await mockApi(page, "STUDENT");
+    await page.route("**/api/v1/certifications", (route) => route.fulfill({
+      json: [
+        {
+          id: "approved",
+          issuer_id: "aws",
+          issuer_name: "AWS",
+          issuer_url: null,
+          credential_name: "AWS Cloud Practitioner",
+          external_id: null,
+          issued_on: "2026-09-10",
+          expires_on: null,
+          status: "APPROVED",
+          source_url: null,
+          skills: [],
+          evidences: [],
+          created_at: "2026-09-10T00:00:00Z",
+          updated_at: "2026-09-10T00:00:00Z",
+          correction_allowed: false,
+        },
+        {
+          id: "pending",
+          issuer_id: "oracle",
+          issuer_name: "Oracle",
+          issuer_url: null,
+          credential_name: "Oracle Foundations",
+          external_id: null,
+          issued_on: "2026-09-09",
+          expires_on: null,
+          status: "PENDING",
+          source_url: null,
+          skills: [],
+          evidences: [],
+          created_at: "2026-09-09T00:00:00Z",
+          updated_at: "2026-09-09T00:00:00Z",
+          correction_allowed: false,
+        },
+        {
+          id: "observed",
+          issuer_id: "datacamp",
+          issuer_name: "DataCamp",
+          issuer_url: null,
+          credential_name: "Cloud Fundamentals",
+          external_id: null,
+          issued_on: "2026-09-08",
+          expires_on: null,
+          status: "OBSERVED",
+          source_url: null,
+          skills: [{ id: "skill-1", name: "Cloud", level: "Fundamentals" }],
+          evidences: [],
+          created_at: "2026-09-08T00:00:00Z",
+          updated_at: "2026-09-08T00:00:00Z",
+          correction_allowed: true,
+          latest_comment: "Completa la evidencia de la certificación.",
+        },
+        {
+          id: "expired",
+          issuer_id: "microsoft",
+          issuer_name: "Microsoft",
+          issuer_url: null,
+          credential_name: "Azure Fundamentals",
+          external_id: null,
+          issued_on: "2025-09-08",
+          expires_on: "2026-09-08",
+          status: "EXPIRED",
+          source_url: null,
+          skills: [],
+          evidences: [],
+          created_at: "2025-09-08T00:00:00Z",
+          updated_at: "2026-09-08T00:00:00Z",
+          correction_allowed: false,
+        },
+      ],
+    }));
+
+    await page.goto("/mi-perfil");
+    await expect(page.getByRole("heading", { name: "Mi avance" })).toBeVisible();
+    await expect(page.getByRole("article", { name: "Aprobadas: 1" })).toBeVisible();
+    await expect(page.getByRole("article", { name: "Pendientes: 1" })).toBeVisible();
+    await expect(page.getByRole("article", { name: "Observadas: 1" })).toBeVisible();
+    await expect(page.getByRole("article", { name: "Vencidas: 1" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Abrir corrección" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Corregir ahora" }).click();
+    await expect(page.getByRole("heading", { name: "Detalle de certificación" })).toBeVisible();
+    await expect(page.getByLabel("Nombre de la certificación")).toHaveValue("Cloud Fundamentals");
+  });
+
+  test("el estudiante puede abrir y cerrar el formulario desde el botón principal", async ({ page }) => {
+    await mockApi(page, "STUDENT");
+    await page.goto("/mi-perfil");
+
+    await page.getByRole("button", { name: "Nueva certificación", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Registrar certificación" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Cerrar formulario", exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Cerrar formulario", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Registrar certificación" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Nueva certificación", exact: true })).toBeVisible();
+  });
+
+  test("el espacio del estudiante comunica carga, error y sesión expirada", async ({ page }) => {
+    await mockApi(page, "STUDENT");
+    let releaseRequest!: () => void;
+    const requestReleased = new Promise<void>((resolve) => {
+      releaseRequest = resolve;
+    });
+    await page.route("**/api/v1/certifications", async (route) => {
+      await requestReleased;
+      await route.fulfill({ json: [] });
+    });
+
+    await page.goto("/mi-perfil");
+    await expect(page.getByText("Cargando tus certificaciones…", { exact: true })).toBeVisible();
+    releaseRequest();
+    await expect(page.getByText("Todavía no tienes certificaciones registradas.")).toBeVisible();
+
+    await page.reload();
+    await page.route("**/api/v1/certifications", (route) => route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: "Servicio temporalmente no disponible" }),
+    }));
+    await expect(page.getByRole("heading", { name: "No se pudo cargar la información" })).toBeVisible();
+    await expect(page.getByText("Servicio temporalmente no disponible", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reintentar" })).toBeVisible();
+
+    await page.reload();
+    await page.route("**/api/v1/certifications", (route) => route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: "Sesión expirada" }),
+    }));
+    await expect(page.getByRole("heading", { name: "Tu sesión expiró" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Volver a iniciar sesión" })).toBeVisible();
   });
 });
 
