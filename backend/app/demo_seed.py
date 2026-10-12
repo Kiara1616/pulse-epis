@@ -32,7 +32,7 @@ from .db.models import (
     Student,
     User,
 )
-from .etl.service import EtlService
+from .etl.service import EtlService, stage_source_records
 from .roster.service import pseudonymize_student_code
 from .core.config import Settings
 
@@ -361,7 +361,30 @@ def seed_demo_data(
     for spec in _period_specs():
         period_end = date.fromisoformat(spec["ends_on"])
         cutoff = min(period_end, _SEED_AS_OF)
-        report = etl.run(spec["code"], cutoff)
+        extraction = etl.extract(spec["code"], cutoff)
+        stage = stage_source_records(extraction.records, cutoff)
+        rejected_certification_ids = {
+            UUID(rejection.record_key)
+            for rejection in stage.rejections
+            if rejection.record_key
+        }
+        clean_certification_ids = frozenset(
+            record.certification_id
+            for record in extraction.records
+            if record.certification_id not in rejected_certification_ids
+        )
+        if rejected_certification_ids:
+            logger.warning(
+                "Synthetic demo seed omitted malformed operational certifications "
+                "from period=%s count=%s; source rows remain untouched",
+                spec["code"],
+                len(rejected_certification_ids),
+            )
+        report = etl.run(
+            spec["code"],
+            cutoff,
+            certification_ids=clean_certification_ids,
+        )
         if report.status != "APPLIED":
             logger.warning(
                 "Synthetic demo seed left operational snapshot unpublished period=%s status=%s rejected_rows=%s; review ETL quality report",

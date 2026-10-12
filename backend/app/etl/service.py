@@ -7,7 +7,7 @@ import json
 import logging
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timezone
-from typing import Any
+from typing import Any, Iterable
 from uuid import UUID
 
 from sqlalchemy import and_, delete, select
@@ -236,7 +236,22 @@ class EtlService:
     def __init__(self, session_factory: sessionmaker[Session]):
         self._session_factory = session_factory
 
-    def extract(self, period_code: str, cutoff_date: date) -> EtlExtraction:
+    def extract(
+        self,
+        period_code: str,
+        cutoff_date: date,
+        certification_ids: Iterable[UUID] | None = None,
+    ) -> EtlExtraction:
+        """Extract one period, optionally restricted to a clean source set.
+
+        The optional restriction is used by the opt-in synthetic pilot seed to
+        keep unrelated malformed operational rows out of its snapshot. Those
+        rows remain untouched and continue to be reported by a normal ETL run.
+        """
+
+        selected_certification_ids = (
+            frozenset(certification_ids) if certification_ids is not None else None
+        )
         with self._session_factory() as session:
             period = session.scalar(
                 select(AcademicPeriod).where(AcademicPeriod.code == period_code.strip())
@@ -263,7 +278,7 @@ class EtlService:
                 for enrollment, student in enrollment_rows
             )
 
-            rows = session.execute(
+            certification_statement = (
                 select(Certification, Student, Issuer, Enrollment, CertificationSkill, Skill)
                 .join(Student, Student.id == Certification.student_id)
                 .join(Issuer, Issuer.id == Certification.issuer_id)
@@ -281,7 +296,12 @@ class EtlService:
                 .outerjoin(Skill, Skill.id == CertificationSkill.skill_id)
                 .where(Enrollment.id.is_not(None), Certification.issued_on <= cutoff_date)
                 .order_by(Certification.id, CertificationSkill.skill_id)
-            ).all()
+            )
+            if selected_certification_ids is not None:
+                certification_statement = certification_statement.where(
+                    Certification.id.in_(selected_certification_ids)
+                )
+            rows = session.execute(certification_statement).all()
 
             records = tuple(
                 EtlSourceRecord(
@@ -340,10 +360,11 @@ class EtlService:
         period_code: str,
         cutoff_date: date,
         actor_user_id: UUID | None = None,
+        certification_ids: Iterable[UUID] | None = None,
     ) -> EtlReport:
         """Run the pipeline; a repeated identical source returns the same run."""
 
-        extraction = self.extract(period_code, cutoff_date)
+        extraction = self.extract(period_code, cutoff_date, certification_ids)
         stage = stage_source_records(extraction.records, cutoff_date)
         rejected_rows = len({rejection.row_number for rejection in stage.rejections})
         accepted_rows = 0 if stage.rejections else len(stage.records)

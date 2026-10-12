@@ -117,6 +117,7 @@ def test_demo_seed_does_not_block_restart_on_pending_certification_without_skill
                 Certification.external_id == "OPS-PENDING-WITHOUT-SKILL"
             )
         ) == 1
+        assert session.scalar(select(func.count()).select_from(FactStudentPeriod)) > 0
         assert session.scalar(
             select(func.count()).select_from(EtlRun).where(EtlRun.status == "REJECTED")
-        ) > 0
+        ) == 0
