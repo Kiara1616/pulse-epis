@@ -282,6 +282,14 @@ function StudentProfileContent() {
     }, 0);
   }
 
+  function toggleCertificationForm() {
+    if (showForm) {
+      setShowForm(false);
+      return;
+    }
+    openNewCertification();
+  }
+
   function handleNextAction() {
     if (!nextAction) return;
     if (nextAction.credentialId) {
@@ -311,7 +319,7 @@ function StudentProfileContent() {
           </p>
         </div>
         <button
-          onClick={openNewCertification}
+          onClick={toggleCertificationForm}
           aria-expanded={showForm}
           className="inline-flex w-fit items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
         >

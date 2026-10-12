@@ -300,6 +300,19 @@ test.describe("navegación por rol", () => {
     await expect(page.getByLabel("Nombre de la certificación")).toHaveValue("Cloud Fundamentals");
   });
 
+  test("el estudiante puede abrir y cerrar el formulario desde el botón principal", async ({ page }) => {
+    await mockApi(page, "STUDENT");
+    await page.goto("/mi-perfil");
+
+    await page.getByRole("button", { name: "Nueva certificación", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Registrar certificación" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Cerrar formulario", exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Cerrar formulario", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Registrar certificación" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Nueva certificación", exact: true })).toBeVisible();
+  });
+
   test("el espacio del estudiante comunica carga, error y sesión expirada", async ({ page }) => {
     await mockApi(page, "STUDENT");
     let releaseRequest!: () => void;
