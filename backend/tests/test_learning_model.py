@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 from uuid import uuid4
 import pytest
 from alembic import command
@@ -10,7 +11,7 @@ from backend.app.learning.models import LearningInterest,LearningRoute,LearningS
 
 ROOT=Path(__file__).resolve().parents[2]
 def test_learning_migration_constraints_and_rollback(tmp_path):
-    url=f"sqlite:///{(tmp_path/'learning.db').as_posix()}"
+    url=os.getenv("PULSE_DATABASE_URL") or os.getenv("DATABASE_URL") or f"sqlite:///{(tmp_path/'learning.db').as_posix()}"
     config=Config(str(ROOT/'backend/alembic.ini'));config.set_main_option('sqlalchemy.url',url)
     command.upgrade(config,'head');engine=create_engine(url)
     assert {'learning_interests','learning_routes','learning_steps','student_learning_profiles','student_learning_interests','learning_courses','learning_offers','learning_offer_interests','learning_workshops','learning_applications','learning_audit'} <= set(inspect(engine).get_table_names())
