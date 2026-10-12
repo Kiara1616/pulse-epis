@@ -26,6 +26,7 @@ Estas fuentes permiten comprender, desarrollar, verificar y operar Pulse EPIS. S
 | [Despliegue y recuperación](16-Despliegue-y-recuperacion.md) | Ambientes, respaldos, rollback y restauración |
 | [Pruebas y aceptación](17-Pruebas-y-aceptacion.md) | Suites, evidencia y condiciones de cierre |
 | [Generación documental](18-Generacion-documental.md) | Construcción, artefactos y verificaciones |
+| [Recorridos y criterios por rol](22-Recorridos-y-criterios-por-rol.md) | Alcance de VA-01, permisos, fuentes y estados de los recorridos |
 | [Gobierno del repositorio](REPOSITORY-GOVERNANCE.md) | Contribución, protección y revisión |
 
 Los estados académicos se consultan en [FD03](../academico/FD03-Especificacion-Requerimientos.md). Un control propuesto, un workflow versionado y una prueba local son evidencias diferentes de operación institucional. Los manuales no publican padrones ni evidencias reales.
