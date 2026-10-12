@@ -103,8 +103,8 @@ En el dominio `/learning`, las rutas actuales reciben `require_roles(ADMIN)` o `
 2. Si no hay registros, muestra el estado vacío y la acción `Nueva certificación`.
 3. El estudiante registra emisor, credencial, fecha de emisión, vencimiento opcional, enlace y habilidades; puede adjuntar evidencia PDF, PNG, JPEG o una URL según el contrato vigente.
 4. El frontend envía la certificación y la evidencia a los endpoints existentes. El nuevo registro queda en `PENDING`.
-5. El estudiante consulta estado, comentario más reciente y evidencias desde su historial.
-6. Si el backend devuelve `correction_allowed=true` y un estado corregible, el estudiante actualiza datos/evidencia y reenvía. La decisión anterior permanece en el historial.
+5. El estudiante consulta estado, comentario más reciente y evidencias desde el detalle de su certificación.
+6. Si el backend devuelve `correction_allowed=true` y un estado corregible, el estudiante actualiza datos/evidencia y reenvía. Las decisiones anteriores se conservan en `certification_status_history` dentro del backend; el historial completo de transiciones está disponible para `VALIDATOR`. Una vista equivalente para `STUDENT` requiere un contrato propio con control de titularidad y queda fuera de VA-01.
 
 **Resultado esperado:** la persona distingue `PENDING`, `UNDER_REVIEW`, `APPROVED`, `OBSERVED`, `RESUBMITTED`, `REJECTED` y `EXPIRED`; una observación explica la acción que debe realizar. Ninguna respuesta incluye certificaciones de otros estudiantes.
 
