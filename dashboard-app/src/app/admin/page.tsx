@@ -36,6 +36,14 @@ const modules = [
     icon: Database,
     status: "Indicadores agregados",
   },
+  {
+    title: "Radar de cursos",
+    description:
+      "Prototipo con datos sintéticos para revisar contenido, audiencia y relevancia.",
+    href: "/admin/radar",
+    icon: ShieldCheck,
+    status: "Demostración sin persistencia",
+  },
 ];
 function AdminContent() {
   const analytics = useAnalytics();

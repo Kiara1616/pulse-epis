@@ -90,3 +90,11 @@ Pruebas: `npx playwright test e2e/admin-priorities.spec.ts` verifica filtros, na
 #73 comparte etiquetas y tonos de certificación en estudiante, validador e historial. APPROVED se muestra como Aprobada; desconocidos usan Estado no reconocido y tono neutral. AsyncState unifica carga, error accesible con reintento y vacío, con texto y acción configurables. El encabezado distingue los tres roles sin selector de permisos. La bandeja monta consultas dentro de RoleGate: los otros roles no inician peticiones de validación. Backend conserva la autoridad de acceso.
 
 El centro administrativo de #72 ya está integrado desde main. La integración de futuras pantallas #69/#71 queda pendiente de sus PR. No se modifican datos ni transiciones del servicio. Tests incluyen sesión expirada, consultas bloqueadas, etiquetas, error/reintento/vacío y móvil. [Captura sintética](../recursos/imagenes/va73-feedback-demo.png). Rollback: revertir commit y reconstruir frontend, sin migraciones.
+
+## VA-09: prototipo del radar de cursos
+
+#75 añade /admin/radar, protegido para ADMIN, y accesos desde sidebar y centro administrativo. Es una demostración con tres cursos sintéticos y fuentes example.invalid: no descarga URLs, no guarda datos y no publica para estudiantes. Las acciones afectan memoria y se reinician al recargar.
+
+DETECTED permite iniciar revisión o descartar; IN_REVIEW permite corregir título/requisitos y definir audiencia y relevancia, publicar o descartar. Publicar exige audiencia no vacía y explicación de al menos 10 caracteres; no ocurre automáticamente. PUBLISHED permite retirar; descartado/retirado son terminales en esta demostración. Cada tarjeta conserva fuente, consulta, requisitos, estado e historial simulado. El filtro contempla vacío.
+
+Audiencia se declara como texto de ejemplo; los catálogos y relaciones finales dependen del modelo #77 y la API #78. Los contratos #68 y el centro administrativo #72/#73 ya están integrados desde main; el Radar conserva sus indicadores, prioridades, calidad y enlaces existentes. No equivale a inscripción, elegibilidad o recomendación institucional. [Captura sintética](../recursos/imagenes/va75-radar-demo.png). Pruebas: flujo corregir/publicar/retirar, requisito de audiencia/relevancia, descarte, filtro, reinicio y permisos. Rollback: revertir commit y reconstruir frontend; sin migraciones.
