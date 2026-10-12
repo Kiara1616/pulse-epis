@@ -325,3 +325,7 @@ learning_workshops vincula oferta y requisitos, cupos positivos y DRAFT/OPEN/CLO
 Las listas de competencias/requisitos y ciclos se almacenan en JSON y son validadas por contrato; intereses y asociaciones estudiantiles tienen integridad relacional. No hay endpoints ni semilla institucional en esta entrega. #78 añade autorización y transiciones. #74 permanece pendiente de revisión: cambios en representación de objetivos o pasos requieren una revisión del contrato antes de merge, no cambios retroactivos en migraciones aplicadas.
 
 Verificación: prueba sintética de upgrade/downgrade/reupgrade, unicidad de orden y restricciones de estado, más la migración existente. Para rollback, respaldar tablas nuevas y bajar a 0009 antes de revertir aplicación; eliminará exclusivamente el dominio nuevo y su auditoría. Se requiere además prueba en PostgreSQL antes de integración institucional.
+
+Secuencia de auditoría: learning_audit añade un ordinal positivo y único por tipo/ID de entidad. La API genera la secuencia dentro de la misma transacción de decisión y bajo el bloqueo de la entidad. No se usa UUID como sustituto del orden de las decisiones de una misma entidad.
+
+También se verificó manualmente upgrade/downgrade/reupgrade en un esquema aislado PostgreSQL 16: quedaron preservadas las tablas existentes y se reconstruyeron las once tablas nuevas. La prueba SQLite automatizada permanece en backend/tests/test_learning_model.py.

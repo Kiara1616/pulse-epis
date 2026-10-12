@@ -2,20 +2,12 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { AlertCircle, Award, Clock3, FileCheck2, Loader2, Plus, RefreshCw, Search } from "lucide-react";
+import { statusLabel, statusClass } from "@/shared/ui/status";
+import { AsyncState } from "@/shared/ui/AsyncState";
 import { RoleGate } from "@/features/access/RoleGate";
 import { ApiError, apiFetch } from "@/shared/api/client";
 import type { Certification } from "@/shared/api/types";
 import { CertificationDetails } from "@/features/certifications/CertificationDetails";
-
-function statusLabel(status: string) {
-  return { PENDING: "Pendiente", UNDER_REVIEW: "En revisión", APPROVED: "Validada", OBSERVED: "Observada", RESUBMITTED: "Reenviada", REJECTED: "Rechazada", EXPIRED: "Vencida" }[status] ?? status;
-}
-
-function statusClass(status: string) {
-  if (status === "APPROVED") return "bg-emerald-100 text-emerald-700";
-  if (["PENDING", "RESUBMITTED", "UNDER_REVIEW"].includes(status)) return "bg-amber-100 text-amber-700";
-  return "bg-rose-100 text-rose-700";
-}
 
 function StudentProfileContent() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
@@ -106,11 +98,11 @@ function StudentProfileContent() {
       <div className="border-b border-slate-100 p-5 md:p-6"><div className="flex items-center justify-between"><div><h2 className="font-semibold text-slate-900">Historial de certificaciones</h2><p className="mt-1 text-xs text-slate-500">Revisa tus registros y su estado de aprobación.</p></div>{loading && <Loader2 aria-label="Cargando certificaciones" className="animate-spin text-blue-600" size={18}/>}</div>
         {certifications.length > 0 && <div className="mt-5 flex flex-col gap-3 sm:flex-row"><label className="flex flex-1 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5"><Search size={17} className="shrink-0 text-slate-400"/><input aria-label="Buscar certificaciones" placeholder="Buscar por certificación o entidad" value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-0 w-full bg-transparent text-sm outline-none"/></label><select aria-label="Filtrar por estado" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-600"><option value="ALL">Todos los estados</option>{["PENDING", "UNDER_REVIEW", "APPROVED", "OBSERVED", "RESUBMITTED", "REJECTED", "EXPIRED"].map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}</select></div>}
       </div>
-      {loading ? <p role="status" className="p-8 text-center text-sm text-slate-500">Cargando tus certificaciones…</p> : error ? <p className="p-8 text-center text-sm text-slate-500">El historial no está disponible. Reintenta la consulta.</p> : certifications.length === 0 ? <div className="px-6 py-12 text-center"><Award className="mx-auto mb-3 text-blue-500" size={30}/><p className="text-sm font-semibold text-slate-700">Todavía no tienes certificaciones registradas.</p><p className="mt-2 text-sm text-slate-500">Comienza con «Nueva certificación» y envía tu primer logro a validación.</p></div> : <>
+      <AsyncState loading={loading} error={error} empty={!certifications.length} onRetry={()=>void loadCertifications()} loadingText="Cargando tus certificaciones…" emptyText="Todavía no tienes certificaciones registradas." emptyAction={<button onClick={()=>setShowForm(true)} className="font-semibold text-blue-600">Nueva certificación</button>}><>
         <div role="status" className="px-6 pt-4 text-xs text-slate-500">{filtered.length} de {certifications.length} certificaciones</div>
         <div className="divide-y divide-slate-100 px-5 md:px-6">{filtered.map((item) => <article key={item.id} className="flex flex-col justify-between gap-3 py-5 sm:flex-row sm:items-center"><div className="flex items-start gap-3"><span className="rounded-xl bg-blue-50 p-3 text-blue-600"><Award size={20}/></span><div><p className="font-semibold text-slate-900 break-words">{item.credential_name}</p><p className="mt-1 text-sm text-slate-500 break-words">{item.issuer_name}</p><p className="mt-1 text-xs text-slate-500">Emitida {formatIssuedDate(item.issued_on)} · {item.evidences.length} {item.evidences.length === 1 ? "evidencia" : "evidencias"}</p></div></div><div className="flex shrink-0 items-center gap-3"><span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusClass(item.status)}`}>{statusLabel(item.status)}</span><button onClick={() => setSelectedId(item.id)} className="text-xs font-semibold text-blue-600">Ver detalle</button></div></article>)}</div>
         {filtered.length === 0 && <div className="p-10 text-center"><p className="text-sm text-slate-500">No hay certificaciones que coincidan con tu búsqueda.</p><button onClick={() => { setQuery(""); setStatusFilter("ALL"); }} className="mt-3 text-sm font-semibold text-blue-600">Limpiar filtros</button></div>}
-      </>}
+      </></AsyncState>
     </section>
   </div>;
 }
