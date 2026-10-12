@@ -48,6 +48,38 @@ El sobre es plano y se acompaña de X-Request-ID. El siguiente ejemplo muestra u
 
 Utilizar cookie de sesión obtenida por proveedor configurado. No pasar un rol arbitrario como autorización. El CSV del padrón y evidencia se envían como multipart; no fijar manualmente Content-Type de FormData. Para modificar un contrato, actualizar Pydantic, tipos frontend, pruebas y esquema documental; el validador compara el esquema con model_json_schema.
 
+## VA-12: API persistente de formación
+
+#78 expone `/api/v1/learning`. Requiere aplicar `0010_learning_domain` de #77. ADMIN mantiene catálogos y decisiones; STUDENT utiliza preferencias y solicitudes propias. VALIDATOR no obtiene administración de formación. Las rutas usan sesión existente y modelos request/response publicados en OpenAPI. Las entidades devuelven UUID, created_at y sus campos declarados; no devuelven correos, códigos, evidencia privada ni perfiles ajenos.
+
+| Endpoint | Operación y permiso |
+|---|---|
+| GET /learning/interests | ADMIN todos; STUDENT activos |
+| POST /learning/interests; PUT /learning/interests/{id} | ADMIN: name (1–120), active |
+| GET /learning/{kind} | kind=routes/courses/offers/workshops; ADMIN todos, STUDENT solo publicados, talleres abiertos con oferta y curso publicados |
+| POST /learning/routes; PUT /learning/routes/{id} | ADMIN: title, description, steps (title, skills, prerequisites); editar solo DRAFT |
+| POST /learning/courses; PUT /learning/courses/{id} | ADMIN: title, provider, source_url HTTPS, checked_on no futura, requirements, skills; corrección solo DETECTED/IN_REVIEW |
+| POST /learning/offers; PUT /learning/offers/{id} | ADMIN: course_id en revisión, title, cycles I–X, interest_ids activos, relevance; editar solo DRAFT sin cambiar curso |
+| POST /learning/workshops; PUT /learning/workshops/{id} | ADMIN: offer_id publicado, title, capacity entero 1–10000, requirements; editar solo DRAFT sin cambiar oferta |
+| POST /learning/{kind}/{id}/status | ADMIN: status y reason de 10–2000 caracteres |
+| GET/PUT /learning/me/profile | STUDENT: route_id publicado u opcional, interest_ids activos; identidad derivada de sesión |
+| GET /learning/me/applications; GET /learning/me/applications/{id} | STUDENT: solo solicitudes propias; ajenas responden 404 |
+| POST /learning/me/applications | STUDENT: workshop_id y requirements_acknowledged=true; taller abierto y oferta/curso publicados |
+| GET /learning/admin/applications | ADMIN: solicitudes y estado |
+| POST /learning/admin/applications/{id}/status | ADMIN: status y reason; aceptar con cupos disponibles |
+| GET /learning/admin/audit?entity_id={id} | ADMIN: auditoría con secuencia por entidad; sin filtro, listado temporal de eventos |
+
+Ejemplo de preferencias: `{ "route_id": "UUID-de-ruta-publicada", "interest_ids": ["UUID-de-interes-activo"] }`. Respuesta con los mismos campos e IDs canónicos. Campos ajenos como student_id son rechazados, no usados como dueño. Los intereses duplicados se normalizan; las asociaciones tienen FK y unicidad. Retirar una ruta no borra preferencias históricas; solo rutas publicadas se pueden seleccionar nuevamente.
+
+La oferta acepta `{ "course_id": "UUID", "title": "Formación en IA", "cycles": ["V"], "interest_ids": [], "relevance": "Contenido relevante para profundizar la formación." }`. Audiencia es información declarada para orientar selección, no autorización automática ni evaluación de conocimientos. El catálogo de oportunidades publicadas está visible a STUDENT; no se presenta como recomendación personalizada. Los requisitos son revisados por ADMIN al aceptar una solicitud, y el acuse del estudiante no acredita que los haya cumplido.
+
+Transiciones: curso DETECTED → IN_REVIEW/DISCARDED y IN_REVIEW → DISCARDED. Crear una oportunidad exige IN_REVIEW; publicarla exige audiencia (ciclo o interés) y relevancia de al menos 10 caracteres y cambia el curso a PUBLISHED en la misma transacción. Oportunidad DRAFT → PUBLISHED/RETIRED, PUBLISHED → RETIRED; retirar sincroniza curso a RETIRED. Ruta DRAFT → PUBLISHED/RETIRED, PUBLISHED → RETIRED. Taller DRAFT → OPEN → CLOSED → COMPLETED. Solicitud SUBMITTED → ACCEPTED/REJECTED, ACCEPTED → COMPLETED. Estados terminales no se reabren desde esta API.
+
+Cupos: solicitudes enviadas no reservan cupo; ACCEPTED y COMPLETED consumen cupo. Al aceptar, se bloquea la fila del taller y se valida el conteo bajo la transacción. Un estudiante solo tiene una solicitud por taller. Cambios de estado y preferencias conservan actor, motivo y valores anteriores/nuevos; auditoría es de solo lectura. La secuencia por entidad evita ordenar empates por UUID. Lecturas y escrituras son atómicas: un error no deja publicaciones o auditorías parciales.
+
+Errores mantienen la envoltura existente: error.code/error.message. 401 sin sesión; 403 por rol o estudiante no provisionado; 404 inexistente/no disponible o solicitud ajena; 409 duplicado, estado inválido o cupos completos; 422 contrato inválido, referencia inactiva o publicación incompleta; 503 sin base configurada. No existe fallback a fixtures ni descarga de URLs. Los detalles de estado no permiten cambiar permisos de sesión.
+
+Tests: SQLite para persistencia, contratos, privacidad y transiciones; PostgreSQL con `LEARNING_TEST_DATABASE_URL` apuntando exclusivamente a una base de pruebas para aceptación concurrente. Cada caso PostgreSQL crea y elimina un esquema propio learning_test_UUID; no modifica tablas de otra aplicación. Los endpoints se entregan antes de conectar las pantallas en #79: el prototipo #75 aún no los consume. El cierre #80 debe distinguir flujo HTTP persistente de aceptación visual integrada.
 ## VA-02: contratos de frontend y fixtures sintéticos
 
 La issue #68 añade contratos de vista reutilizables en `dashboard-app/src/shared/contracts/`. No crea tablas, endpoints nuevos ni un modo de autenticación alternativo. La API existente sigue siendo la fuente del producto. Las decisiones nuevas son provisionales hasta revisar VA-01 (#67) y cerrar modelo/API en VA-11/VA-12 (#77/#78).
