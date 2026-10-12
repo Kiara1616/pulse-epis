@@ -62,15 +62,13 @@ export function ValidationHistory({
         </button>
       </div>
 
-      {error && (
-        <p role="alert" className="mt-3 text-sm text-rose-700">
-          {error}
-        </p>
-      )}
-
       {loading ? (
         <p role="status" className="mt-3 text-sm text-slate-500">
           Cargando historial…
+        </p>
+      ) : error ? (
+        <p role="alert" className="mt-3 text-sm text-rose-700">
+          {error}
         </p>
       ) : changes.length ? (
         <ol className="mt-3 divide-y divide-slate-100">

@@ -573,3 +573,35 @@ test("validador filtra la bandeja por estado, antigüedad y tipo de caso", async
   await expect(page.getByText("New Certification", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Approved Case", { exact: true })).toHaveCount(0);
 });
+
+test("el historial muestra el error sin presentar un estado vacío falso", async ({ page }) => {
+  await mockApi(page, "VALIDATOR");
+  const record = {
+    id: "review-error",
+    student_key: "stu-error",
+    credential_name: "Error History Case",
+    issuer_name: "AWS",
+    issued_on: "2026-10-01",
+    expires_on: null,
+    status: "UNDER_REVIEW",
+    stored_status: "UNDER_REVIEW",
+    latest_comment: null,
+    source_url: null,
+    evidences: [],
+  };
+  await page.route("**/api/v1/validations", (route) => route.fulfill({ json: [record] }));
+  await page.route("**/api/v1/validations/review-error/history", (route) => route.fulfill({
+    status: 503,
+    contentType: "application/json",
+    body: JSON.stringify({ detail: "Historial temporalmente no disponible" }),
+  }));
+
+  await page.goto("/validaciones");
+  await page.getByRole("button", { name: /Error History Case.*Ver envío/ }).click();
+  const detail = page.getByRole("region", { name: "Detalle del envío" });
+  await detail.getByRole("button", { name: "Ver historial de decisiones" }).click();
+
+  const history = page.getByRole("region", { name: "Historial de decisiones" });
+  await expect(history.getByRole("alert")).toHaveText("Historial temporalmente no disponible");
+  await expect(history.getByText("No hay decisiones registradas.", { exact: true })).toHaveCount(0);
+});
