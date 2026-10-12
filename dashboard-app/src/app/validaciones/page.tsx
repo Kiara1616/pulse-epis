@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Clock3, ExternalLink, Loader2 } from "lucide-react";
+import { AlertCircle, Clock3, ExternalLink } from "lucide-react";
+import { statusLabel, statusClass } from "@/shared/ui/status";
+import { AsyncState } from "@/shared/ui/AsyncState";
 import { RoleGate } from "@/features/access/RoleGate";
 import { apiFetch } from "@/shared/api/client";
 import { ValidationHistory } from "@/features/certifications/ValidationHistory";
@@ -42,31 +44,11 @@ function evidencePreviewKind(evidence: ValidationEvidence): "image" | "pdf" | "l
   return "link";
 }
 
-const statusLabels: Record<Status, string> = {
-  PENDING: "Pendiente",
-  UNDER_REVIEW: "En revisión",
-  APPROVED: "Aprobada",
-  OBSERVED: "Observada",
-  RESUBMITTED: "Reenviada",
-  REJECTED: "Rechazada",
-  EXPIRED: "Vencida",
-};
-
-const statusClasses: Record<Status, string> = {
-  PENDING: "bg-amber-50 text-amber-700",
-  UNDER_REVIEW: "bg-blue-50 text-blue-700",
-  APPROVED: "bg-emerald-50 text-emerald-700",
-  OBSERVED: "bg-orange-50 text-orange-700",
-  RESUBMITTED: "bg-violet-50 text-violet-700",
-  REJECTED: "bg-rose-50 text-rose-700",
-  EXPIRED: "bg-gray-100 text-gray-700",
-};
-
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("es-PE").format(new Date(`${value}T00:00:00`));
 }
 
-export default function ValidationsPage() {
+function ValidationsContent() {
   const [records, setRecords] = useState<ValidationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
@@ -141,7 +123,7 @@ export default function ValidationsPage() {
     }
   }
 
-  return <RoleGate allow={["VALIDATOR"]}><div className="space-y-6">
+  return <div className="space-y-6">
     <div><p className="text-sm font-bold text-blue-600 uppercase tracking-wider">Control de evidencia</p><h2 className="text-3xl font-black text-gray-900 mt-1">Bandeja de validaciones</h2><p className="text-gray-500 mt-2">Revisa titular, emisor, vigencia y duplicados antes de incluir una certificación en los indicadores.</p></div>
     {error && <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><AlertCircle size={18} className="mt-0.5 shrink-0"/><p>{error}</p></div>}
     {historyId && <ValidationHistory key={historyId} id={historyId} onClose={() => setHistoryId(null)}/>}
@@ -149,7 +131,7 @@ export default function ValidationsPage() {
       {[["Pendientes", counts.pending], ["En revisión", counts.review], ["Aprobadas", counts.approved], ["Observadas", counts.observed]].map(([label, count]) => <div key={label} className="bg-white border border-gray-100 rounded-2xl p-5"><p className="text-sm text-gray-500">{label}</p><p className="text-3xl font-black mt-1">{count}</p></div>)}
     </section>
     {selected && <section className="rounded-2xl border border-blue-200 bg-white p-6 space-y-5" aria-label="Detalle del envío">
-      <div className="flex justify-between gap-4"><div><h3 className="text-xl font-bold">{selected.credential_name}</h3><span className={`inline-block mt-2 rounded-full px-3 py-1 text-xs font-bold ${statusClasses[selected.status]}`}>{statusLabels[selected.status]}</span></div><button disabled={actingId !== null} onClick={() => { setSelectedId(null); setPreview(null); setHistoryId(null); }} className="text-sm font-semibold text-blue-600">Cerrar detalle</button></div>
+      <div className="flex justify-between gap-4"><div><h3 className="text-xl font-bold">{selected.credential_name}</h3><span className={`inline-block mt-2 rounded-full px-3 py-1 text-xs font-bold ${statusClass(selected.status)}`}>{statusLabel(selected.status)}</span></div><button disabled={actingId !== null} onClick={() => { setSelectedId(null); setPreview(null); setHistoryId(null); }} className="text-sm font-semibold text-blue-600">Cerrar detalle</button></div>
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[
         ["Estudiante", selected.student_key], ["Emisor", selected.issuer_name],
         ["Identificador de la credencial", selected.external_id || "No registrado"],
@@ -175,6 +157,8 @@ export default function ValidationsPage() {
       {selected.status === "UNDER_REVIEW" && <div className="space-y-3 border-t pt-4"><label htmlFor="review-comment" className="block font-semibold">Comentario para el estudiante</label><textarea id="review-comment" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={2000} disabled={actingId !== null} rows={3} placeholder="Indica el motivo del rechazo o las correcciones necesarias." className="w-full rounded-lg border p-3"/><p className="text-sm text-gray-500">Obligatorio al observar o rechazar. Si observas el envío, el estudiante podrá corregirlo y reenviarlo.</p><div className="flex flex-wrap gap-3">{([['APPROVE', 'Aprobar', 'bg-emerald-600 text-white'], ['OBSERVE', 'Observar', 'bg-amber-100 text-amber-800'], ['REJECT', 'Rechazar', 'bg-rose-50 text-rose-700']] as const).map(([action, label, color]) => <button key={action} disabled={actingId !== null} onClick={() => void decide(selected, action)} className={`rounded-lg px-4 py-2 font-semibold disabled:opacity-50 ${color}`}>{actingId === selected.id ? "Guardando…" : label}</button>)}</div></div>}
       <button onClick={() => setHistoryId(selected.id)} className="text-sm font-semibold text-blue-600">Ver historial</button>
     </section>}
-    {loading ? <div role="status" className="flex items-center justify-center gap-2 py-16 text-gray-500"><Loader2 className="animate-spin" size={20}/>Cargando certificaciones...</div> : records.length === 0 ? <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center text-gray-500">No hay certificaciones para revisar.</div> : <section className="space-y-4">{records.map((record) => <button key={record.id} disabled={actingId !== null} onClick={() => { setSelectedId(record.id); setComment(""); setPreview(null); setHistoryId(null); setError(null); if (record.evidences[0]) void openEvidence(record, record.evidences[0]); }} className="w-full text-left bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex items-center gap-5 hover:border-blue-300 focus-visible:outline-blue-600 disabled:opacity-50"><div className="rounded-xl bg-blue-50 p-3 text-blue-600"><Clock3/></div><div className="flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-gray-900">{record.credential_name}</h3><span className={`text-xs px-2 py-1 rounded-full font-bold ${statusClasses[record.status]}`}>{statusLabels[record.status]}</span></div><p className="text-sm text-gray-500 mt-1">{record.student_key} · {record.issuer_name} · Emitida {formatDate(record.issued_on)}</p></div><span className="text-sm font-semibold text-blue-600">Ver envío</span></button>)}</section>}
-  </div></RoleGate>;
+    <AsyncState loading={loading} error={records.length ? null : error} empty={!records.length} onRetry={()=>void loadRecords()} loadingText="Cargando certificaciones…" emptyText="No hay certificaciones para revisar."><section className="space-y-4">{records.map((record) => <button key={record.id} disabled={actingId !== null} onClick={() => { setSelectedId(record.id); setComment(""); setPreview(null); setHistoryId(null); setError(null); if (record.evidences[0]) void openEvidence(record, record.evidences[0]); }} className="w-full text-left bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex items-center gap-5 hover:border-blue-300 focus-visible:outline-blue-600 disabled:opacity-50"><div className="rounded-xl bg-blue-50 p-3 text-blue-600"><Clock3/></div><div className="flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-gray-900">{record.credential_name}</h3><span className={`text-xs px-2 py-1 rounded-full font-bold ${statusClass(record.status)}`}>{statusLabel(record.status)}</span></div><p className="text-sm text-gray-500 mt-1">{record.student_key} · {record.issuer_name} · Emitida {formatDate(record.issued_on)}</p></div><span className="text-sm font-semibold text-blue-600">Ver envío</span></button>)}</section></AsyncState>
+  </div>;
 }
+
+export default function ValidationsPage(){return <RoleGate allow={["VALIDATOR"]}><ValidationsContent/></RoleGate>;}
