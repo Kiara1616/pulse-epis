@@ -129,6 +129,76 @@ test("admin conecta indicadores, prioridades y calidad del corte", async ({
     page.getByRole("heading", { name: "Brechas de habilidades" }),
   ).toBeVisible();
 });
+
+for (const linked of [
+  { key: "cycle", label: "Ciclo", selected: "VI", alternative: "VII", field: "by_cycle" },
+  { key: "cohort", label: "Año de ingreso", selected: "2024", alternative: "2025", field: "by_cohort" },
+  { key: "issuer", label: "Proveedor", selected: "Emisor sintético", alternative: "Otro emisor sintético", field: "by_issuer" },
+])
+  test(`enlace con ${linked.key} conserva selección y permite otra opción`, async ({ page }) => {
+    await mock(page);
+    const requests: URLSearchParams[] = [];
+    await page.route("**/api/v1/indicators/overview**", (route) => {
+      const params = new URL(route.request().url()).searchParams;
+      requests.push(params);
+      const selection = params.get(linked.key);
+      return route.fulfill({
+        json: {
+          ...overview,
+          filters: { ...overview.filters, [linked.key]: selection },
+          [linked.field]: selection
+            ? [{ name: selection, value: 4 }]
+            : [
+                { name: linked.selected, value: 4 },
+                { name: linked.alternative, value: 2 },
+              ],
+        },
+      });
+    });
+    const query = new URLSearchParams({
+      period_code: "2026-II", cutoff_date: "2026-10-01",
+      dataset: "registered", [linked.key]: linked.selected,
+    });
+    await page.goto(`/brechas?${query}`);
+    const select = page.getByLabel(linked.label, { exact: true });
+    await expect(select).toHaveValue(linked.selected);
+    await expect(select.locator("option")).toHaveText([
+      "Todos", linked.selected, linked.alternative,
+    ]);
+    expect(requests.some((params) =>
+      params.get("period_code") === "2026-II" &&
+      params.get("cutoff_date") === "2026-10-01" &&
+      !params.has("cycle") && !params.has("cohort") && !params.has("issuer") &&
+      !params.has("level") && !params.has("dataset"),
+    )).toBe(true);
+    const updated = page.waitForResponse((response) =>
+      response.url().includes("/indicators/overview?") &&
+      new URL(response.url()).searchParams.get(linked.key) === linked.alternative,
+    );
+    await select.selectOption(linked.alternative);
+    await updated;
+    await expect(select).toHaveValue(linked.alternative);
+    await expect(select.locator("option")).toHaveText([
+      "Todos", linked.selected, linked.alternative,
+    ]);
+  });
+
+test("fallo al cargar opciones permite reintentar sin perder el ciclo enlazado", async ({ page }) => {
+  await mock(page);
+  let fail = true;
+  await page.route("**/api/v1/indicators/overview**", (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    return route.fulfill(!params.has("cycle") && fail
+      ? { status: 503, json: { error: { message: "Opciones no disponibles" } } }
+      : { json: { ...overview, by_cycle: [{ name: "VI", value: 4 }, { name: "VII", value: 2 }] } });
+  });
+  await page.goto("/brechas?period_code=2026-II&cycle=VI");
+  await expect(page.getByText("Opciones no disponibles")).toBeVisible();
+  fail = false;
+  await page.getByRole("button", { name: "Reintentar", exact: true }).click();
+  await expect(page.getByLabel("Ciclo", { exact: true })).toHaveValue("VI");
+  await expect(page.getByLabel("Ciclo", { exact: true }).locator("option")).toHaveText(["Todos", "VI", "VII"]);
+});
 test("calidad sin informe no inventa un resultado aprobado", async ({
   page,
 }) => {

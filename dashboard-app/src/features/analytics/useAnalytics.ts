@@ -48,6 +48,8 @@ export function useAnalytics() {
   });
   const [loadingPeriods, setLoadingPeriods] = useState(true);
   const [loadingOverview, setLoadingOverview] = useState(false);
+  const [loadingOptions, setLoadingOptions] = useState(false);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -124,6 +126,49 @@ export function useAnalytics() {
     return params.toString();
   }, [filters, dataset]);
 
+  const optionsQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    if (dataset === "demo") params.set("dataset", "demo");
+    if (filters.period_code) params.set("period_code", filters.period_code);
+    if (filters.cutoff_date) params.set("cutoff_date", filters.cutoff_date);
+    return params.toString();
+  }, [dataset, filters.period_code, filters.cutoff_date]);
+
+  useEffect(() => {
+    if (!filters.period_code) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setLoadingOptions(true);
+      setOptionsError(null);
+      setOptions({ issuers: [], levels: [], cohorts: [], cycles: [] });
+      void apiFetch<AnalyticsOverview>(`/indicators/overview?${optionsQuery}`)
+        .then((overview) => {
+          if (!cancelled)
+            setOptions({
+              issuers: overview.by_issuer,
+              levels: overview.by_level,
+              cohorts: overview.by_cohort,
+              cycles: overview.by_cycle,
+            });
+        })
+        .catch((loadError) => {
+          if (!cancelled)
+            setOptionsError(
+              loadError instanceof Error
+                ? loadError.message
+                : "No se pudieron cargar las opciones de filtros.",
+            );
+        })
+        .finally(() => {
+          if (!cancelled) setLoadingOptions(false);
+        });
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [filters.period_code, optionsQuery, reloadToken]);
+
   useEffect(() => {
     if (!filters.period_code) return;
     let cancelled = false;
@@ -135,13 +180,6 @@ export function useAnalytics() {
         .then((overview) => {
           if (!cancelled) {
             setData(overview);
-            if (!filters.issuer && !filters.cohort && !filters.cycle)
-              setOptions({
-                issuers: overview.by_issuer,
-                levels: [],
-                cohorts: overview.by_cohort,
-                cycles: overview.by_cycle,
-              });
           }
         })
         .catch((loadError) => {
@@ -206,8 +244,8 @@ export function useAnalytics() {
     filters,
     setFilter,
     data,
-    loading: loadingPeriods || loadingOverview,
-    error,
+    loading: loadingPeriods || loadingOverview || loadingOptions,
+    error: error ?? optionsError,
     retry,
   };
 }
