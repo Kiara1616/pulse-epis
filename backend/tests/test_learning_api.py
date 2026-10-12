@@ -39,7 +39,7 @@ def context():
         s.add_all((User(id=actor.id, email=actor.email, role=actor.role.value) for actor in actors.values()))
         s.flush()
         s.add_all((Student(id=students[name], user_id=ids[name], student_key=f'DEMO-{name}-{uuid4().hex}') for name in students))
-    app = create_app(Settings(environment='test', log_level='WARNING', auth_session_secret='test-learning-only'))
+    app = create_app(Settings(environment='test', database_url=None, log_level='WARNING', auth_session_secret='test-learning-only'))
     app.state.session_factory = factory
 
     def identity(request: Request):
@@ -129,7 +129,7 @@ def test_invalid_payloads(context, field, value):
     assert clients['admin'].post('/api/v1/learning/courses', json=payload).status_code == 422
 
 def test_authentication_and_unavailable_database():
-    app = create_app(Settings(environment='test', auth_session_secret='test-learning-only', log_level='WARNING'))
+    app = create_app(Settings(environment='test', database_url=None, auth_session_secret='test-learning-only', log_level='WARNING'))
     with TestClient(app) as c:
         assert c.get('/api/v1/learning/interests').status_code == 401
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(id=uuid4(), email='demo@example.invalid', role=Role.ADMIN)
