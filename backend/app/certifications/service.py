@@ -329,6 +329,18 @@ def append_status_history(
 ) -> CertificationStatusHistory:
     """Append a transition; callers never update or delete history rows."""
 
+    # A low-resolution clock can tie consecutive events; UUID order is not chronology.
+    # Parent certification is locked by mutation callers. Keep new event time monotonic
+    # without changing any previously recorded timestamp or explicit cutoff date.
+    recorded_at = _as_utc(changed_at or _utc_now())
+    previous = session.scalar(select(func.max(CertificationStatusHistory.changed_at)).where(
+        CertificationStatusHistory.certification_id == certification_id))
+    pending = [item.changed_at for item in session.new
+               if isinstance(item, CertificationStatusHistory)
+               and item.certification_id == certification_id and item.changed_at is not None]
+    times = [_as_utc(value) for value in ([previous] if previous else []) + pending]
+    if times and recorded_at <= max(times):
+        recorded_at = max(times) + timedelta(microseconds=1)
     history = CertificationStatusHistory(
         id=uuid4(),
         certification_id=certification_id,
@@ -337,7 +349,7 @@ def append_status_history(
         to_status=to_status,
         comment=comment,
         cutoff_date=cutoff_date,
-        changed_at=changed_at or _utc_now(),
+        changed_at=recorded_at,
     )
     session.add(history)
     return history

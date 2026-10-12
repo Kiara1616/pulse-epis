@@ -68,3 +68,7 @@ La exportación CSV descarga las filas y los filtros de la vista. El botón PDF 
 ## Privacidad y soporte
 
 No publique CSV reales, correos, códigos, evidencias ni URLs privadas en capturas, issues o repositorios. Comparta solo agregados autorizados. En soporte comunique página, hora, acción y request_id sin datos personales. Las decisiones institucionales y atención de solicitudes se realizan por el canal definido por EPIS.
+
+### Próxima integración de formación
+
+La API `/learning` entregada en #78 permite preferencias y solicitudes propias del estudiante y administración de catálogos/publicación/talleres. Aún no está conectada a las pantallas: el radar de #75 sigue siendo demostrativo hasta #79. La prueba HTTP integral de #80 utiliza datos sintéticos y confirma persistencia; no se presenta como aceptación visual institucional. Contratos y límites se documentan en [API y contratos](15-API-y-contratos.md) y [pruebas y aceptación](17-Pruebas-y-aceptacion.md).

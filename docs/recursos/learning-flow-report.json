@@ -1,0 +1,24 @@
+{
+  "source": "HTTP integration test with real local sessions",
+  "synthetic": true,
+  "browser_flow_complete": false,
+  "steps": [
+    "Registrar credencial y evidencia privada",
+    "Validar credencial",
+    "Actualizar preferencias propias",
+    "Publicar oportunidad revisada",
+    "Abrir taller",
+    "Solicitar participación",
+    "Aceptar con control de cupos",
+    "Consultar persistencia en una nueva sesión"
+  ],
+  "result": "PASS",
+  "application_status": "ACCEPTED",
+  "capacity": 1,
+  "available_places": 0,
+  "permission_checks": [
+    "VALIDATOR sin administración de solicitudes: 403",
+    "STUDENT sin acceso a auditoría: 403"
+  ],
+  "remaining": "Conectar pantallas en #79 y aprobar aceptación visual conjunta en #80"
+}
