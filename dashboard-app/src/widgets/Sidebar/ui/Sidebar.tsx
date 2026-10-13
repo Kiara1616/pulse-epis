@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, GraduationCap, Cpu, ScanSearch, Settings, BadgeCheck, UsersRound, Award, LogOut } from "lucide-react";
+import { LayoutDashboard, GraduationCap, Cpu, ScanSearch, Settings, BadgeCheck, UsersRound, Award, Compass, LogOut } from "lucide-react";
 import type { AppRole } from "@/shared/api/types";
 import { useRole } from "@/features/access/RoleProvider";
 import { useAuth } from "@/features/access/AuthProvider";
@@ -22,6 +22,7 @@ export function Sidebar() {
     { href:"/admin/publicaciones", label:"Publicar indicadores", icon:LayoutDashboard, roles:["ADMIN"] },
     { href:"/validaciones", label:"Validar", icon:BadgeCheck, roles:["VALIDATOR"] },
     { href:"/mi-perfil", label:"Credenciales", icon:Award, roles:["STUDENT"] },
+    { href:"/mi-ruta", label:"Mi ruta", icon:Compass, roles:["STUDENT"] },
   ];
   return <aside className="fixed inset-y-0 left-0 z-20 w-20 md:w-56 bg-[#102c52] px-2 md:px-4 py-6 flex flex-col items-center border-r border-white/10 overflow-y-auto">
     <Link href={role === "STUDENT" ? "/mi-perfil" : "/"} className="flex items-center gap-3 md:w-full mb-2" aria-label="Pulse EPIS"><span className="h-12 w-12 shrink-0 rounded-xl bg-white p-1 grid place-items-center"><Image src="/epis-logo.png" alt="Logo de la Escuela Profesional de Ingeniería de Sistemas" width={48} height={48} priority className="h-full w-full object-contain"/></span><span className="hidden md:block"><span className="block text-base font-bold text-white">Pulse EPIS</span><span className="block mt-0.5 text-xs text-blue-200">Gestión de certificaciones</span></span></Link>
