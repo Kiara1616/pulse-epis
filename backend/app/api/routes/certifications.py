@@ -18,7 +18,7 @@ from fastapi import (
 from fastapi.responses import FileResponse, RedirectResponse, Response
 
 from ...auth.dependencies import require_permissions
-from ...auth.models import AuthenticatedUser, Permission
+from ...auth.models import AuthenticatedUser, Permission, Role
 from ...certifications.schemas import (
     CertificationCreateRequest,
     CertificationResponse,
@@ -179,6 +179,30 @@ def list_certifications(
             "CERTIFICATION_UNAVAILABLE",
             "The certification service is unavailable",
         ) from exc
+
+
+@router.get(
+    "/reference-preview",
+    dependencies=[Depends(_CERTIFICATION_READ)],
+    summary="Read the reference history linked to the signed-in student account",
+)
+def reference_preview(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(_CERTIFICATION_READ),
+) -> dict[str, object]:
+    if current_user.role != Role.STUDENT:
+        raise _http_error(status.HTTP_403_FORBIDDEN, "FORBIDDEN", "Only student accounts can read this view")
+    if not (
+        request.app.state.settings.local_auth_enabled
+        or request.app.state.settings.demo_analytics_enabled
+    ):
+        raise _http_error(404, "NOT_FOUND", "No hay registros vinculados a esta cuenta.")
+    from ...analytics.demo import reference_student_profile
+
+    profile = reference_student_profile(current_user.email)
+    if profile is None:
+        raise _http_error(404, "NOT_FOUND", "No hay registros vinculados a esta cuenta.")
+    return profile
 
 
 @router.get(

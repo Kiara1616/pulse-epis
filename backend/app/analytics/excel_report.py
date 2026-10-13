@@ -20,7 +20,7 @@ def generate_excel(data: dict) -> bytes:
     percent = book.add_format({"num_format": "0.00%", "font_color": TEAL, "bold": True})
     date_fmt = book.add_format({"num_format": "dd/mm/yyyy"})
     filters = data["filters"]
-    source = "DEMOSTRACIÓN LOCAL · datos sintéticos" if data.get("dataset") == "demo" else "Datos registrados · corte publicado"
+    source = "Datos de referencia · indicadores agregados" if data.get("dataset") == "demo" else "Datos registrados · corte publicado"
     def sheet(name, description):
         ws = book.add_worksheet(name); ws.hide_gridlines(2); ws.set_tab_color(BLUE)
         ws.set_column("A:A", 3); ws.set_column("B:B", 38); ws.set_column("C:H", 15)

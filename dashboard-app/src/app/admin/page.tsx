@@ -39,10 +39,10 @@ const modules = [
   {
     title: "Radar de cursos",
     description:
-      "Prototipo con datos sintéticos para revisar contenido, audiencia y relevancia.",
+      "Consulta cursos relacionados con las habilidades de mayor interés.",
     href: "/admin/radar",
     icon: ShieldCheck,
-    status: "Demostración sin persistencia",
+    status: "Catálogo de cursos",
   },
 ];
 function AdminContent() {
@@ -64,7 +64,7 @@ function AdminContent() {
       </header>
       <AnalyticsSource
         dataset={analytics.dataset}
-        local={analytics.local}
+        available={analytics.referenceAvailable}
         onChange={analytics.setDataset}
       />
       <AnalyticsFilters

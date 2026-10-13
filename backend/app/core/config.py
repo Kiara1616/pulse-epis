@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     local_auth_seed: bool = False
     local_auth_password: SecretStr = SecretStr("pulse-local-demo")
     demo_data_seed: bool = False
+    demo_analytics_enabled: bool = False
     auth_session_secret: SecretStr = SecretStr(_DEVELOPMENT_SESSION_SECRET)
     auth_session_cookie: str = "pulse_session"
     auth_session_max_age: int = 3600

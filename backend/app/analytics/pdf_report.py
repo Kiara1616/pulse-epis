@@ -21,7 +21,7 @@ def generate_pdf(overview: dict) -> bytes:
  styles["Heading2"].textColor=NAVY;styles["Heading2"].fontSize=12;styles["Heading2"].spaceBefore=8;styles["Heading2"].spaceAfter=6
  filters=overview["filters"]; kpis=overview["kpis"]
  cutoff=date.fromisoformat(filters["cutoff_date"]).strftime("%d/%m/%Y")
- source="DEMOSTRACIÓN LOCAL · Datos sintéticos" if overview.get("dataset")=="demo" else "Datos registrados · Corte publicado"
+ source="Datos de referencia · Indicadores agregados" if overview.get("dataset")=="demo" else "Datos registrados · Corte publicado"
  def para(text,style="Normal"):return Paragraph(text,styles[style])
  content=[para("Informe de certificaciones","ReportTitle"),para(f"Periodo <b>{escape(filters['period_code'])}</b> &nbsp; | &nbsp; Corte <b>{cutoff}</b>"),Spacer(1,8),para(source),Spacer(1,10)]
  context=" · ".join(f"{label}: {escape(str(filters.get(key) or 'Todos'))}" for key,label in [("cohort","Año de ingreso"),("cycle","Ciclo"),("issuer","Entidad emisora")])

@@ -117,8 +117,8 @@ export function DataQuality({
       </p>
       {dataset === "demo" ? (
         <p className="mt-4 text-sm text-slate-500">
-          Datos sintéticos: esta vista no atribuye calidad institucional a la
-          demostración.
+          La calidad institucional se consulta en los datos publicados. Esta
+          vista presenta indicadores de referencia.
         </p>
       ) : (
         <QualityReport

@@ -24,15 +24,53 @@ _ANALYTICS_READ = require_permissions(Permission.ANALYTICS_READ)
 
 def _service(request: Request, dataset: str):
     if dataset == "demo":
-        if not request.app.state.settings.local_auth_enabled:
-            raise _error(403, "DEMO_DISABLED", "La demostración solo está disponible en el entorno local.")
+        if not _reference_enabled(request):
+            raise _error(403, "REFERENCE_DISABLED", "Los datos de referencia no están habilitados.")
         from ...analytics.demo import demo_analytics
         return demo_analytics()
     return request.app.state.analytics_service
 
 
+def _reference_enabled(request: Request) -> bool:
+    settings = request.app.state.settings
+    return settings.local_auth_enabled or settings.demo_analytics_enabled
+
+
 def _error(status_code: int, code: str, message: str) -> HTTPException:
     return HTTPException(status_code=status_code, detail={"code": code, "message": message})
+
+
+@router.get("/config", dependencies=[Depends(_ANALYTICS_READ)])
+def analytics_config(request: Request) -> dict[str, object]:
+    reference_available = _reference_enabled(request)
+    return {
+        "reference_available": reference_available,
+        "default_dataset": "demo" if reference_available else "registered",
+    }
+
+
+@router.get("/enrollment-history", dependencies=[Depends(_ANALYTICS_READ)])
+def enrollment_history(request: Request) -> list[dict[str, int | str]]:
+    if not _reference_enabled(request):
+        raise _error(403, "REFERENCE_DISABLED", "Los datos de referencia no están habilitados.")
+    from ...analytics.demo import reference_enrollment_history
+
+    return reference_enrollment_history()
+
+
+@router.get("/reference/students", dependencies=[Depends(_ANALYTICS_READ)])
+def reference_students(
+    request: Request,
+    period_code: str | None = Query(default=None, max_length=32),
+    q: str = Query(default="", max_length=120),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=25, ge=1, le=100),
+) -> dict[str, object]:
+    if not _reference_enabled(request):
+        raise _error(403, "REFERENCE_DISABLED", "Los datos de referencia no están habilitados.")
+    from ...analytics.demo import demo_student_directory
+
+    return demo_student_directory(period_code=period_code, q=q, offset=offset, limit=limit)
 
 
 @router.get("/overview", response_model=AnalyticsOverview, dependencies=[Depends(_ANALYTICS_READ)])

@@ -31,7 +31,7 @@ services:
         generateValue: true
       - key: PULSE_EVIDENCE_STORAGE_PATH
         value: /tmp/pulse-evidence
-      - key: PULSE_DEMO_DATA_SEED
+      - key: PULSE_DEMO_ANALYTICS_ENABLED
         value: 'true'
       - key: PULSE_GOOGLE_CLIENT_ID
         sync: false
