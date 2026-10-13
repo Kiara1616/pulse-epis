@@ -20,22 +20,9 @@ const emptyFilters: AnalyticsFilters = {
 
 export function useAnalytics() {
   const { authProvider } = useAuth();
-  const [dataset, setDataset] = useState<"registered" | "demo">(() => {
-    if (authProvider !== "local") return "registered";
-    if (typeof window !== "undefined") {
-      const linkedSource = new URLSearchParams(window.location.search).get(
-        "dataset",
-      );
-      if (linkedSource === "registered" || linkedSource === "demo")
-        return linkedSource;
-    }
-    if (
-      typeof window !== "undefined" &&
-      window.sessionStorage.getItem("pulse-analytics-source") === "registered"
-    )
-      return "registered";
-    return "demo";
-  });
+  const [dataset, setDataset] = useState<"registered" | "demo">("registered");
+  const [referenceAvailable, setReferenceAvailable] = useState(false);
+  const [sourceReady, setSourceReady] = useState(false);
   const initialQueryRead = useRef(false);
   const [periods, setPeriods] = useState<AnalyticsPeriod[]>([]);
   const [filters, setFilters] = useState<AnalyticsFilters>(emptyFilters);
@@ -54,6 +41,43 @@ export function useAnalytics() {
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+    void apiFetch<{
+      reference_available: boolean;
+      default_dataset: "registered" | "demo";
+    }>("/indicators/config")
+      .then((configuration) => {
+        if (cancelled) return;
+        setReferenceAvailable(configuration.reference_available);
+        const queryDataset = new URLSearchParams(window.location.search).get(
+          "dataset",
+        );
+        const savedDataset = window.sessionStorage.getItem(
+          "pulse-analytics-source",
+        );
+        const validDataset = (value: string | null): value is "registered" | "demo" =>
+          value === "registered" ||
+          (value === "demo" && configuration.reference_available);
+        const selected = [queryDataset, savedDataset].find(validDataset);
+        setDataset(selected ?? configuration.default_dataset);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          const localReference = authProvider === "local";
+          setReferenceAvailable(localReference);
+          setDataset(localReference ? "demo" : "registered");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSourceReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authProvider]);
+
+  useEffect(() => {
+    if (!sourceReady) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       setLoadingPeriods(true);
@@ -112,7 +136,7 @@ export function useAnalytics() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [reloadToken, dataset]);
+  }, [reloadToken, dataset, sourceReady]);
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -235,7 +259,10 @@ export function useAnalytics() {
     options,
     dataset,
     local: authProvider === "local",
+    referenceAvailable,
+    sourceReady,
     setDataset: (value: "registered" | "demo") => {
+      if (value === "demo" && !referenceAvailable) return;
       window.sessionStorage.setItem("pulse-analytics-source", value);
       setData(null);
       setFilters(emptyFilters);
@@ -244,7 +271,7 @@ export function useAnalytics() {
     filters,
     setFilter,
     data,
-    loading: loadingPeriods || loadingOverview || loadingOptions,
+    loading: !sourceReady || loadingPeriods || loadingOverview || loadingOptions,
     error: error ?? optionsError,
     retry,
   };

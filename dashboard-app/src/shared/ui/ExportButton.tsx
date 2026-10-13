@@ -37,7 +37,7 @@ export const ExportButton = ({ filename, rows, metadata = [], filters, dataset =
     try {
       const columns = rows.length ? Object.keys(rows[0]) : [];
       const csv = [
-        `# Fuente de datos: ${dataset === "demo" ? "DEMOSTRACIÓN LOCAL - datos sintéticos" : "Datos registrados"}`,
+        `# Fuente de datos: ${dataset === "demo" ? "Datos de referencia · no oficiales · indicadores agregados" : "Datos publicados"}`,
         ...metadata.map((line) => `# ${line}`),
         ...Object.entries(filters ?? {}).filter(([key]) => key !== "level").map(([key, value]) => `# ${key}: ${value || "Todos"}`),
         columns.map(escapeCsv).join(";"),

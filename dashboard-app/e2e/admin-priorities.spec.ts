@@ -118,7 +118,7 @@ test("admin conecta indicadores, prioridades y calidad del corte", async ({
     .toHaveAttribute("href", "/tecnologias");
   const radar = modules.getByRole("link", { name: /Radar de cursos/ });
   await expect(radar).toHaveAttribute("href", "/admin/radar");
-  await expect(radar).toContainText("Demostración sin persistencia");
+  await expect(radar).toContainText("Catálogo de cursos");
   await page.getByText("Fuente y corte", { exact: true }).first().click();
   await expect(page.getByText("GET /api/v1/indicators/overview").first()).toBeVisible();
   await page.getByLabel("Ciclo", { exact: true }).selectOption("VI");
@@ -254,7 +254,7 @@ test("demo no consulta ni atribuye calidad institucional", async ({ page }) => {
   await page.goto("/admin");
   await expect(
     page.getByRole("region", { name: "Calidad de datos" }),
-  ).toContainText("Datos sintéticos");
+  ).toContainText("indicadores de referencia");
   expect(requests).toBe(0);
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.screenshot({

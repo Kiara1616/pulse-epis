@@ -26,6 +26,7 @@ import {
 } from "@/shared/contracts/types";
 import { studentSummary } from "@/shared/contracts/adapters";
 import { CertificationDetails } from "@/features/certifications/CertificationDetails";
+import { ReferenceStudentProfile } from "@/features/certifications/ReferenceStudentProfile";
 import {
   hasCertificationFormErrors,
   validateCertificationForm,
@@ -366,6 +367,8 @@ function StudentProfileContent() {
         <SessionExpiredState />
       ) : (
         <>
+          <ReferenceStudentProfile />
+
           {summary && nextAction && (
             <StudentOverview
               summary={summary}

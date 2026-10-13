@@ -71,7 +71,7 @@ export function IndicatorCards({ data }: { data: AnalyticsOverview }) {
             </summary>
             <p className="mt-2">
               {data.dataset === "demo"
-                ? "Demostración sintética"
+                ? "Datos de referencia · indicadores agregados"
                 : data.dataset === "registered"
                   ? "Datos registrados"
                   : "Fuente no especificada"}{" "}

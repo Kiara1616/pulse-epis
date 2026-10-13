@@ -61,7 +61,7 @@ function DashboardContent() {
 
       <AnalyticsSource
         dataset={analytics.dataset}
-        local={analytics.local}
+        available={analytics.referenceAvailable}
         onChange={analytics.setDataset}
       />
       <AnalyticsFilters

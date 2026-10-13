@@ -1,3 +1,6 @@
+from pathlib import Path
+import re
+
 from deploy.render.start import configure_environment
 
 
@@ -14,3 +17,13 @@ def test_existing_sqlalchemy_driver_url_is_preserved():
     env = {'PULSE_DATABASE_URL': 'postgresql+psycopg://db/pulse'}
     configure_environment(env)
     assert env == {'PULSE_DATABASE_URL': 'postgresql+psycopg://db/pulse'}
+
+
+def test_reference_analytics_is_enabled_in_both_render_blueprints():
+    repository_root = Path(__file__).resolve().parents[2]
+    for relative_path in ("render.yaml", "deploy/render/render.production.yaml"):
+        blueprint = (repository_root / relative_path).read_text(encoding="utf-8")
+        assert re.search(
+            r"- key: PULSE_DEMO_ANALYTICS_ENABLED\s+value:\s*['\"]?true['\"]?",
+            blueprint,
+        ), relative_path
