@@ -132,7 +132,7 @@ test("admin puede reintentar la carga inicial de periodos y ver la procedencia",
 
   await page.goto("/estudiantes");
   await expect(page.getByRole("heading", { name: "Estudiantes y certificaciones" })).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("No se pudieron cargar los periodos.");
+  await expect(page.locator('p[role="alert"]')).toContainText("No se pudieron cargar los periodos.");
   expect(failedPeriodRequests).toBeGreaterThan(0);
 
   allowPeriodLoad = true;
