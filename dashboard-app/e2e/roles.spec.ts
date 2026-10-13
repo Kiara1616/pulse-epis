@@ -434,22 +434,24 @@ test.describe("navegación por rol", () => {
     releaseRequest();
     await expect(page.getByText("Todavía no tienes certificaciones registradas.")).toBeVisible();
 
-    await page.reload();
+    await page.unroute("**/api/v1/certifications");
     await page.route("**/api/v1/certifications", (route) => route.fulfill({
       status: 503,
       contentType: "application/json",
       body: JSON.stringify({ detail: "Servicio temporalmente no disponible" }),
     }));
+    await page.reload();
     await expect(page.getByRole("heading", { name: "No se pudo cargar la información" })).toBeVisible();
     await expect(page.getByText("Servicio temporalmente no disponible", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reintentar" })).toBeVisible();
 
-    await page.reload();
+    await page.unroute("**/api/v1/certifications");
     await page.route("**/api/v1/certifications", (route) => route.fulfill({
       status: 401,
       contentType: "application/json",
       body: JSON.stringify({ detail: "Sesión expirada" }),
     }));
+    await page.reload();
     await expect(page.getByRole("heading", { name: "Tu sesión expiró" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Volver a iniciar sesión" })).toBeVisible();
   });
