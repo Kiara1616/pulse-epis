@@ -49,6 +49,26 @@ jobs:
       - name: Run role E2E flows
         run: npm run test:e2e
 
+      - name: Setup Python for real browser flow
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install real API dependencies
+        run: python -m pip install -r ../backend/requirements.txt
+
+      - name: Run browser flow with real API and sessions
+        run: npx playwright test --config playwright.real.config.ts
+
+      - name: Upload real browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-flow-evidence
+          path: |
+            dashboard-app/test-results
+            docs/recursos/imagenes/va80-browser-*.png
+
       - name: Audit npm dependencies
         run: |
           npm audit --omit=dev --audit-level=high

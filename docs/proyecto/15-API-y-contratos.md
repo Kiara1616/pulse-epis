@@ -123,3 +123,9 @@ Los adaptadores se pueden usar sin cambiar las pantallas actuales. No existe con
 Para las pantallas nuevas, usar LoadState con una etiqueta sintética visible en ready; empty debe indicar ausencia de registros, error permitir reintento si corresponde y 401 volver al control de sesión existente. Los fixtures facilitan diseño y pruebas; no conceden permisos ni sustituyen controles de la API. VA-03/VA-05/VA-06 implementarán las pantallas, VA-08/VA-09/VA-10 los prototipos y VA-13 sustituirá la inyección explícita por endpoints autorizados.
 
 Verificación: `npx playwright test e2e/contracts.spec.ts` cubre resúmenes, estados desconocidos, permisos recibidos, independencia de fixtures, procedencia, adaptadores y ausencia de fallback. Los recorridos visuales existentes se verifican con `npm run test:e2e`. No se requieren migraciones para esta entrega.
+
+## Integración de pantallas con formación persistente
+
+`dashboard-app/src/shared/api/learning.ts` consume el contrato `/api/v1/learning` con cookies de sesión mediante `apiFetch`. `/mi-ruta` usa GET interests/routes/courses/offers y GET/PUT me/profile; `/admin/radar` usa cursos, oportunidades y transiciones; `/talleres` usa talleres y solicitudes propias o administrativas según el rol. No existe fallback sintético ante errores de la API.
+
+El estudiante confirma lectura de requisitos con `requirements_acknowledged=true` al solicitar; esto no prueba elegibilidad ni reserva cupo. La aceptación administrativa valida capacidad y persiste el motivo en `comment`, que la pantalla de solicitudes propias muestra. Catálogos publicados y permisos siguen definidos por el backend. La prueba de navegador VA-14 verifica estas relaciones con sesiones reales y datos sintéticos; las pruebas HTTP/backend cubren reglas de titularidad, transiciones y concurrencia PostgreSQL.
