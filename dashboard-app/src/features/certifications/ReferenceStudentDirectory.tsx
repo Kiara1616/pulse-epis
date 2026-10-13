@@ -54,9 +54,6 @@ export function ReferenceStudentDirectory() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setData(null);
-    setError("");
     apiFetch<AnalyticsPeriod[]>("/indicators/periods?dataset=demo")
       .then((items) => {
         if (!active) return;
@@ -99,7 +96,7 @@ export function ReferenceStudentDirectory() {
   return <div className="space-y-5">
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">Datos de referencia · no oficiales</p><h1 className="mt-2 text-3xl font-semibold text-slate-900">Estudiantes y certificaciones</h1><p className="mt-2 max-w-3xl text-sm text-slate-500">Los registros sirven para visualizar la plataforma. Las credenciales y fechas son ejemplos y no representan validaciones institucionales registradas.</p></div>
-      <button onClick={() => setRevision((value) => value + 1)} className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">Actualizar</button>
+      <button onClick={() => { setLoading(true); setData(null); setError(""); setPeriodsRevision(-1); setRevision((value) => value + 1); }} className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">Actualizar</button>
     </header>
 
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
