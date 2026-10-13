@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="dashboard-app/public/epis-logo.png" alt="Pulse EPIS" width="88">
+  <img src="https://raw.githubusercontent.com/Kiara1616/pulse-epis/main/dashboard-app/public/epis-logo.png" alt="Pulse EPIS" width="88">
   <h1>Pulse EPIS</h1>
   <p><strong>De las credenciales verificadas a nuevas oportunidades de formación.</strong></p>
   <p>Gestión de certificaciones, seguimiento de competencias e información para la toma de decisiones.</p>
