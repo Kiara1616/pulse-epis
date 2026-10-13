@@ -461,6 +461,10 @@ test("validador abre el envío, revisa imagen y observa con correcciones", async
   const record = { id: "review-1", student_key: "stu-002", credential_name: "Power BI", issuer_name: "DataCamp", issued_on: "2025-08-08", expires_on: "2027-08-08", status: "UNDER_REVIEW", stored_status: "UNDER_REVIEW", latest_comment: null, external_id: "DC-123", skills: [{ name: "Modelado", level: "Intermedio" }], evidences: [{ id: "image-1", evidence_type: "FILE", original_filename: "certificado.png", content_type: "image/png" }] };
   await page.route("**/api/v1/validations", (route) => route.fulfill({ json: [record] }));
   await page.route("**/api/v1/validations/review-1/evidence/image-1/access", (route) => route.fulfill({ json: { access_url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==" } }));
+  await page.route("**/api/v1/validations/review-1/history", (route) => route.fulfill({ json: [
+    { id: "history-1", certification_id: "review-1", actor_user_id: "validator-1", from_status: "PENDING", to_status: "UNDER_REVIEW", comment: null, cutoff_date: null, changed_at: "2026-09-01T10:00:00Z" },
+    { id: "history-2", certification_id: "review-1", actor_user_id: "validator-1", from_status: "UNDER_REVIEW", to_status: "OBSERVED", comment: "Sube una imagen donde se vea el titular completo.", cutoff_date: null, changed_at: "2026-09-02T10:00:00Z" },
+  ] }));
   let decision: { action: string; comment: string } | undefined;
   await page.route("**/api/v1/validations/review-1", async (route) => {
     decision = route.request().postDataJSON();
@@ -480,4 +484,124 @@ test("validador abre el envío, revisa imagen y observa con correcciones", async
   await detail.getByRole("button", { name: "Observar", exact: true }).click();
   await expect(detail.getByText("Observada", { exact: true })).toBeVisible();
   expect(decision).toEqual({ action: "OBSERVE", comment: "Sube una imagen donde se vea el titular completo." });
+  await detail.getByRole("button", { name: "Ver historial de decisiones" }).click();
+  const history = page.getByRole("region", { name: "Historial de decisiones" });
+  await expect(history.getByText("En revisión → Observada", { exact: false })).toBeVisible();
+  await expect(history.getByText("Sube una imagen donde se vea el titular completo.", { exact: true })).toBeVisible();
+});
+
+test("STUDENT no puede acceder a la bandeja del validador", async ({ page }) => {
+  await mockApi(page, "STUDENT");
+  let validationRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("/api/v1/validations")) validationRequests += 1;
+  });
+
+  await page.goto("/validaciones");
+
+  await expect(page.getByRole("heading", { name: "Acceso restringido" })).toBeVisible();
+  await expect(page.getByText("El rol Estudiante no tiene permiso", { exact: false })).toBeVisible();
+  expect(validationRequests).toBe(0);
+});
+
+test("validador filtra la bandeja por estado, antigüedad y tipo de caso", async ({ page }) => {
+  await mockApi(page, "VALIDATOR");
+  const now = Date.now();
+  const records = [
+    {
+      id: "new-old",
+      student_key: "stu-001",
+      credential_name: "New Certification",
+      issuer_name: "AWS",
+      issued_on: "2026-09-01",
+      expires_on: null,
+      status: "PENDING",
+      stored_status: "PENDING",
+      latest_comment: null,
+      source_url: null,
+      updated_at: new Date(now - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      evidences: [],
+    },
+    {
+      id: "correction-recent",
+      student_key: "stu-002",
+      credential_name: "Correction Case",
+      issuer_name: "DataCamp",
+      issued_on: "2026-10-01",
+      expires_on: null,
+      status: "RESUBMITTED",
+      stored_status: "RESUBMITTED",
+      latest_comment: "Completa la evidencia.",
+      source_url: null,
+      updated_at: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      evidences: [],
+    },
+    {
+      id: "approved-recent",
+      student_key: "stu-003",
+      credential_name: "Approved Case",
+      issuer_name: "Oracle",
+      issued_on: "2026-10-02",
+      expires_on: null,
+      status: "APPROVED",
+      stored_status: "APPROVED",
+      latest_comment: null,
+      source_url: null,
+      updated_at: new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      evidences: [],
+    },
+  ];
+  await page.route("**/api/v1/validations", (route) => route.fulfill({ json: records }));
+
+  await page.goto("/validaciones");
+  await expect(page.getByRole("heading", { name: "Bandeja de validaciones" })).toBeVisible();
+  await expect(page.getByText("New Certification", { exact: true })).toBeVisible();
+  await expect(page.getByText("Correction Case", { exact: true })).toBeVisible();
+
+  await page.getByRole("combobox", { name: "Filtrar por estado" }).selectOption("RESUBMITTED");
+  await expect(page.getByText("Correction Case", { exact: true })).toBeVisible();
+  await expect(page.getByText("New Certification", { exact: true })).toHaveCount(0);
+
+  await page.getByRole("combobox", { name: "Filtrar por estado" }).selectOption("ALL");
+  await page.getByRole("combobox", { name: "Filtrar por antigüedad" }).selectOption("OLDER");
+  await expect(page.getByText("New Certification", { exact: true })).toBeVisible();
+  await expect(page.getByText("Correction Case", { exact: true })).toHaveCount(0);
+
+  await page.getByRole("combobox", { name: "Filtrar por antigüedad" }).selectOption("ALL");
+  await page.getByRole("combobox", { name: "Filtrar por tipo de caso" }).selectOption("CORRECTION");
+  await expect(page.getByText("Correction Case", { exact: true })).toBeVisible();
+  await expect(page.getByText("New Certification", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Approved Case", { exact: true })).toHaveCount(0);
+});
+
+test("el historial muestra el error sin presentar un estado vacío falso", async ({ page }) => {
+  await mockApi(page, "VALIDATOR");
+  const record = {
+    id: "review-error",
+    student_key: "stu-error",
+    credential_name: "Error History Case",
+    issuer_name: "AWS",
+    issued_on: "2026-10-01",
+    expires_on: null,
+    status: "UNDER_REVIEW",
+    stored_status: "UNDER_REVIEW",
+    latest_comment: null,
+    source_url: null,
+    evidences: [],
+  };
+  await page.route("**/api/v1/validations", (route) => route.fulfill({ json: [record] }));
+  await page.route("**/api/v1/validations/review-error/history", (route) => route.fulfill({
+    status: 503,
+    contentType: "application/json",
+    body: JSON.stringify({ detail: "Historial temporalmente no disponible" }),
+  }));
+
+  await page.goto("/validaciones");
+  await page.getByRole("button", { name: /Error History Case.*Ver envío/ }).click();
+  const detail = page.getByRole("region", { name: "Detalle del envío" });
+  await detail.getByRole("button", { name: "Ver historial de decisiones" }).click();
+
+  const history = page.getByRole("region", { name: "Historial de decisiones" });
+  await expect(history.getByRole("alert")).toHaveText("Historial temporalmente no disponible");
+  await expect(history.getByText("No hay decisiones registradas.", { exact: true })).toHaveCount(0);
 });
