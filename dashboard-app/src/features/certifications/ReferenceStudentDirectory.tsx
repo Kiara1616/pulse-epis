@@ -12,7 +12,7 @@ type ReferenceCertification = {
   expires_on: string | null;
   status: string;
   skills: { name: string; level: string | null }[];
-  traceability: { student: TraceEvent; validator: TraceEvent; administrator: TraceEvent };
+  traceability: { source: "EXAMPLE"; student: TraceEvent; validator: TraceEvent; administrator: TraceEvent };
 };
 type ReferenceStudent = {
   id: string;
@@ -25,6 +25,8 @@ type ReferenceStudent = {
   certifications: ReferenceCertification[];
 };
 type ReferenceDirectory = {
+  dataset: "demo";
+  reference_label: string;
   period_code: string | null;
   cutoff_date: string | null;
   total: number;
@@ -48,21 +50,39 @@ export function ReferenceStudentDirectory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [periodsRevision, setPeriodsRevision] = useState(-1);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setData(null);
+    setError("");
     apiFetch<AnalyticsPeriod[]>("/indicators/periods?dataset=demo")
       .then((items) => {
         if (!active) return;
         setPeriods(items);
-        setPeriod((current) => current || items.at(-1)?.code || "");
+        if (!items.length) {
+          setPeriodsRevision(-1);
+          setData(null);
+          setError("No hay periodos disponibles para consultar.");
+          setLoading(false);
+          return;
+        }
+        setPeriod((current) => items.some((item) => item.code === current) ? current : items.at(-1)?.code || "");
+        setPeriodsRevision(revision);
       })
-      .catch((loadError) => { if (active) setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar los periodos."); });
+      .catch((loadError) => {
+        if (!active) return;
+        setPeriodsRevision(-1);
+        setData(null);
+        setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar los periodos.");
+        setLoading(false);
+      });
     return () => { active = false; };
-  }, []);
+  }, [revision]);
 
   useEffect(() => {
-    if (!period) return;
+    if (!period || periodsRevision !== revision) return;
     let active = true;
     const timer = window.setTimeout(() => {
       setLoading(true);
@@ -74,11 +94,11 @@ export function ReferenceStudentDirectory() {
         .finally(() => { if (active) setLoading(false); });
     }, 180);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [period, query, offset, revision]);
+  }, [period, query, offset, revision, periodsRevision]);
 
   return <div className="space-y-5">
     <header className="flex flex-wrap items-end justify-between gap-4">
-      <div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">Datos de referencia</p><h1 className="mt-2 text-3xl font-semibold text-slate-900">Estudiantes y certificaciones</h1><p className="mt-2 max-w-3xl text-sm text-slate-500">Consulta el mismo registro académico por periodo. Cada certificación conserva su asociación con el estudiante, la validación y el corte administrativo.</p></div>
+      <div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">Datos de referencia · no oficiales</p><h1 className="mt-2 text-3xl font-semibold text-slate-900">Estudiantes y certificaciones</h1><p className="mt-2 max-w-3xl text-sm text-slate-500">Los registros sirven para visualizar la plataforma. Las credenciales y fechas son ejemplos y no representan validaciones institucionales registradas.</p></div>
       <button onClick={() => setRevision((value) => value + 1)} className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">Actualizar</button>
     </header>
 
@@ -98,10 +118,10 @@ export function ReferenceStudentDirectory() {
             </div>
             {student.certifications.length ? <div className="mt-4 grid gap-3 lg:grid-cols-2">
               {student.certifications.map((certificate) => <details key={certificate.id} className="rounded-md bg-slate-50 p-3">
-                <summary className="cursor-pointer list-none"><span className="text-xs font-semibold text-emerald-700">Aprobada · referencia</span><p className="mt-1 font-semibold text-slate-900">{certificate.credential_name}</p><p className="mt-1 text-sm text-slate-600">{certificate.issuer} · emitida {dateLabel(certificate.issued_on)}</p></summary>
+                <summary className="cursor-pointer list-none"><span className="text-xs font-semibold text-emerald-700">Aprobada · referencia no oficial</span><p className="mt-1 font-semibold text-slate-900">{certificate.credential_name}</p><p className="mt-1 text-sm text-slate-600">{certificate.issuer} · emitida {dateLabel(certificate.issued_on)}</p></summary>
                 <div className="mt-3 space-y-3 border-t border-slate-200 pt-3 text-xs text-slate-600">
                   <div><p className="font-semibold text-slate-700">Habilidades</p><p className="mt-1">{certificate.skills.map((skill) => `${skill.name}${skill.level ? ` · ${skill.level}` : ""}`).join(", ")}</p></div>
-                  <div className="grid gap-2 sm:grid-cols-3">{([certificate.traceability.student, certificate.traceability.validator, certificate.traceability.administrator] as TraceEvent[]).map((event) => <div key={`${event.role}-${event.date}`} className="rounded border border-slate-200 bg-white p-2"><p className="font-semibold">{event.role === "STUDENT" ? "Estudiante" : event.role === "VALIDATOR" ? "Validador" : "Administrador"}</p><p className="mt-1">{event.action}</p><p className="mt-1">{dateLabel(event.date)}</p></div>)}</div>
+                  <div className="grid gap-2 sm:grid-cols-3">{([certificate.traceability.student, certificate.traceability.validator, certificate.traceability.administrator] as TraceEvent[]).map((event) => <div key={`${event.role}-${event.date}`} className="rounded border border-slate-200 bg-white p-2"><p className="font-semibold">{event.role === "STUDENT" ? "Estudiante" : event.role === "VALIDATOR" ? "Validador" : "Administrador"}</p><p className="mt-1 text-amber-700">Evento de ejemplo</p><p className="mt-1">{event.action}</p><p className="mt-1">{dateLabel(event.date)}</p></div>)}</div>
                 </div>
               </details>)}
             </div> : <p className="mt-4 text-sm text-slate-500">Sin certificaciones aprobadas en este corte.</p>}

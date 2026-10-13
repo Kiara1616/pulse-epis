@@ -286,20 +286,21 @@ def _certification_records(session, period_id, cutoff: date, students: list[Stud
                 "status": "APPROVED",
                 "skills": [],
                 "traceability": {
+                    "source": "EXAMPLE",
                     "student": {
                         "role": "STUDENT",
                         "reference": student.student_code,
-                        "action": "Registro asociado al perfil académico",
+                        "action": "Evento de ejemplo: registro asociado al perfil académico",
                         "date": certification.issued_on.isoformat(),
                     },
                     "validator": {
                         "role": "VALIDATOR",
-                        "action": "Certificación aprobada",
+                        "action": "Evento de ejemplo: certificación aprobada",
                         "date": min(cutoff, certification.issued_on + timedelta(days=7)).isoformat(),
                     },
                     "administrator": {
                         "role": "ADMIN",
-                        "action": "Incluida en el corte de indicadores",
+                        "action": "Evento de ejemplo: incluida en el corte de indicadores",
                         "date": cutoff.isoformat(),
                     },
                 },
@@ -331,12 +332,26 @@ def demo_student_directory(
         else:
             period = session.scalar(select(AcademicPeriod).order_by(AcademicPeriod.starts_on.desc()))
         if period is None:
-            return {"period_code": period_code, "cutoff_date": None, "total": 0, "items": []}
+            return {
+                "dataset": "demo",
+                "reference_label": "Datos de referencia · no oficiales",
+                "period_code": period_code,
+                "cutoff_date": None,
+                "total": 0,
+                "items": [],
+            }
         cutoff = session.scalar(
             select(func.max(FactStudentPeriod.cutoff_date)).where(FactStudentPeriod.period_id == period.id)
         )
         if cutoff is None:
-            return {"period_code": period.code, "cutoff_date": None, "total": 0, "items": []}
+            return {
+                "dataset": "demo",
+                "reference_label": "Datos de referencia · no oficiales",
+                "period_code": period.code,
+                "cutoff_date": None,
+                "total": 0,
+                "items": [],
+            }
         facts = session.scalars(
             select(FactStudentPeriod).where(
                 FactStudentPeriod.period_id == period.id,
@@ -378,6 +393,8 @@ def demo_student_directory(
         matched.sort(key=lambda item: str(item["code"]))
         total = len(matched)
         return {
+            "dataset": "demo",
+            "reference_label": "Datos de referencia · no oficiales",
             "period_code": period.code,
             "cutoff_date": cutoff.isoformat(),
             "total": total,
@@ -423,7 +440,8 @@ def reference_student_profile(email: str) -> dict[str, object] | None:
                 }
             )
         return {
-            "reference_label": "Datos de referencia",
+            "dataset": "demo",
+            "reference_label": "Datos de referencia · no oficiales",
             "student": {
                 "code": student.student_code,
                 "display_name": _student_display_name(student),
