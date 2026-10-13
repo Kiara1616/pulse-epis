@@ -1,28 +1,71 @@
-# Pulse EPIS
+<div align="center">
+  <img src="dashboard-app/public/epis-logo.png" alt="Pulse EPIS" width="88">
+  <h1>Pulse EPIS</h1>
+  <p><strong>De las credenciales verificadas a nuevas oportunidades de formación.</strong></p>
+  <p>Gestión de certificaciones, seguimiento de competencias e información para la toma de decisiones.</p>
+</div>
 
-![Escudo institucional](docs/recursos/imagenes/upt-logo.png)
+---
 
-**Universidad Privada de Tacna**<br>
-**Facultad de Ingeniería · Escuela Profesional de Ingeniería de Sistemas**<br>
-**Proyecto: Pulse EPIS**
+Pulse EPIS es una plataforma web que conecta el registro de certificaciones tecnológicas con su validación, el análisis de cobertura y la gestión de oportunidades de formación. Está orientada a la Escuela Profesional de Ingeniería de Sistemas de la Universidad Privada de Tacna.
 
-Pulse EPIS es una plataforma web de inteligencia de negocios para consolidar certificaciones tecnológicas verificadas de estudiantes de la EPIS de la Universidad Privada de Tacna. Relaciona padrón por periodo, credenciales, evidencia privada, revisión humana y snapshots reproducibles para acreditación y mejora curricular.
+Su propósito es ofrecer una visión trazable del avance formativo: cada credencial conserva su evidencia y sus decisiones de revisión, mientras los indicadores permiten explorar resultados agregados por periodo y fecha de corte.
 
-## Estado del proyecto
+## Valor para la comunidad
 
-El frontend consume FastAPI y PostgreSQL; existen sesión local/OIDC, RBAC, importación de padrón, registro, evidencia privada, validación, ETL, indicadores, filtros y exportación CSV. La evolución compara cortes del mismo periodo y las brechas miden cobertura interna. El entorno local y las pruebas usan datos sintéticos.
+- **Para estudiantes:** un espacio para registrar logros, atender observaciones, definir intereses y solicitar participación en talleres.
+- **Para validadores:** una bandeja de trabajo con filtros, evidencias privadas e historial de decisiones.
+- **Para administradores:** herramientas para organizar el padrón, publicar indicadores y gestionar cursos, oportunidades y talleres.
 
-No hay un cierre institucional aprobado: se requieren padrón autorizado, responsables, configuración externa y recuperación conjunta probada. Siguen pendientes PDF operativo, demanda laboral externa, perfil analítico independiente, vista pública y algunas operaciones de UI. El [SRS](docs/academico/FD03-Especificacion-Requerimientos.md) conserva el estado de cada requisito.
+Las brechas expresan ausencia de evidencia aprobada dentro de la cobertura analizada; no constituyen una evaluación de conocimientos. Las oportunidades publicadas forman un catálogo general y no una recomendación personalizada.
 
-## Inicio local con Docker Compose
+## Capacidades principales
 
-Requisitos: Git, Docker con Compose v2. Para desarrollar fuera de contenedores: Node.js 20+, npm y Python 3.12+.
+| Área | Funcionalidad |
+|---|---|
+| Certificaciones | Registro, consulta, corrección y reenvío de credenciales propias. |
+| Revisión | Aprobación, observación y rechazo mediante transiciones controladas y comentarios. |
+| Evidencias | Archivos privados y acceso temporal autorizado para consulta. |
+| Analítica | Indicadores agregados, filtros, evolución entre cortes y exportación CSV. |
+| Gestión de datos | Importación de padrón, controles de calidad y publicación reproducible por periodo. |
+| Formación | Preferencias persistentes, rutas publicadas y catálogo de oportunidades. |
+| Talleres | Oferta, solicitudes, decisiones con motivo y control de cupos al aceptar. |
+| Acceso | Sesiones autenticadas y autorización aplicada en el backend según el rol. |
+
+## Un recorrido conectado
+
+1. El estudiante registra una certificación y adjunta su evidencia.
+2. El validador revisa el envío y registra una decisión. Las observaciones orientan la corrección.
+3. El estudiante consulta su estado y actualiza sus preferencias de formación.
+4. El administrador revisa y publica oportunidades, y abre talleres asociados.
+5. El estudiante solicita participar y consulta la decisión registrada.
+
+La solicitud no reserva un cupo: la aceptación se valida en el backend. Las certificaciones aprobadas pueden alimentar los indicadores mediante el proceso de publicación correspondiente.
+
+## Arquitectura
+
+| Componente | Tecnología y responsabilidad |
+|---|---|
+| Portal web | Next.js, React y TypeScript: experiencias diferenciadas por rol. |
+| API | FastAPI y Python: contratos, autorización y reglas de negocio. |
+| Persistencia | PostgreSQL y SQLAlchemy: datos operativos y trazabilidad. |
+| Migraciones | Alembic: evolución versionada del esquema. |
+| Calidad y analítica | Procesos ETL: validación y generación de cortes reproducibles. |
+| Verificación | Pytest, Playwright y GitHub Actions: pruebas y controles de integración. |
+
+## Probar en local
+
+Se requieren Git y Docker con Compose v2. Para desarrollo sin contenedores, consultar la [guía de desarrollo local](docs/proyecto/12-Desarrollo-local.md).
+
+**1. Preparar la configuración**
+
+Copiar `.env.compose.example` como `.env` y reemplazar las contraseñas y secretos de ejemplo.
 
 ```powershell
 Copy-Item .env.compose.example .env
 ```
 
-Reemplazar contraseñas y secretos de ejemplo antes de iniciar; la plantilla activa cuentas sintéticas locales solo en development.
+**2. Iniciar los servicios**
 
 ```bash
 docker compose config --quiet
@@ -30,75 +73,70 @@ docker compose up --build -d
 docker compose ps
 ```
 
-Portal: http://localhost:3000. API: http://localhost:8000. Swagger: http://localhost:8000/docs. Readiness: http://localhost:8000/ready. PostgreSQL no publica puertos al host. Las cuentas locales son admin@local.pulse-epis.test, validator@local.pulse-epis.test y student@local.pulse-epis.test; utilizan PULSE_LOCAL_AUTH_PASSWORD.
+| Servicio | Dirección local |
+|---|---|
+| Portal | [localhost:3000](http://localhost:3000) |
+| Documentación interactiva de la API | [localhost:8000/docs](http://localhost:8000/docs) |
+| Disponibilidad de la API | [localhost:8000/ready](http://localhost:8000/ready) |
+
+La configuración de desarrollo habilita cuentas sintéticas para recorrer los tres roles:
+
+| Rol | Cuenta local |
+|---|---|
+| Administrador | `admin@local.pulse-epis.test` |
+| Validador | `validator@local.pulse-epis.test` |
+| Estudiante | `student@local.pulse-epis.test` |
+
+La contraseña se define en `PULSE_LOCAL_AUTH_PASSWORD`. Estas cuentas son exclusivas del entorno local y no representan personas reales.
+
+Para detener los servicios conservando los datos:
 
 ```bash
 docker compose down
 ```
 
-down conserva datos. down -v elimina base y evidencia local y no es un procedimiento de recuperación. La [guía de desarrollo](docs/proyecto/12-Desarrollo-local.md) explica API/frontend separados, migraciones, semilla, CORS y diagnóstico.
+## Calidad y verificación
 
-## Estructura
-
-```text
-pulse-epis/
-  backend/                  API, servicios, migraciones, ETL y pruebas
-  dashboard-app/            Portal Next.js conectado a la API
-  deploy/                   Proxy HTTPS Caddy
-  docs/
-    academico/              FD01 a FD05 y cobertura de formatos del curso
-    proyecto/               Fundamentos, manuales técnicos y operación
-    recursos/               Contratos, plantilla sintética y migración
-    tooling/                Dependencias y configuración documental
-    catalogo.json           Inventario de fuentes generado y validado
-  scripts/                  Generación y validación
-  pilot/                    Contrato de evidencia y notas de release
-  .github/workflows/        CI, despliegue, ETL, monitor, backup y release
-  compose.yaml              Frontend, API, PostgreSQL y proxy por perfil
-```
-
-## Documentación y generación
-
-El [índice documental](docs/README.md) separa [entregables del curso](docs/academico/README.md) y [documentación del proyecto](docs/proyecto/README.md). Las fuentes se versionan; el paquete HTML/PDF contiene diagramas reales, OpenAPI, recursos y manifiesto con hashes y commit. Los informes académicos documentan exclusivamente Pulse EPIS.
+El repositorio incluye pruebas unitarias, de API, de permisos y de interfaz. El recorrido integral también se ejecuta en navegador con sesiones reales y una base temporal de datos sintéticos.
 
 ```bash
 python -m pip install -r backend/requirements-dev.txt
-npm ci --prefix docs/tooling
-python scripts/validate_docs.py
-python scripts/build_docs.py
-python scripts/validate_docs.py --artifacts
+python -m pytest backend/tests
 ```
 
-### Hosting administrado en Render
-
-[Preparar despliegue en Render](https://render.com/deploy?repo=https://github.com/Kiara1616/pulse-epis)
-
-`render.yaml` configura frontend y API en un único origen, PostgreSQL administrado
-y evidencias temporales para la demo gratuita. Render proporciona el subdominio HTTPS.
-La alternativa de pago se conserva en `deploy/render/render.production.yaml`.
-La publicación real y Google OIDC requieren configurar la cuenta del proveedor.
-Consulta el [manual de producción y aceptación](docs/12-Produccion-y-aceptacion.md).
-El [reporte sintético](pilot/synthetic-report.json) demuestra el flujo integral;
-`pilot/acceptance.json` conserva pendiente la aceptación pública y bloquea `v1.0.0`.
-
-
-Abrir artifacts/docs/index.html. Solo FD: python scripts/build_academic_pdfs.py. La [guía de generación](docs/proyecto/18-Generacion-documental.md) describe dependencias y artefactos. CI publica project-manuals y la release adjunta el paquete completo.
-
-## Pruebas y operación
+Desde `dashboard-app`:
 
 ```bash
-python -m pytest backend/tests
-python scripts/validate_release.py
+npm ci
+npx playwright install chromium
+npm run lint
+npx tsc --noEmit
+npm run build
+npm run test:e2e
+npx playwright test --config playwright.real.config.ts
 ```
 
-Frontend: desde dashboard-app ejecutar npm ci, npm run lint, npx tsc --noEmit, npm run build y npm run test:e2e con Chromium instalado. La [guía de pruebas](docs/proyecto/17-Pruebas-y-aceptacion.md) explica suites y límites de la verificación. Para PostgreSQL, configurar una base de prueba descartable: la suite de migraciones no debe apuntar a producción.
+Las suites de migraciones y concurrencia requieren una base PostgreSQL de pruebas. La configuración y los límites de cada verificación se describen en la [guía de pruebas y aceptación](docs/proyecto/17-Pruebas-y-aceptacion.md).
 
-Staging y producción usan hosts y secretos externos separados. Los workflows no prueban por sí mismos operación activa. [Despliegue y recuperación](docs/proyecto/16-Despliegue-y-recuperacion.md) distingue backup de base, copia de evidencia, rollback de aplicación y restauración. La [seguridad](docs/proyecto/13-Autenticacion-y-seguridad.md) documenta proveedores, permisos y controles pendientes.
+## Documentación
 
-El ETL se ejecuta con python -m backend.scripts_etl.main --period-code y --cutoff-date, sobre una base migrada. Su [guía](docs/proyecto/14-ETL-y-calidad.md) describe idempotencia y calidad. El [contrato API](docs/proyecto/15-API-y-contratos.md) y el [diccionario](docs/proyecto/09-Diccionario-indicadores.md) definen campos y fórmulas actuales.
+- [Manual de usuario](docs/proyecto/10-Manual-de-usuario.md): recorridos y acciones de cada rol.
+- [API y contratos](docs/proyecto/15-API-y-contratos.md): interfaces y reglas de integración.
+- [Autenticación y seguridad](docs/proyecto/13-Autenticacion-y-seguridad.md): identidad, permisos y protección de evidencias.
+- [ETL y calidad](docs/proyecto/14-ETL-y-calidad.md): procesamiento y publicación de indicadores.
+- [Despliegue y recuperación](docs/proyecto/16-Despliegue-y-recuperacion.md): ambientes, respaldos y restauración.
+- [Índice de documentación](docs/README.md): especificaciones y referencias del proyecto.
 
-## Contribución equipo y licencia
+## Alcance y despliegue
 
-Issue, rama, PR, revisión cruzada, CI y merge forman el flujo de [CONTRIBUTING.md](CONTRIBUTING.md) y [Gobierno del repositorio](docs/proyecto/REPOSITORY-GOVERNANCE.md). Actualizar requisitos, manuales y contratos al cambiar comportamiento. No subir secretos, padrones reales, códigos, correos ni evidencias privadas.
+Las funcionalidades descritas están implementadas y cuentan con pruebas automatizadas. La demostración utiliza datos sintéticos; la puesta en operación institucional requiere datos autorizados, configuración de identidad, responsables y validación de recuperación.
 
-Equipo: Kiara Holly Zapana Murillo (2023077087) y Vincenzo Rafael Lllanos Niño (2023076796). Proyecto del curso Inteligencia de Negocios, Universidad Privada de Tacna. El repositorio no declara LICENSE; no se atribuye una licencia o transferencia de derechos no acordada.
+El repositorio incluye configuración para Docker Compose y Render. El [manual de producción y aceptación](docs/12-Produccion-y-aceptacion.md) detalla los requisitos de publicación. Los informes de prueba no equivalen a una aceptación institucional ni acreditan disponibilidad de un servicio público.
+
+## Equipo y contribución
+
+Desarrollado por **Kiara Holly Zapana Murillo** y **Vincenzo Rafael Lllanos Niño**.
+
+Las contribuciones se gestionan mediante issues, ramas, pull requests, revisión y CI. Consulta [CONTRIBUTING.md](CONTRIBUTING.md) y el [gobierno del repositorio](docs/proyecto/REPOSITORY-GOVERNANCE.md). Los cambios deben mantener actualizados los contratos y manuales, y utilizar datos sintéticos en pruebas y capturas.
+
+El repositorio no declara actualmente una licencia de distribución.
