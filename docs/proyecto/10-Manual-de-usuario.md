@@ -99,6 +99,16 @@ DETECTED permite iniciar revisión o descartar; IN_REVIEW permite corregir títu
 
 Audiencia se declara como texto de ejemplo; los catálogos y relaciones finales dependen del modelo #77 y la API #78. Los contratos #68 y el centro administrativo #72/#73 ya están integrados desde main; el Radar conserva sus indicadores, prioridades, calidad y enlaces existentes. No equivale a inscripción, elegibilidad o recomendación institucional. [Captura sintética](../recursos/imagenes/va75-radar-demo.png). Pruebas: flujo corregir/publicar/retirar, requisito de audiencia/relevancia, descarte, filtro, reinicio y permisos. Rollback: revertir commit y reconstruir frontend; sin migraciones.
 
-### Próxima integración de formación
+### Formación integrada y recorrido VA-14
 
-La API `/learning` entregada en #78 permite preferencias y solicitudes propias del estudiante y administración de catálogos/publicación/talleres. Aún no está conectada a las pantallas: el radar de #75 sigue siendo demostrativo hasta #79. La prueba HTTP integral de #80 utiliza datos sintéticos y confirma persistencia; no se presenta como aceptación visual institucional. Contratos y límites se documentan en [API y contratos](15-API-y-contratos.md) y [pruebas y aceptación](17-Pruebas-y-aceptacion.md).
+La integración #79 conecta `/mi-ruta`, `/admin/radar` y `/talleres` con la API `/learning`. Los ejemplos de prototipo descritos arriba corresponden a entregas anteriores; las pantallas actuales guardan preferencias, solicitudes y decisiones reales de la sesión.
+
+1. El estudiante registra una certificación y adjunta evidencia privada en `/mi-perfil`.
+2. El validador abre el envío en `/validaciones`, revisa la evidencia, toma la revisión y decide. Observar o rechazar requiere comentario; el estudiante corrige únicamente cuando el backend lo permite.
+3. El estudiante consulta la certificación aprobada y guarda intereses y una ruta publicada en `/mi-ruta`.
+4. El administrador registra una fuente en `/admin/radar`, revisa el curso y publica una oportunidad con audiencia y relevancia.
+5. En `/talleres`, el administrador crea y abre un taller asociado a la oportunidad publicada.
+6. El estudiante lee los requisitos y envía una solicitud. El envío no reserva cupo; aceptar consume cupo y el backend impide superar el aforo.
+7. El administrador registra una decisión con motivo. El estudiante consulta el estado y motivo en «Mis solicitudes», también tras volver a iniciar sesión.
+
+Los catálogos de intereses y rutas requieren provisión administrativa por la API: todavía no existe una pantalla de creación. Las oportunidades son un catálogo general, no una recomendación personalizada. La prueba VA-14 usa cuentas y documentos sintéticos; no acredita operación institucional ni autoriza publicar evidencias privadas. Contratos y límites se documentan en [API y contratos](15-API-y-contratos.md) y [pruebas y aceptación](17-Pruebas-y-aceptacion.md).
