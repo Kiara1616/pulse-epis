@@ -3,6 +3,7 @@
   <h1>Pulse EPIS</h1>
   <p><strong>De las credenciales verificadas a nuevas oportunidades de formación.</strong></p>
   <p>Gestión de certificaciones, seguimiento de competencias e información para la toma de decisiones.</p>
+  <p><a href="https://pulse-epis.onrender.com/"><strong>Acceder a Pulse EPIS</strong></a></p>
 </div>
 
 ---
@@ -128,6 +129,8 @@ Las suites de migraciones y concurrencia requieren una base PostgreSQL de prueba
 - [Índice de documentación](docs/README.md): especificaciones y referencias del proyecto.
 
 ## Alcance y despliegue
+
+**Proyecto desplegado:** [pulse-epis.onrender.com](https://pulse-epis.onrender.com/).
 
 Las funcionalidades descritas están implementadas y cuentan con pruebas automatizadas. La demostración utiliza datos sintéticos; la puesta en operación institucional requiere datos autorizados, configuración de identidad, responsables y validación de recuperación.
 
