@@ -258,6 +258,11 @@ function StudentWorkshopView() {
                       <div>
                         <p className="font-semibold text-slate-900">{workshop?.title ?? "Taller ya no disponible"}</p>
                         <p className="mt-1 text-xs text-slate-500">Enviada {formatLearningDate(application.created_at)}</p>
+                        {application.comment?.trim() && (
+                          <p className="mt-2 text-sm text-slate-700">
+                            Motivo registrado: {application.comment.trim()}
+                          </p>
+                        )}
                       </div>
                       <StatusPill status={application.status} />
                     </li>

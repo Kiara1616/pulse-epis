@@ -44,9 +44,13 @@ async function auth(page: Page, role: Role) {
   );
 }
 
-async function mockStudentLearning(page: Page, empty = false) {
+async function mockStudentLearning(
+  page: Page,
+  empty = false,
+  initialApplications: Array<Record<string, unknown>> = [],
+) {
   const workshops = empty ? [] : [workshop()];
-  const applications: Array<Record<string, unknown>> = [];
+  const applications = [...initialApplications];
   await page.route("**/api/v1/learning/workshops", (route) =>
     route.fulfill({ json: workshops.filter((item) => item.status === "OPEN") }),
   );
@@ -164,6 +168,27 @@ test("estudiante conserva estado vacío y error del API", async ({ page }) => {
   await page.goto("/talleres");
   await expect(page.getByText("No hay talleres abiertos disponibles por ahora.")).toBeVisible();
   await expect(page.getByText("Aún no has enviado solicitudes.")).toBeVisible();
+});
+
+test("estudiante ve el motivo de una decisión persistida después de recargar", async ({ page }) => {
+  await auth(page, "STUDENT");
+  await mockStudentLearning(page, false, [{
+    id: "application-79",
+    student_id: "student-own",
+    workshop_id: "workshop-79",
+    status: "REJECTED",
+    comment: "No cumple los requisitos del taller.",
+    created_at: "2026-10-13T12:00:00Z",
+  }]);
+
+  await page.goto("/talleres");
+  const applications = page.getByRole("region", { name: "Mis solicitudes" });
+  await expect(applications.getByText("Motivo registrado: No cumple los requisitos del taller.", { exact: true })).toBeVisible();
+  await expect(applications.getByText("Rechazada", { exact: true })).toBeVisible();
+
+  await page.reload();
+  await expect(applications.getByText("Motivo registrado: No cumple los requisitos del taller.", { exact: true })).toBeVisible();
+  await expect(applications.getByText("Rechazada", { exact: true })).toBeVisible();
 });
 
 test("admin publica talleres y revisa solicitudes reales", async ({ page }) => {
