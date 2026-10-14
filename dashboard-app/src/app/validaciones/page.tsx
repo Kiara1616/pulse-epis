@@ -7,6 +7,7 @@ import { AsyncState } from "@/shared/ui/AsyncState";
 import { RoleGate } from "@/features/access/RoleGate";
 import { apiFetch } from "@/shared/api/client";
 import { ValidationHistory } from "@/features/certifications/ValidationHistory";
+import { ReferenceValidationRecords } from "@/features/certifications/ReferenceValidationRecords";
 
 type Status =
   | "PENDING"
@@ -304,6 +305,8 @@ function ValidationsContent() {
           Prioriza los casos, revisa la evidencia y registra una decisión trazable para cada certificación.
         </p>
       </div>
+
+      <ReferenceValidationRecords />
 
       {error && (
         <div

@@ -33,6 +33,7 @@ from ...validation.service import (
 
 router = APIRouter(prefix="/validations", tags=["validations"])
 _VALIDATOR = require_permissions(Permission.CERTIFICATION_VALIDATE)
+_REFERENCE_READ = require_permissions(Permission.ANALYTICS_READ)
 
 
 def _http_error(status_code: int, code: str, message: str) -> HTTPException:
@@ -129,6 +130,27 @@ def list_validations(
             "VALIDATION_UNAVAILABLE",
             "The validation service is unavailable",
         ) from exc
+
+
+@router.get(
+    "/reference",
+    dependencies=[Depends(_REFERENCE_READ)],
+    summary="Read the shared reference certifications and role traceability",
+)
+def reference_validations(
+    request: Request,
+    period_code: str | None = Query(default=None, max_length=32),
+) -> dict[str, object]:
+    settings = request.app.state.settings
+    if not (settings.local_auth_enabled or settings.demo_analytics_enabled):
+        raise _http_error(
+            status.HTTP_403_FORBIDDEN,
+            "REFERENCE_DISABLED",
+            "Los datos de referencia no están habilitados.",
+        )
+    from ...analytics.demo import demo_validation_records
+
+    return demo_validation_records(period_code=period_code)
 
 
 @router.post(
