@@ -7,6 +7,12 @@ const period = {
   ends_on: "2025-12-31",
   latest_cutoff_date: "2025-12-31",
 };
+const latestPeriod = {
+  code: "2026-II",
+  starts_on: "2026-08-17",
+  ends_on: "2026-12-18",
+  latest_cutoff_date: "2026-10-10",
+};
 
 const directory = {
   dataset: "demo",
@@ -83,7 +89,88 @@ const overview = {
   skill_gaps: [{ skill: "Cloud Computing", certified_students: 100, gap_students: 242, coverage_percent: 29.24 }],
 };
 
-async function mockSession(page: Page, role: "ADMIN" | "STUDENT") {
+const validationReferences = {
+  dataset: "demo",
+  reference_label: "Datos de referencia · no oficiales",
+  period_code: "2026-II",
+  cutoff_date: "2026-10-10",
+  total_students: 360,
+  students_with_certifications: 2,
+  total_certifications: 2,
+  items: [
+    {
+      student_key: "reference-student-kz",
+      student_code: "KZ2023077087",
+      display_name: "Cuenta KZ",
+      email: "kz2023077087@virtual.upt.pe",
+      cycle: "VI",
+      cohort: "2023",
+      certifications: [
+        {
+          ...directory.items[0].certifications[0],
+          id: "credential-kz-2026-ii",
+          issued_on: "2026-09-01",
+          expires_on: "2029-09-01",
+          traceability: {
+            source: "EXAMPLE",
+            student: {
+              role: "STUDENT",
+              action: "Evento de ejemplo: registro asociado al perfil académico",
+              date: "2026-09-01",
+            },
+            validator: {
+              role: "VALIDATOR",
+              action: "Evento de ejemplo: certificación aprobada",
+              date: "2026-09-08",
+            },
+            administrator: {
+              role: "ADMIN",
+              action: "Evento de ejemplo: incluida en el corte de indicadores",
+              date: "2026-10-10",
+            },
+          },
+        },
+      ],
+    },
+    {
+      student_key: "reference-student-vl",
+      student_code: "VL2023076796",
+      display_name: "Cuenta VL",
+      email: "vl2023076796@virtual.upt.pe",
+      cycle: "VI",
+      cohort: "2023",
+      certifications: [
+        {
+          ...directory.items[0].certifications[0],
+          id: "credential-vl-2026-ii",
+          credential_name: "Microsoft Certified: Azure Fundamentals",
+          issued_on: "2026-09-03",
+          expires_on: "2029-09-03",
+          traceability: {
+            source: "EXAMPLE",
+            student: {
+              role: "STUDENT",
+              action: "Evento de ejemplo: registro asociado al perfil académico",
+              date: "2026-09-03",
+            },
+            validator: {
+              role: "VALIDATOR",
+              action: "Evento de ejemplo: certificación aprobada",
+              date: "2026-09-10",
+            },
+            administrator: {
+              role: "ADMIN",
+              action: "Evento de ejemplo: incluida en el corte de indicadores",
+              date: "2026-10-10",
+            },
+          },
+        },
+      ],
+    },
+  ],
+};
+
+async function mockSession(page: Page, role: "ADMIN" | "VALIDATOR" | "STUDENT") {
   await page.route("**/api/v1/auth/config", (route) =>
     route.fulfill({ json: { provider: "google" } }),
   );
@@ -91,7 +178,12 @@ async function mockSession(page: Page, role: "ADMIN" | "STUDENT") {
     route.fulfill({
       json: {
         id: "reference-user",
-        email: role === "STUDENT" ? "kz2023077087@virtual.upt.pe" : "admin@virtual.upt.pe",
+        email:
+          role === "STUDENT"
+            ? "kz2023077087@virtual.upt.pe"
+            : role === "VALIDATOR"
+              ? "validator@virtual.upt.pe"
+              : "admin@virtual.upt.pe",
         role,
         permissions: [],
         student_id: role === "STUDENT" ? "reference-student-kz" : null,
@@ -152,6 +244,94 @@ test("admin puede reintentar la carga inicial de periodos y ver la procedencia",
   if (!downloadPath) throw new Error("La exportación CSV no produjo un archivo.");
   const csv = await readFile(downloadPath, "utf8");
   expect(csv).toContain("# Fuente de datos: Datos de referencia · no oficiales · indicadores agregados");
+
+  await page.goto("/admin");
+  await expect(page.getByRole("heading", { name: "Centro de administración" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Estudiantes y certificaciones" })).toBeVisible();
+});
+
+test("el validador consulta las certificaciones KZ y VL con su trazabilidad", async ({ page }) => {
+  await mockSession(page, "VALIDATOR");
+  await page.route("**/api/v1/indicators/config", (route) =>
+    route.fulfill({ json: { reference_available: true, default_dataset: "demo" } }),
+  );
+  await page.route("**/api/v1/indicators/periods**", (route) =>
+    route.fulfill({ json: [latestPeriod, period] }),
+  );
+  await page.route("**/api/v1/validations", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/v1/validations/reference**", (route) =>
+    route.fulfill({ json: validationReferences }),
+  );
+
+  await page.goto("/validaciones");
+  const referencePanel = page.getByRole("region", {
+    name: "Certificaciones de referencia para consulta",
+  });
+  await expect(referencePanel).toBeVisible();
+  await expect(referencePanel.getByLabel("Periodo")).toHaveValue("2026-II");
+  await expect(referencePanel.getByText("Cuenta KZ", { exact: true })).toBeVisible();
+  await expect(referencePanel.getByText("Cuenta VL", { exact: true })).toBeVisible();
+  await expect(referencePanel.getByText("Datos de referencia · no oficiales")).toBeVisible();
+  await referencePanel.getByText("AWS Certified Cloud Practitioner").click();
+  await expect(referencePanel.getByText("Evento de ejemplo").first()).toBeVisible();
+  await expect(referencePanel.getByText("Validador").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aprobar" })).toHaveCount(0);
+});
+
+test("el validador conserva su bandeja cuando los datos de referencia están deshabilitados", async ({ page }) => {
+  await mockSession(page, "VALIDATOR");
+  await page.route("**/api/v1/indicators/config", (route) =>
+    route.fulfill({ json: { reference_available: false, default_dataset: "registered" } }),
+  );
+
+  let demoPeriodRequests = 0;
+  let referenceValidationRequests = 0;
+  let operationalQueueRequests = 0;
+  await page.route("**/api/v1/indicators/periods**", (route) => {
+    if (new URL(route.request().url()).searchParams.get("dataset") === "demo") {
+      demoPeriodRequests += 1;
+    }
+    return route.fulfill({ json: [period] });
+  });
+  await page.route("**/api/v1/validations/reference**", (route) => {
+    referenceValidationRequests += 1;
+    return route.fulfill({ json: validationReferences });
+  });
+  await page.route("**/api/v1/validations", (route) => {
+    operationalQueueRequests += 1;
+    return route.fulfill({
+      json: [
+        {
+          id: "operational-validation-1",
+          student_key: "student-2024-001",
+          credential_name: "AWS Certified Cloud Practitioner",
+          issuer_name: "AWS",
+          issued_on: "2026-09-01",
+          expires_on: null,
+          stored_status: "PENDING",
+          status: "PENDING",
+          evidences: [],
+          latest_comment: null,
+          source_url: null,
+          updated_at: "2026-09-01T12:00:00Z",
+        },
+      ],
+    });
+  });
+
+  await page.goto("/validaciones");
+
+  await expect(page.getByRole("heading", { name: "Bandeja de validaciones" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /AWS Certified Cloud Practitioner/ })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Certificaciones de referencia para consulta" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText(/REFERENCE_DISABLED|Los datos de referencia no están habilitados/),
+  ).toHaveCount(0);
+  expect(operationalQueueRequests).toBe(1);
+  expect(demoPeriodRequests).toBe(0);
+  expect(referenceValidationRequests).toBe(0);
 });
 
 test("la pantalla nominal de referencia está restringida al rol estudiante en su propio espacio", async ({ page }) => {

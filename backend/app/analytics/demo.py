@@ -390,7 +390,15 @@ def demo_student_directory(
                     "certifications": certification_map.get(student.student_key, []),
                 }
             )
-        matched.sort(key=lambda item: str(item["code"]))
+        account_order = {
+            code: index for index, code in enumerate(REFERENCE_STUDENT_ACCOUNTS.values())
+        }
+        matched.sort(
+            key=lambda item: (
+                account_order.get(str(item["code"]), len(account_order)),
+                str(item["code"]),
+            )
+        )
         total = len(matched)
         return {
             "dataset": "demo",
@@ -400,6 +408,45 @@ def demo_student_directory(
             "total": total,
             "items": matched[offset : offset + limit],
         }
+
+
+def demo_validation_records(*, period_code: str | None = None) -> dict[str, object]:
+    """Return a read-only, role-linked view of the shared reference records."""
+
+    directory = demo_student_directory(period_code=period_code, limit=500)
+    students = directory["items"]
+    assert isinstance(students, list)
+    items = [
+        {
+            "student_key": student["id"],
+            "student_code": student["code"],
+            "display_name": student["display_name"],
+            "email": student["email"],
+            "cycle": student["cycle"],
+            "cohort": student["cohort"],
+            "certifications": student["certifications"],
+        }
+        for student in students
+        if student["certifications"]
+    ]
+    account_order = {code: index for index, code in enumerate(REFERENCE_STUDENT_ACCOUNTS.values())}
+    items.sort(
+        key=lambda item: (
+            account_order.get(str(item["student_code"]), len(account_order)),
+            str(item["student_code"]),
+        )
+    )
+    certifications = sum(len(item["certifications"]) for item in items)
+    return {
+        "dataset": "demo",
+        "reference_label": "Datos de referencia · no oficiales",
+        "period_code": directory["period_code"],
+        "cutoff_date": directory["cutoff_date"],
+        "total_students": directory["total"],
+        "students_with_certifications": len(items),
+        "total_certifications": certifications,
+        "items": items,
+    }
 
 
 def reference_student_profile(email: str) -> dict[str, object] | None:
@@ -456,6 +503,7 @@ __all__ = [
     "REFERENCE_STUDENT_ACCOUNTS",
     "demo_analytics",
     "demo_student_directory",
+    "demo_validation_records",
     "reference_enrollment_history",
     "reference_student_profile",
 ]
