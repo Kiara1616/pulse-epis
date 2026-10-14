@@ -278,6 +278,62 @@ test("el validador consulta las certificaciones KZ y VL con su trazabilidad", as
   await expect(page.getByRole("button", { name: "Aprobar" })).toHaveCount(0);
 });
 
+test("el validador conserva su bandeja cuando los datos de referencia están deshabilitados", async ({ page }) => {
+  await mockSession(page, "VALIDATOR");
+  await page.route("**/api/v1/indicators/config", (route) =>
+    route.fulfill({ json: { reference_available: false, default_dataset: "registered" } }),
+  );
+
+  let demoPeriodRequests = 0;
+  let referenceValidationRequests = 0;
+  let operationalQueueRequests = 0;
+  await page.route("**/api/v1/indicators/periods**", (route) => {
+    if (new URL(route.request().url()).searchParams.get("dataset") === "demo") {
+      demoPeriodRequests += 1;
+    }
+    return route.fulfill({ json: [period] });
+  });
+  await page.route("**/api/v1/validations/reference**", (route) => {
+    referenceValidationRequests += 1;
+    return route.fulfill({ json: validationReferences });
+  });
+  await page.route("**/api/v1/validations", (route) => {
+    operationalQueueRequests += 1;
+    return route.fulfill({
+      json: [
+        {
+          id: "operational-validation-1",
+          student_key: "student-2024-001",
+          credential_name: "AWS Certified Cloud Practitioner",
+          issuer_name: "AWS",
+          issued_on: "2026-09-01",
+          expires_on: null,
+          stored_status: "PENDING",
+          status: "PENDING",
+          evidences: [],
+          latest_comment: null,
+          source_url: null,
+          updated_at: "2026-09-01T12:00:00Z",
+        },
+      ],
+    });
+  });
+
+  await page.goto("/validaciones");
+
+  await expect(page.getByRole("heading", { name: "Bandeja de validaciones" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /AWS Certified Cloud Practitioner/ })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Certificaciones de referencia para consulta" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText(/REFERENCE_DISABLED|Los datos de referencia no están habilitados/),
+  ).toHaveCount(0);
+  expect(operationalQueueRequests).toBe(1);
+  expect(demoPeriodRequests).toBe(0);
+  expect(referenceValidationRequests).toBe(0);
+});
+
 test("la pantalla nominal de referencia está restringida al rol estudiante en su propio espacio", async ({ page }) => {
   await mockSession(page, "STUDENT");
   await page.goto("/estudiantes");
