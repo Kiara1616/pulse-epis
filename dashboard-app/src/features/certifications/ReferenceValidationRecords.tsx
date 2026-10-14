@@ -197,7 +197,7 @@ export function ReferenceValidationRecords() {
         <div role="alert" className="rounded-lg bg-white p-4 text-sm text-rose-700">
           <p>{error}</p>
           <button type="button" onClick={refresh} className="mt-2 font-semibold underline">
-            Reintentar
+            Reintentar consulta
           </button>
         </div>
       ) : loading ? (
