@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: vars.STAGING_HOST != ''
     name: Deploy to staging host
     runs-on: ubuntu-latest
     environment:
