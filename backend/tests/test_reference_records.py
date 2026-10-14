@@ -42,9 +42,74 @@ def test_reference_directory_is_limited_to_admin_and_validator_roles():
             assert response.json()["reference_label"] == "Datos de referencia · no oficiales"
             assert response.json()["total"] == 342
 
+        latest_directory = client.get(
+            "/api/v1/indicators/reference/students", params={"limit": 2}
+        )
+        assert latest_directory.status_code == 200
+        assert latest_directory.json()["period_code"] == "2026-II"
+        assert [item["code"] for item in latest_directory.json()["items"]] == [
+            "KZ2023077087",
+            "VL2023076796",
+        ]
+
         actor["user"] = _user(Role.STUDENT, "kz2023077087@virtual.upt.pe")
         denied = client.get("/api/v1/indicators/reference/students")
         assert denied.status_code == 403
+
+
+def test_admin_and_validator_receive_the_same_read_only_reference_certifications():
+    app, actor = _reference_app(_user(Role.ADMIN, "admin@virtual.upt.pe"))
+    with TestClient(app) as client:
+        admin_response = client.get(
+            "/api/v1/validations/reference", params={"period_code": "2025-II"}
+        )
+        assert admin_response.status_code == 200
+        admin_data = admin_response.json()
+        assert admin_data["dataset"] == "demo"
+        assert admin_data["reference_label"] == "Datos de referencia · no oficiales"
+        assert admin_data["period_code"] == "2025-II"
+        assert admin_data["total_students"] == 342
+        assert admin_data["total_certifications"] > 0
+        overview = demo_analytics().overview(period_code="2025-II")
+        assert admin_data["total_certifications"] == overview.kpis.approved_certifications
+        assert admin_data["students_with_certifications"] == overview.kpis.certified_students
+
+        linked_accounts = {
+            item["student_code"]: item
+            for item in admin_data["items"]
+            if item["student_code"] in {"KZ2023077087", "VL2023076796"}
+        }
+        assert set(linked_accounts) == {"KZ2023077087", "VL2023076796"}
+        for student in linked_accounts.values():
+            assert student["certifications"]
+            for certification in student["certifications"]:
+                traceability = certification["traceability"]
+                assert traceability["source"] == "EXAMPLE"
+                assert {traceability[key]["role"] for key in ("student", "validator", "administrator")} == {
+                    "STUDENT",
+                    "VALIDATOR",
+                    "ADMIN",
+                }
+
+        latest_response = client.get("/api/v1/validations/reference")
+        assert latest_response.status_code == 200
+        latest_data = latest_response.json()
+        assert latest_data["period_code"] == "2026-II"
+        assert [item["student_code"] for item in latest_data["items"][:2]] == [
+            "KZ2023077087",
+            "VL2023076796",
+        ]
+        assert all(item["certifications"] for item in latest_data["items"][:2])
+
+        actor["user"] = _user(Role.VALIDATOR, "validator@virtual.upt.pe")
+        validator_response = client.get(
+            "/api/v1/validations/reference", params={"period_code": "2025-II"}
+        )
+        assert validator_response.status_code == 200
+        assert validator_response.json() == admin_data
+
+        actor["user"] = _user(Role.STUDENT, "kz2023077087@virtual.upt.pe")
+        assert client.get("/api/v1/validations/reference").status_code == 403
 
 
 def test_student_reference_profile_returns_only_the_linked_account_history():

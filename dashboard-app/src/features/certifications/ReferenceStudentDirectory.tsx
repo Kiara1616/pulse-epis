@@ -41,7 +41,12 @@ function dateLabel(value: string | null) {
   return new Intl.DateTimeFormat("es-PE", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${value}T00:00:00`));
 }
 
-export function ReferenceStudentDirectory() {
+export function ReferenceStudentDirectory({
+  headingLevel = "h1",
+}: {
+  headingLevel?: "h1" | "h2";
+}) {
+  const Heading = headingLevel;
   const [periods, setPeriods] = useState<AnalyticsPeriod[]>([]);
   const [period, setPeriod] = useState("");
   const [query, setQuery] = useState("");
@@ -65,7 +70,7 @@ export function ReferenceStudentDirectory() {
           setLoading(false);
           return;
         }
-        setPeriod((current) => items.some((item) => item.code === current) ? current : items.at(-1)?.code || "");
+        setPeriod((current) => items.some((item) => item.code === current) ? current : items[0]?.code || "");
         setPeriodsRevision(revision);
       })
       .catch((loadError) => {
@@ -94,8 +99,8 @@ export function ReferenceStudentDirectory() {
   }, [period, query, offset, revision, periodsRevision]);
 
   return <div className="space-y-5">
-    <header className="flex flex-wrap items-end justify-between gap-4">
-      <div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">Datos de referencia · no oficiales</p><h1 className="mt-2 text-3xl font-semibold text-slate-900">Estudiantes y certificaciones</h1><p className="mt-2 max-w-3xl text-sm text-slate-500">Los registros sirven para visualizar la plataforma. Las credenciales y fechas son ejemplos y no representan validaciones institucionales registradas.</p></div>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+      <div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">Datos de referencia · no oficiales</p><Heading className={`mt-2 font-semibold text-slate-900 ${headingLevel === "h1" ? "text-3xl" : "text-2xl"}`}>Estudiantes y certificaciones</Heading><p className="mt-2 max-w-3xl text-sm text-slate-500">Los registros sirven para visualizar la plataforma. Las credenciales y fechas son ejemplos y no representan validaciones institucionales registradas.</p></div>
       <button onClick={() => { setLoading(true); setData(null); setError(""); setPeriodsRevision(-1); setRevision((value) => value + 1); }} className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">Actualizar</button>
     </header>
 

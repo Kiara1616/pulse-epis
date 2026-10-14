@@ -11,6 +11,7 @@ import {
   InstitutionalPriorities,
 } from "@/features/admin/InstitutionalPriorities";
 import { DataQuality } from "@/features/admin/DataQuality";
+import { ReferenceStudentDirectory } from "@/features/certifications/ReferenceStudentDirectory";
 const modules = [
   {
     title: "Padrón EPIS",
@@ -118,6 +119,9 @@ function AdminContent() {
           </Link>
         ))}
       </section>
+      {analytics.dataset === "demo" && analytics.referenceAvailable && (
+        <ReferenceStudentDirectory headingLevel="h2" />
+      )}
     </div>
   );
 }
