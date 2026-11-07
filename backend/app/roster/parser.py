@@ -9,6 +9,7 @@ import unicodedata
 from dataclasses import dataclass
 
 from ..core.config import Settings
+from ..auth.models import STUDENT_EMAIL_DOMAIN
 
 
 ROSTER_COLUMNS = ("code", "email", "school", "plan", "cycle", "status", "period")
@@ -140,7 +141,7 @@ def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings, se
     total_rows = 0
     source_rows = 0
     expected_period = normalize_text(period_code).casefold()
-    allowed_domains = set(settings.allowed_google_email_domains)
+    allowed_domains = {STUDENT_EMAIL_DOMAIN}
 
     for row_number, raw_row in enumerate(reader, start=2):
         row = {

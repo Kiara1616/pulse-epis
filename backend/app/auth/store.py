@@ -42,13 +42,14 @@ def _principal_from_model(
     session: Session,
     user: User,
 ) -> AuthenticatedUser:
-    student_id = session.scalar(select(Student.id).where(Student.user_id == user.id))
+    student = session.scalar(select(Student).where(Student.user_id == user.id))
+    student_id = student.id if student is not None and student.status == "ACTIVE" else None
     return AuthenticatedUser(
         id=user.id,
         email=user.email,
         role=Role(user.role),
         student_id=student_id,
-        is_active=user.is_active,
+        is_active=user.is_active and (user.role != Role.STUDENT.value or student_id is not None),
         google_subject=user.google_subject,
         password_hash=user.password_hash,
     )

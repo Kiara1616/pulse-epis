@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..core.config import Settings
-from .models import AuthenticatedUser, GoogleIdentity, Role
+from .models import AuthenticatedUser, GoogleIdentity, Role, STUDENT_EMAIL_DOMAIN
 from .passwords import verify_password
 from .store import UserDirectory, UserDirectoryUnavailable, UserIdentityConflict
 
@@ -66,6 +66,8 @@ class AuthService:
             # Matching the local directory is deliberate: a Google domain is not
             # evidence that the person belongs to EPIS.
             raise UserNotProvisioned("Identity is not in the institutional padrón")
+        if user.role == Role.STUDENT and domain != STUDENT_EMAIL_DOMAIN:
+            raise UserNotProvisioned("Student email must use the institutional virtual domain")
         if not user.is_active:
             raise InactiveUser("The provisioned account is inactive")
         if user.role == Role.STUDENT and user.student_id is None:
