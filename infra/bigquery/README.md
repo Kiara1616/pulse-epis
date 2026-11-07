@@ -2,6 +2,8 @@
 
 Esta prueba carga **solo datos sintéticos** en BigQuery Sandbox, sin cuenta de facturación. Es una alternativa demostrativa al despliegue objetivo de Cloud SQL y Cloud Storage descrito en `../environments/demo`. No se conecta a Pulse EPIS en Render ni contiene padrón o correos reales.
 
+El [diagrama de esta prueba](architecture.mmd) distingue la carga sintética activa de la integración futura con Pulse EPIS. El diagrama completo con Cloud SQL y Data Lake sigue siendo el diseño objetivo.
+
 ```powershell
 bq --project_id=pulse-epis-bi-sandbox-20261107 mk --dataset --location=US --default_table_expiration=5184000 pulse_epis_demo
 python infra/bigquery/sandbox_demo.py pulse-epis-bi-sandbox-20261107

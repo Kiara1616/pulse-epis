@@ -1,0 +1,10 @@
+flowchart LR
+  R[Pulse EPIS en Render] -.->|Integración futura; no activa| X[Exportación seudonimizada]
+  S[Datos sintéticos del script] --> L[bq load --replace]
+  X -.-> L
+  L --> B[(BigQuery Sandbox sin facturación)]
+  B --> F1[fact_student_period]
+  B --> F2[fact_certification]
+  F1 --> Q[Consulta por fecha de corte]
+  F2 --> Q
+  Q --> E[Evidencia de DW en GCP]
