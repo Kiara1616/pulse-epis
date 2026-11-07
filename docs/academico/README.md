@@ -20,6 +20,6 @@ Esta carpeta contiene exclusivamente los cinco formatos académicos de Pulse EPI
 
 Los cinco informes de Pulse EPIS incluyen escudo de la Universidad Privada de Tacna, facultad, escuela, curso, docente, integrantes con sus códigos, versión y fecha. El paquete PDF utiliza tamaño A4, tipografía Times, cuerpo de 12 puntos, párrafos justificados, títulos y texto negros, tablas sin sombreado, control de versiones, índice, numeración y diagramas renderizados. Los documentos distinguen implementación, propuesta y validación institucional pendiente.
 
-La base técnica es main `d123bea`, que incorpora la documentación académica y la preparación del piloto. El manifiesto generado registra el commit de trabajo, estado de cambios y hash de cada fuente. La revisión docente y la aceptación institucional requieren sus propias actas; los resultados sintéticos se identifican como tales.
+El manifiesto generado registra el commit de trabajo, el estado de cambios y el hash de cada fuente. La revisión docente y la aceptación institucional requieren sus propias actas; los resultados sintéticos se identifican como tales. La infraestructura GCP y los seis reportes temporales corresponden a la segunda unidad y se distinguen de una operación cloud aún no verificada.
 
 Desde la raíz: `python scripts/build_docs.py` genera el paquete completo y `python scripts/build_academic_pdfs.py` genera únicamente FD01–FD05. Los PDF y HTML quedan en `artifacts/docs/academico`. No se requieren Pandoc ni TeX. La validación de fuentes y de artefactos forma parte de CI.

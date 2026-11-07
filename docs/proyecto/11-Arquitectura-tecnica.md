@@ -11,7 +11,7 @@ Pulse EPIS usa frontend Next.js 16.3.3 y React 19.2.8, API FastAPI y persistenci
 | Analítica frontend | dashboard-app/src/features/analytics | Consulta común y filtros de snapshots |
 | API | backend/app/api/routes | Contratos HTTP, autorización y errores |
 | Servicios | backend/app/auth, roster, certifications, validation, etl, analytics | Reglas de dominio y operaciones transaccionales |
-| Persistencia | backend/app/db y backend/migrations | 18 tablas y ocho migraciones versionadas |
+| Persistencia | backend/app/db, backend/app/learning y backend/migrations | Tablas operativas, catálogo, aprendizaje, hechos analíticos y migraciones versionadas |
 | Evidencias | backend/app/evidence | Archivos privados con hash y acceso firmado |
 | Operación | compose.yaml, deploy y .github/workflows | Contenedores, HTTPS y tareas operativas |
 
@@ -36,4 +36,4 @@ No hay archivos mock-data.json ni etl_data.json en la rama revisada. Los datos d
 
 ## Consistencia y limitaciones
 
-La base y las evidencias se guardan en volúmenes distintos. Se debe respaldar ambos para recuperar un expediente. Crear credencial y adjuntar archivo son dos solicitudes; falla del adjunto puede dejar PENDING sin binario. El backend ofrece corrección, pero la interfaz de edición y captura de habilidades aún no está completa. Consulta [API y contratos](15-API-y-contratos.md), [modelo](05-Modelo-de-datos.md) y [SAD](../academico/FD04-Arquitectura-Software.md).
+La base y las evidencias se guardan en volúmenes distintos. Se debe respaldar ambos para recuperar un expediente. El flujo actual utiliza catálogos canónicos de emisor, credencial y habilidad, y conserva propuestas sin resolver como borradores. La recuperación conjunta de base y evidencias sigue siendo un requisito operativo antes de usar datos institucionales. Consulta [API y contratos](15-API-y-contratos.md), [modelo](05-Modelo-de-datos.md), [arquitectura BI](26-Arquitectura-Data-Warehouse.md) y [SAD](../academico/FD04-Arquitectura-Software.md).

@@ -17,6 +17,14 @@ artifacts/
 dashboard-app/test-results/
 dashboard-app/playwright-report/
 
+# Terraform local state and credentials
+**/.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+backend.hcl
+infracost.json
+
 .venv-docs/
 .tmp-docs/
 output/

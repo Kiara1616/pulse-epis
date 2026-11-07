@@ -27,7 +27,7 @@ La rama se actualizó sobre `origin/main` en `0b67964`, que ya incorpora trabajo
 
 - `backend/app/api/routes/learning.py` y la migración `0010_learning_domain` exponen rutas persistentes para intereses, rutas, cursos, oportunidades, talleres, preferencias del estudiante, solicitudes y auditoría.
 - La API de formación usa la sesión existente: `ADMIN` administra catálogos y decisiones; `STUDENT` consulta catálogos publicados, guarda sus preferencias y gestiona sus propias solicitudes; `VALIDATOR` no recibe permisos de administración de formación.
-- `/admin/radar` continúa siendo un prototipo visual sintético y todavía no sustituye sus datos de demostración por la API persistente.
+- `/admin/radar` permite gestionar cursos y oportunidades mediante la API persistente; las fuentes sintéticas de pruebas se identifican como demostración.
 
 Por tanto, “fuera de alcance” en este documento significa “no implementado por VA-01”; no significa que las issues posteriores no hayan añadido capacidades en `main`.
 
@@ -60,9 +60,9 @@ En el dominio `/learning`, las rutas actuales reciben `require_roles(ADMIN)` o `
 | `ADMIN` | `/admin/publicaciones` | Consultar y ejecutar una publicación ETL por periodo y corte | `PERIOD_MANAGE` | `API` — `/etl/runs` | Solo se publica un corte que cumple las reglas de calidad; una repetición es idempotente |
 | `VALIDATOR` | `/validaciones` | Tomar una revisión, consultar evidencia temporal, decidir y ver historial | `CERTIFICATION_VALIDATE` | `API` — `/validations` y endpoints de evidencia/historial | La decisión valida la transición; observar y rechazar exigen comentario visible para el estudiante |
 | `STUDENT` | `/mi-perfil` | Registrar, consultar, corregir y reenviar certificaciones propias | `CERTIFICATION_READ_OWN`, `CERTIFICATION_WRITE_OWN` | `API` — `/certifications` y evidencias | El registro comienza pendiente, conserva su historial y nunca permite modificar el expediente de otra persona |
-| `STUDENT` | Resumen de avance futuro | Consultar intereses, objetivo/ruta y solicitudes propias | `STUDENT` — `/learning/me/profile`, `/learning/me/applications` | `API` disponible; fixtures solo para prototipos | Se persisten únicamente preferencias y solicitudes propias; la ruta debe estar publicada y la oferta/taller disponible |
-| `ADMIN` | Radar futuro de cursos y oportunidades | Revisar, corregir y publicar una oportunidad | `ADMIN` — `/learning/courses`, `/learning/offers` y transiciones | `SYNTHETIC` en `/admin/radar`; `API` persistente disponible | El prototipo mantiene etiqueta sintética; la integración debe usar API, auditoría y transiciones backend |
-| `ADMIN`, `STUDENT` | Talleres e inscripciones futuras | Publicar talleres, consultar oferta y solicitar participación | `ADMIN` para catálogo; `STUDENT` para solicitudes propias | `API` disponible; fixtures solo para pruebas visuales | La capacidad se controla en backend y una solicitud no expone ni modifica expedientes ajenos |
+| `STUDENT` | `/mi-ruta` | Consultar intereses, ruta y solicitudes propias | `STUDENT` — `/learning/me/profile`, `/learning/me/applications` | API persistente | Se persisten únicamente preferencias y solicitudes propias; la ruta debe estar publicada y la oferta/taller disponible |
+| `ADMIN` | `/admin/radar` | Revisar, corregir y publicar una oportunidad | `ADMIN` — `/learning/courses`, `/learning/offers` y transiciones | API persistente | La publicación exige revisión, justificación y transiciones backend |
+| `ADMIN`, `STUDENT` | `/talleres` | Publicar talleres, consultar oferta y solicitar participación | `ADMIN` para catálogo; `STUDENT` para solicitudes propias | API persistente | La capacidad se controla en backend y una solicitud no expone ni modifica expedientes ajenos |
 
 ### Capacidades con permiso, pero sin recorrido de esta issue
 
@@ -192,7 +192,7 @@ En el dominio `/learning`, las rutas actuales reciben `require_roles(ADMIN)` o `
 | Indicadores y brechas | `/indicators/periods`, `/overview`, `/dictionary`, reportes | `dataset=demo` local o fixtures de contrato | Etiquetar fuente, periodo y corte; no conciliar demo con registrados. |
 | Padrón y calidad ETL | `/padron/*` y `/etl/runs` | Ninguno en la operación actual | Usar CSV sintético en pruebas, nunca padrón real en el repositorio. |
 | Intereses y ruta formativa | `/learning/interests`, `/learning/routes`, `/learning/me/profile` | `InterestProfile` y `LearningRoute` para prototipos | La pantalla debe indicar procedencia; las preferencias persistentes son propias del estudiante. |
-| Cursos y oportunidades | `/learning/courses`, `/learning/offers` y transiciones | `CourseCandidate` y `Opportunity` usados por `/admin/radar` | El radar actual es sintético; la publicación real exige revisión y reglas de backend. |
+| Cursos y oportunidades | `/learning/courses`, `/learning/offers` y transiciones | Candidatos y oportunidades sintéticos usados por `/admin/radar` | La publicación persistente exige revisión y reglas de backend. |
 | Talleres y participación | `/learning/workshops`, `/learning/me/applications`, `/learning/admin/applications` | `Workshop` y `Participation` para pruebas | Los cupos, estados y alcance se validan en API; no afirmar inscripción desde un fixture. |
 
 La implementación de contratos de frontend y sus fixtures se documenta también en [API y contratos](15-API-y-contratos.md). Los adaptadores deben conservar la procedencia `API` o `SYNTHETIC`, estados `loading`, `ready`, `empty` y `error`, y la independencia entre objetos fixture.

@@ -27,6 +27,14 @@ Estas fuentes permiten comprender, desarrollar, verificar y operar Pulse EPIS. S
 | [Pruebas y aceptación](17-Pruebas-y-aceptacion.md) | Suites, evidencia y condiciones de cierre |
 | [Generación documental](18-Generacion-documental.md) | Construcción, artefactos y verificaciones |
 | [Recorridos y criterios por rol](22-Recorridos-y-criterios-por-rol.md) | Alcance de VA-01, permisos, fuentes y estados de los recorridos |
+| [Auditoría funcional y plan de mejora](23-Auditoria-funcional-y-plan-de-mejora.md) | Hallazgos por perfil, trazabilidad y plan priorizado |
+| [Catálogo y descubrimiento](24-Catalogo-y-descubrimiento.md) | Roles, propuestas, fuentes autorizadas y publicación de cursos y talleres |
+| [Plan de la segunda unidad BI](25-Plan-segunda-unidad-BI.md) | Entregables, decisiones, evidencia y criterios de cierre por semana |
+| [Arquitectura Data Warehouse](26-Arquitectura-Data-Warehouse.md) | Flujo de datos, grano de hechos y reglas de agregación temporal |
+| [Plan de lanzamiento del MVP](27-Plan-lanzamiento-MVP.md) | Estado verificable, alcance, cronograma y puertas Go/No-Go |
+| [Guía de presentación U2](28-Guia-presentacion-U2.md) | Preflight, recorrido de demostración y respuestas para la sustentación |
+| [Cierre de la segunda unidad](29-Cierre-segunda-unidad.md) | Matriz de cumplimiento, brechas cloud y plan de aceptación |
+| [Estimación de costos GCP](../../infra/costs/estimate.md) | Costos demo y piloto calculados desde supuestos y precios versionados |
 | [Gobierno del repositorio](REPOSITORY-GOVERNANCE.md) | Contribución, protección y revisión |
 
 Los estados académicos se consultan en [FD03](../academico/FD03-Especificacion-Requerimientos.md). Un control propuesto, un workflow versionado y una prueba local son evidencias diferentes de operación institucional. Los manuales no publican padrones ni evidencias reales.

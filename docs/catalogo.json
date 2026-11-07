@@ -140,6 +140,34 @@
     {
       "source": "docs/proyecto/22-Recorridos-y-criterios-por-rol.md",
       "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/23-Auditoria-funcional-y-plan-de-mejora.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/24-Catalogo-y-descubrimiento.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/25-Plan-segunda-unidad-BI.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/26-Arquitectura-Data-Warehouse.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/27-Plan-lanzamiento-MVP.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/28-Guia-presentacion-U2.md",
+      "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/29-Cierre-segunda-unidad.md",
+      "group": "proyecto"
     }
   ]
 }

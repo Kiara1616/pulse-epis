@@ -150,6 +150,7 @@ Los documentos del proyecto utilizados para mantener consistencia son los siguie
 | [FD02 — Visión](FD02-Informe-Vision.md) | Alcance, actores y prioridades |
 | [FD03 — Requerimientos](FD03-Especificacion-Requerimientos.md) | RF, RNF y casos de uso |
 | [Modelo de datos](../proyecto/05-Modelo-de-datos.md) | Entidades y organización relacional |
+| [Arquitectura Data Warehouse](../proyecto/26-Arquitectura-Data-Warehouse.md) | Grano de hechos, dimensiones lógicas, flujo ETL y reglas temporales de la segunda unidad |
 | [Diccionario de indicadores](../proyecto/09-Diccionario-indicadores.md) | Fórmulas y significado de los resultados |
 | [API y contratos](../proyecto/15-API-y-contratos.md) | Interfaces entre componentes |
 | Código de `backend/app`, `compose.yaml` y `deploy/operations.sh` | Comportamiento implementado y operación |

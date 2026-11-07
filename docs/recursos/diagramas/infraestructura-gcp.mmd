@@ -1,0 +1,23 @@
+flowchart TB
+  U[Usuarios EPIS] -->|HTTPS| FE[Cloud Run Frontend Next.js]
+  FE -->|API HTTPS| BE[Cloud Run Backend FastAPI]
+  BE -->|Unix socket| SQL[(Cloud SQL PostgreSQL 16)]
+  BE -->|Cloud Storage FUSE| EV[(Bucket evidencias privadas)]
+  BE --> SM[Secret Manager]
+  CS[Cloud Scheduler] -->|OAuth| ETL[Cloud Run Job ETL]
+  ETL --> SQL
+  ETL --> SM
+  ETL -->|Cloud Storage FUSE| LAKE[(Bucket Data Lake)]
+  AR[Artifact Registry] --> FE
+  AR --> BE
+  AR --> ETL
+  FE --> MON[Logging y Monitoring]
+  BE --> MON
+  ETL --> MON
+  MON --> ALERT[Alertas ETL y presupuesto 50/80/100]
+  TF[Terraform + estado remoto GCS] --> FE
+  TF --> BE
+  TF --> SQL
+  TF --> CS
+  TF --> ETL
+  TF --> LAKE
