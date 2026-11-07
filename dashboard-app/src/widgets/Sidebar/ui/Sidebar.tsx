@@ -20,7 +20,7 @@ export function Sidebar() {
     { href:"/admin/estudiantes", label:"Padrón", icon:UsersRound, roles:["ADMIN"] },
     { href:"/admin/radar", label:"Radar de cursos", icon:ScanSearch, roles:["ADMIN"] },
     { href:"/admin/publicaciones", label:"Publicar indicadores", icon:LayoutDashboard, roles:["ADMIN"] },
-    { href:"/validaciones", label:"Validar", icon:BadgeCheck, roles:["VALIDATOR"] },
+    { href:"/validaciones", label:"Validar", icon:BadgeCheck, roles:["ADMIN","VALIDATOR"] },
     { href:"/mi-perfil", label:"Credenciales", icon:Award, roles:["STUDENT"] },
     { href:"/mi-ruta", label:"Mi ruta", icon:Compass, roles:["STUDENT"] },
     { href:"/talleres", label:"Talleres", icon:CalendarDays, roles:["ADMIN","STUDENT"] },

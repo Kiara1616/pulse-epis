@@ -679,7 +679,7 @@ function ValidationsContent() {
 
 export default function ValidationsPage() {
   return (
-    <RoleGate allow={["VALIDATOR"]}>
+    <RoleGate allow={["ADMIN", "VALIDATOR"]}>
       <ValidationsContent />
     </RoleGate>
   );

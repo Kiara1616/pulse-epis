@@ -5,7 +5,7 @@ test("etiquetas coherentes y estado desconocido neutral", () => {
   expect(statusLabel("FUTURE")).toBe("Estado no reconocido");
   expect(statusClass("FUTURE")).toContain("gray");
 });
-for (const role of ["STUDENT", "ADMIN"])
+for (const role of ["STUDENT"])
   test(`${role} no inicia consultas de validación`, async ({ page }) => {
     let calls = 0;
     await page.route("**/api/v1/auth/config", (r) =>
@@ -32,6 +32,17 @@ for (const role of ["STUDENT", "ADMIN"])
     ).toBeVisible();
     expect(calls).toBe(0);
   });
+test("ADMIN puede abrir la bandeja de validación", async ({ page }) => {
+  await page.route("**/api/v1/auth/config", (r) => r.fulfill({ json: { provider: "google" } }));
+  await page.route("**/api/v1/auth/me", (r) => r.fulfill({ json: {
+    id: "DEMO", email: "admin@example.invalid", role: "ADMIN", permissions: [], student_id: null,
+  } }));
+  await page.route("**/api/v1/validations", (r) => r.fulfill({ json: [] }));
+  await page.goto("/validaciones");
+  await expect(page.getByRole("heading", { name: "Acceso restringido" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Bandeja de validaciones" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Validar" })).toBeVisible();
+});
 test("error, reintento y vacío accesibles para validador", async ({ page }) => {
   await page.route("**/api/v1/auth/config", (r) =>
     r.fulfill({ json: { provider: "google" } }),
