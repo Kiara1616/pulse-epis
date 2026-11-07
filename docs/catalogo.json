@@ -140,6 +140,10 @@
     {
       "source": "docs/proyecto/22-Recorridos-y-criterios-por-rol.md",
       "group": "proyecto"
+    },
+    {
+      "source": "docs/proyecto/30-Fuentes-y-captura-de-datos.md",
+      "group": "proyecto"
     }
   ]
 }
