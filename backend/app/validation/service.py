@@ -98,6 +98,7 @@ class ValidationQueueItem:
     external_id: str | None = None
     issuer_url: str | None = None
     skills: tuple[dict, ...] = ()
+    catalog_credential_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,6 +239,7 @@ class ValidationService:
             student_key=student.student_key,
             credential_name=certification.credential_name,
             issuer_name=issuer.name,
+            catalog_credential_id=certification.catalog_credential_id,
             issued_on=certification.issued_on,
             expires_on=certification.expires_on,
             stored_status=certification.status,

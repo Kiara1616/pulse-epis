@@ -26,6 +26,8 @@ from .db.models import (
     Certification,
     CertificationSkill,
     CertificationStatusHistory,
+    CredentialCatalog,
+    CredentialCatalogSkill,
     Enrollment,
     Issuer,
     Skill,
@@ -209,6 +211,17 @@ def _ensure_certification(
     issuer: Issuer,
     skills: dict[str, Skill],
 ) -> bool:
+    spec = DEMO_CERTIFICATION_CATALOG[spec_index]
+    normalized_name = spec.credential_name.casefold()
+    catalog = session.scalar(select(CredentialCatalog).where(CredentialCatalog.issuer_id == issuer.id, CredentialCatalog.normalized_name == normalized_name))
+    if catalog is None:
+        catalog = CredentialCatalog(issuer_id=issuer.id, name=spec.credential_name, normalized_name=normalized_name, active=True)
+        session.add(catalog)
+        session.flush()
+    for skill_name, _ in spec.skills:
+        skill = skills[skill_name]
+        if session.get(CredentialCatalogSkill, (catalog.id, skill.id)) is None:
+            session.add(CredentialCatalogSkill(credential_id=catalog.id, skill_id=skill.id))
     code = student.student_code or student.student_key
     external_id = f"DEMO-{_SEED_VERSION}-{_slug(code)}-{_slug(issuer.name)}"
     existing = session.scalar(
@@ -218,6 +231,8 @@ def _ensure_certification(
         )
     )
     if existing is not None:
+        if existing.catalog_credential_id is None:
+            existing.catalog_credential_id = catalog.id
         for skill_name, level in DEMO_CERTIFICATION_CATALOG[spec_index].skills:
             skill = skills[skill_name]
             if session.scalar(
@@ -252,6 +267,7 @@ def _ensure_certification(
         id=uuid4(),
         student_id=student.id,
         issuer_id=issuer.id,
+        catalog_credential_id=catalog.id,
         credential_name=DEMO_CERTIFICATION_CATALOG[spec_index].credential_name,
         external_id=external_id,
         issued_on=issued_on,

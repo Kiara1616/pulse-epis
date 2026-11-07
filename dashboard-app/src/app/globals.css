@@ -7,7 +7,11 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --border: #dbe3ef;
+  --muted: #52627a;
+  --accent: #1d4ed8;
 }
 
 
@@ -16,6 +20,31 @@ body {
   background: var(--background);
   font-family: "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
   letter-spacing: -0.01em;
+}
+
+@layer components {
+  .page-title {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: #0f172a;
+  }
+
+  @media (min-width: 640px) {
+    .page-title {
+      font-size: 1.875rem;
+      line-height: 2.25rem;
+    }
+  }
+
+  .page-intro { color: var(--muted); font-size: .875rem; line-height: 1.5rem; }
+  .section-title { color: #0f172a; font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; letter-spacing: -.02em; }
+  .card-title { color: #0f172a; font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+  .metric-value { color: #0f172a; font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+  .surface-card { border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); box-shadow: 0 1px 2px rgb(15 23 42 / .05); }
+  .context-note { border: 1px solid var(--border); border-radius: .75rem; background: #f8fafc; color: #475569; font-size: .875rem; line-height: 1.5rem; }
+  .form-label { color: #334155; font-size: .875rem; line-height: 1.25rem; font-weight: 500; }
 }
 
 button, input, select { font: inherit; }

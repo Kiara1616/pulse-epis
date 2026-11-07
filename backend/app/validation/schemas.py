@@ -24,6 +24,7 @@ CertificationStatus = Literal[
 class ValidationDecisionRequest(BaseModel):
     action: ValidationAction
     comment: str | None = Field(default=None, max_length=2000)
+    catalog_confirmed: bool = False
 
     @field_validator("comment")
     @classmethod
@@ -51,6 +52,7 @@ class ValidationQueueResponse(BaseModel):
     student_key: str
     credential_name: str
     issuer_name: str
+    catalog_credential_id: UUID | None = None
     issued_on: date
     expires_on: date | None
     stored_status: CertificationStatus

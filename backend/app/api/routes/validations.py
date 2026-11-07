@@ -6,9 +6,11 @@ from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import select
 
 from ...auth.dependencies import require_permissions
 from ...auth.models import AuthenticatedUser, Permission
+from ...db.models import Certification, CertificationSkill, CredentialCatalog, Issuer, Skill
 from ...validation.schemas import (
     ValidationDecisionRequest,
     ValidationDecisionResponse,
@@ -53,6 +55,7 @@ def _queue_response(item: ValidationQueueItem) -> ValidationQueueResponse:
         student_key=item.student_key,
         credential_name=item.credential_name,
         issuer_name=item.issuer_name,
+        catalog_credential_id=item.catalog_credential_id,
         issued_on=item.issued_on,
         expires_on=item.expires_on,
         stored_status=item.stored_status,
@@ -166,6 +169,21 @@ def decide_validation(
     as_of: date | None = Query(default=None),
     current_user: AuthenticatedUser = Depends(_VALIDATOR),
 ) -> ValidationDecisionResponse:
+    if payload.action == "APPROVE":
+        if not payload.catalog_confirmed:
+            raise _http_error(422, "CATALOG_CONFIRMATION_REQUIRED", "Confirma entidad, certificación y habilidades contra la evidencia.")
+        factory = request.app.state.session_factory
+        if factory is None:
+            raise _http_error(503, "CATALOG_UNAVAILABLE", "El catálogo no está disponible.")
+        with factory() as session:
+            certification = session.get(Certification, certification_id)
+            credential = session.get(CredentialCatalog, certification.catalog_credential_id) if certification and certification.catalog_credential_id else None
+            issuer = session.get(Issuer, certification.issuer_id) if certification else None
+            if credential is None or issuer is None or not credential.active or not issuer.active or credential.issuer_id != certification.issuer_id:
+                raise _http_error(422, "CATALOG_REQUIRED", "Administración debe vincular esta certificación al catálogo antes de aprobarla.")
+            skill_id = session.scalar(select(CertificationSkill.skill_id).join(Skill, Skill.id == CertificationSkill.skill_id).where(CertificationSkill.certification_id == certification_id, Skill.active.is_(True)))
+            if skill_id is None:
+                raise _http_error(422, "CATALOG_SKILL_REQUIRED", "La certificación requiere al menos una habilidad activa confirmada.")
     try:
         decision = _service(request).transition(
             current_user.id,

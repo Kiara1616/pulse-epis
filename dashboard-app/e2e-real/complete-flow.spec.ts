@@ -16,7 +16,23 @@ test('evidencia, validación, perfil, oportunidad y participación con API real'
   const student = await studentContext.newPage();
   const validator = await validatorContext.newPage();
   await login(admin, 'admin', '/admin/radar');
-  // Catalog prerequisites have no authoring screen; create only these via real API.
+  // Prepare the canonical certification vocabulary through the real API.
+  const skillResponse = await adminContext.request.post('http://127.0.0.1:8080/api/v1/catalog/skills', {
+    data: { name: 'Python', category: 'Programación', active: true },
+  });
+  expect(skillResponse.status()).toBe(201);
+  const skill = await skillResponse.json();
+  const issuerResponse = await adminContext.request.post('http://127.0.0.1:8080/api/v1/catalog/issuers', {
+    data: { name: 'Emisor sintético', website_url: 'https://example.invalid', active: true },
+  });
+  expect(issuerResponse.status()).toBe(201);
+  const issuer = await issuerResponse.json();
+  const credentialResponse = await adminContext.request.post('http://127.0.0.1:8080/api/v1/catalog/credentials', {
+    data: { issuer_id: issuer.id, name: 'Python sintético', skill_ids: [skill.id], active: true },
+  });
+  expect(credentialResponse.status()).toBe(201);
+  const credential = await credentialResponse.json();
+  // Learning prerequisites are also created through the real API.
   const interestResponse = await adminContext.request.post('http://127.0.0.1:8080/api/v1/learning/interests', { data: { name: 'IA sintética' } });
   expect(interestResponse.status()).toBe(201);
   await interestResponse.json();
@@ -27,16 +43,17 @@ test('evidencia, validación, perfil, oportunidad y participación con API real'
   expect(publication.ok()).toBeTruthy();
   await login(student, 'student', '/mi-perfil');
   await student.getByRole('button', { name: 'Nueva certificación', exact: true }).click();
-  await student.getByLabel('Nombre de la certificación').fill('Python sintético');
-  await student.getByLabel('Entidad emisora').fill('Emisor sintético');
+  await student.locator('label').filter({ hasText: 'Entidad emisora' }).locator('select').selectOption(issuer.id);
+  await student.locator('label').filter({ hasText: 'Nombre de la certificación' }).locator('select').selectOption(credential.id);
   await student.getByLabel('Fecha de emisión', { exact: true }).fill('2026-09-01');
-  await student.getByLabel('Habilidades, separadas por comas').fill('Python');
+  await expect(student.getByLabel('Python', { exact: true })).toBeChecked();
   await student.locator('input[type="file"]').setInputFiles({ name: 'evidencia-demo.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\nsynthetic evidence\n%%EOF') });
   await student.getByRole('button', { name: 'Enviar a validación' }).click();
   await expect(student.getByText('Certificación registrada.', { exact: false })).toBeVisible();
   await login(validator, 'validator', '/validaciones');
   await validator.getByRole('button', { name: /Python sintético.*Ver envío/ }).click();
   await validator.getByRole('button', { name: 'Tomar revisión' }).click();
+  await validator.getByRole('checkbox').check();
   await validator.getByRole('button', { name: 'Aprobar', exact: true }).click();
   await student.reload();
   await expect(student.getByRole('article', { name: 'Aprobadas: 1' })).toBeVisible();

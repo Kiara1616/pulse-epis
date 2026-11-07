@@ -50,3 +50,4 @@ class GoogleIdentity:
     email: str
     email_verified: bool
     nonce: str | None = None
+    display_name: str | None = None

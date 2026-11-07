@@ -40,7 +40,7 @@ def roster_students(request: Request, period_code: str | None = None,
             AcademicPeriod, AcademicPeriod.id == Enrollment.period_id).outerjoin(User, User.id == Student.user_id).where(AcademicPeriod.code == period_code)
         if q.strip():
             term = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-            query = query.where(or_(Student.student_code.ilike(term, escape="\\"), User.email.ilike(term, escape="\\")))
+            query = query.where(or_(Student.student_code.ilike(term, escape="\\"), User.email.ilike(term, escape="\\"), Student.full_name.ilike(term, escape="\\")))
         total = session.scalar(select(func.count()).select_from(query.subquery()))
         rows = session.execute(query.order_by(Student.student_code, Student.id).offset(offset).limit(limit)).all()
         student_ids = [student.id for student, _, _ in rows]
@@ -69,7 +69,7 @@ def roster_students(request: Request, period_code: str | None = None,
                     }
                 )
         return {"period_code": period_code, "total": total, "items": [
-            {"id": str(s.id), "code": s.student_code, "email": u.email if u else None,
+            {"id": str(s.id), "code": s.student_code, "name": s.full_name, "email": u.email if u else None,
              "cycle": e.cycle, "cohort": e.cohort, "school": e.school, "plan": e.study_plan, "status": e.status,
              "certifications": certification_by_student.get(s.id, [])}
             for s, u, e in rows]}

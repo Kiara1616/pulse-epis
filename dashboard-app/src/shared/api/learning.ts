@@ -38,6 +38,18 @@ export type LearningCourse = {
   created_at: string;
 };
 
+export type DiscoverySource = {
+  id: string;
+  name: string;
+  url: string;
+  kind: "RSS" | "HTML_LINKS";
+  active: boolean;
+  last_checked_at: string | null;
+  last_error: string | null;
+};
+
+export type DiscoveryResult = { detected: number; updated: number; scanned: number; error?: string };
+
 export type LearningOffer = {
   id: string;
   course_id: string;
@@ -105,6 +117,12 @@ export type DecisionStatus =
   | LearningApplication["status"];
 
 export const learningApi = {
+  discoverySources: () => apiFetch<DiscoverySource[]>("/learning/admin/discovery-sources"),
+  addDiscoverySource: (value: { name: string; url: string; kind: DiscoverySource["kind"]; terms_reviewed: boolean }) =>
+    apiFetch<DiscoverySource>("/learning/admin/discovery-sources", { method: "POST", body: JSON.stringify(value) }),
+  scanDiscoverySource: (id: string) => apiFetch<DiscoveryResult>(`/learning/admin/discovery-sources/${id}/scan`, { method: "POST" }),
+  setDiscoverySourceActive: (id: string, active: boolean) =>
+    apiFetch<DiscoverySource>(`/learning/admin/discovery-sources/${id}/active?active=${active}`, { method: "PUT" }),
   interests: () => apiFetch<LearningInterest[]>("/learning/interests"),
   routes: () => apiFetch<LearningRoute[]>("/learning/routes"),
   courses: () => apiFetch<LearningCourse[]>("/learning/courses"),

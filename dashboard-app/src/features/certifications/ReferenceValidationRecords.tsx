@@ -146,20 +146,15 @@ export function ReferenceValidationRecords() {
   return (
     <section
       aria-label="Certificaciones de referencia para consulta"
-      className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5"
+      className="surface-card space-y-4 p-5"
     >
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-blue-700">
-            Datos de referencia · no oficiales
-          </p>
-          <h3 className="mt-1 text-xl font-bold text-slate-900">
+          <h3 className="section-title">
             Certificaciones y trazabilidad
           </h3>
           <p className="mt-1 max-w-3xl text-sm text-slate-600">
-            Consulta las credenciales asociadas a cada estudiante y los eventos
-            vinculados con estudiante, validador y administrador. Estos registros
-            son de solo lectura.
+            Ejemplos de credenciales y eventos para consulta.
           </p>
         </div>
         <button
@@ -233,7 +228,7 @@ export function ReferenceValidationRecords() {
                     className="rounded-md border border-slate-200 bg-slate-50 p-3"
                   >
                     <summary className="cursor-pointer">
-                      <span className="text-xs font-semibold text-emerald-700">
+                      <span className="text-xs font-semibold text-blue-700">
                         Aprobada · referencia no oficial
                       </span>
                       <p className="mt-1 font-semibold text-slate-900">
@@ -270,7 +265,7 @@ export function ReferenceValidationRecords() {
                             <p className="font-semibold text-slate-700">
                               {roleLabel(event.role)}
                             </p>
-                            <p className="mt-1 text-amber-700">Evento de ejemplo</p>
+                            <p className="mt-1 text-slate-500">Evento de ejemplo</p>
                             <p className="mt-1">{event.action}</p>
                             <p className="mt-1">{dateLabel(event.date)}</p>
                           </div>

@@ -3,18 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
+  ExternalLink,
   BookOpen,
   CheckCircle2,
   Cloud,
   Code2,
   Compass,
   Database,
-  Info,
   ShieldCheck,
   Target,
 } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
+import { ContextNote, PageHeader } from "@/shared/ui/DashboardPrimitives";
 import {
   getLearningErrorMessage,
   learningApi,
@@ -90,6 +90,7 @@ function StudentPathContent() {
     () => new Map(courses.map((course) => [course.id, course.title])),
     [courses],
   );
+  const coursesById = useMemo(() => new Map(courses.map((course) => [course.id, course])), [courses]);
 
   function toggleInterest(id: string) {
     setSelectedInterestIds((current) =>
@@ -129,30 +130,8 @@ function StudentPathContent() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
-          Tu desarrollo profesional
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-          Mi ruta
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Administra tus áreas de interés, elige una ruta publicada y consulta las
-          oportunidades vigentes del catálogo.
-        </p>
-      </header>
-
-      <aside
-        role="note"
-        className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950"
-      >
-        <Info size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
-        <p className="leading-6">
-          Las preferencias y la ruta se guardan en tu perfil. Las oportunidades
-          publicadas son un catálogo general, no una recomendación personalizada ni
-          una evaluación de tus conocimientos.
-        </p>
-      </aside>
+      <PageHeader title="Mi ruta" description="Elige tus intereses y consulta las oportunidades vigentes." />
+      <ContextNote>Las oportunidades son un catálogo general; tus preferencias no evalúan conocimientos ni generan recomendaciones personalizadas.</ContextNote>
 
       {error && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
@@ -161,7 +140,7 @@ function StudentPathContent() {
             <button
               type="button"
               onClick={retryLoad}
-              className="mt-2 font-bold underline underline-offset-2"
+              className="mt-2 font-semibold underline underline-offset-2"
             >
               Reintentar carga
             </button>
@@ -184,7 +163,7 @@ function StudentPathContent() {
                 <Compass size={20} aria-hidden="true" />
               </div>
               <div>
-                <h2 id="path-preferences-heading" className="font-bold text-slate-950">
+                <h2 id="path-preferences-heading" className="section-title">
                   Tus preferencias de formación
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
@@ -195,7 +174,7 @@ function StudentPathContent() {
 
             {interests.length > 0 ? (
               <fieldset className="mt-6">
-                <legend className="text-sm font-bold text-slate-900">
+                <legend className="text-sm font-semibold text-slate-900">
                   Áreas de interés
                 </legend>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -233,7 +212,7 @@ function StudentPathContent() {
             )}
 
             <div className="mt-5">
-              <label htmlFor="learning-route" className="text-sm font-bold text-slate-900">
+              <label htmlFor="learning-route" className="text-sm font-semibold text-slate-900">
                 Ruta de formación
               </label>
               <select
@@ -262,21 +241,21 @@ function StudentPathContent() {
                 type="button"
                 disabled={saving || !hasUnsavedChanges}
                 onClick={savePreferences}
-                className="rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? "Guardando…" : "Guardar preferencias"}
               </button>
-              {notice && <p role="status" className="text-sm font-medium text-emerald-800">{notice}</p>}
+              {notice && <p role="status" className="text-sm font-medium text-blue-800">{notice}</p>}
             </div>
           </section>
 
           <section aria-labelledby="selected-route-heading" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700">
+              <div className="rounded-xl bg-blue-50 p-2.5 text-blue-700">
                 <BookOpen size={20} aria-hidden="true" />
               </div>
               <div>
-                <h2 id="selected-route-heading" className="font-bold text-slate-950">
+                <h2 id="selected-route-heading" className="section-title">
                   {selectedRoute ? selectedRoute.title : "Rutas publicadas"}
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
@@ -290,7 +269,7 @@ function StudentPathContent() {
               <ol className="mt-5 space-y-3">
                 {selectedRoute.steps.map((step) => (
                   <li key={step.id} className="flex gap-3 rounded-xl border border-slate-200 p-4">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-50 text-sm font-bold text-blue-800">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-50 text-sm font-semibold text-blue-800">
                       {step.position}
                     </span>
                     <div>
@@ -322,28 +301,27 @@ function StudentPathContent() {
           </section>
 
           <section aria-labelledby="opportunities-heading" className="space-y-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
-                Formación disponible
-              </p>
-              <h2 id="opportunities-heading" className="mt-1 text-2xl font-bold text-slate-950">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+              <h2 id="opportunities-heading" className="section-title">
                 Oportunidades publicadas
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Contenido vigente compartido con estudiantes; la audiencia indicada no limita el acceso al catálogo.
+                Cursos externos revisados por la escuela. La inscripción se realiza con cada proveedor.
               </p>
+              </div>
+              <Link href="/talleres" className="text-sm font-semibold text-blue-700 hover:text-blue-900">Ver talleres EPIS →</Link>
             </div>
             {offers.length > 0 ? (
               <div className="grid gap-4 lg:grid-cols-2">
                 {offers.map((offer) => (
                   <article key={offer.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
                       <CheckCircle2 size={14} aria-hidden="true" /> Publicada
                     </span>
-                    <h3 className="mt-3 text-lg font-bold text-slate-950">{offer.title}</h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Curso: {courseNames.get(offer.course_id) ?? "Curso publicado"}
-                    </p>
+                    <h3 className="card-title mt-3">{offer.title}</h3>
+                    <p className="mt-1 text-sm text-slate-600">Curso: {courseNames.get(offer.course_id) ?? "Curso publicado"}</p>
+                    {coursesById.get(offer.course_id) && <p className="mt-1 text-sm text-slate-600">Proveedor: {coursesById.get(offer.course_id)?.provider}</p>}
                     <p className="mt-3 text-sm leading-6 text-slate-700">{offer.relevance}</p>
                     {(offer.cycles.length > 0 || offer.interest_ids.length > 0) && (
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -359,12 +337,11 @@ function StudentPathContent() {
                         ))}
                       </div>
                     )}
-                    <Link
-                      href="/talleres"
-                      className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900"
-                    >
-                      Ver talleres disponibles <ArrowRight size={16} aria-hidden="true" />
-                    </Link>
+                    {coursesById.get(offer.course_id)?.source_url && (
+                      <a href={coursesById.get(offer.course_id)?.source_url} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900">
+                        Ver curso e inscripción en el sitio del proveedor <ExternalLink size={16} aria-hidden="true" />
+                      </a>
+                    )}
                   </article>
                 ))}
               </div>

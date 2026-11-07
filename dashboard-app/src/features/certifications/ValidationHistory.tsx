@@ -49,10 +49,10 @@ export function ValidationHistory({
   return (
     <section
       aria-label="Historial de decisiones"
-      className="rounded-xl border border-slate-200 bg-white p-5"
+      className="surface-card p-5"
     >
       <div className="flex justify-between gap-4">
-        <h2 className="font-semibold">Historial de revisión</h2>
+        <h2 className="section-title">Historial de revisión</h2>
         <button
           type="button"
           onClick={onClose}

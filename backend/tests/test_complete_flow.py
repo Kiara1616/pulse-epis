@@ -16,7 +16,7 @@ def test_register_review_correct_publish_and_export(tmp_path):
     db = f"sqlite+pysqlite:///{(tmp_path / 'workflow.db').as_posix()}"
     factory = create_session_factory(db)
     Base.metadata.create_all(factory.kw["bind"])
-    settings = Settings(environment="test", database_url=db, auth_provider="local", local_auth_seed=True,
+    settings = Settings(environment="test", database_url=db, auth_provider="local", local_auth_seed=True, demo_data_seed=False,
                         evidence_storage_path=str(tmp_path / "evidence"), log_level="WARNING")
     app = create_app(settings=settings)
     def login(client, role):
@@ -36,9 +36,12 @@ def test_register_review_correct_publish_and_export(tmp_path):
         assert directory["total"] == 1
         assert directory["items"][0]["code"] == "kz20251234"
         assert client.get("/api/v1/padron/students", params={"q": "%"}).json()["total"] == 0
+        issuer = client.post("/api/v1/catalog/issuers", json={"name": "AWS", "website_url": "https://aws.amazon.com"}).json()
+        skill = client.post("/api/v1/catalog/skills", json={"name": "Cloud Computing"}).json()
+        credential = client.post("/api/v1/catalog/credentials", json={"issuer_id": issuer["id"], "name": "Cloud Fundamentals", "skill_ids": [skill["id"]]}).json()
         login(client, "student")
         assert client.get("/api/v1/padron/students").status_code == 403
-        draft = {"credential_name": "Cloud Fundamentals", "issuer_name": "AWS", "issued_on": "2026-09-01", "skills": [{"name": "Cloud Computing", "level": "Fundamentals"}]}
+        draft = {"catalog_credential_id": credential["id"], "issuer_id": issuer["id"], "issued_on": "2026-09-01", "skill_ids": [skill["id"]]}
         created = client.post("/api/v1/certifications", json=draft)
         assert created.status_code == 201
         id = created.json()["id"]
@@ -47,13 +50,13 @@ def test_register_review_correct_publish_and_export(tmp_path):
         login(client, "validator")
         assert client.get("/api/v1/padron/students").status_code == 403
         assert client.post(f"/api/v1/validations/{id}", json={"action": "START_REVIEW"}).status_code == 200
-        assert client.post(f"/api/v1/validations/{id}", json={"action": "OBSERVE", "comment": "Corrige el nombre del logro"}).status_code == 200
+        assert client.post(f"/api/v1/validations/{id}", json={"action": "OBSERVE", "comment": "Corrige la evidencia"}).status_code == 200
         login(client, "student")
-        assert client.get(f"/api/v1/certifications/{id}").json()["latest_comment"] == "Corrige el nombre del logro"
-        assert client.patch(f"/api/v1/certifications/{id}", json={"credential_name": "AWS Cloud Fundamentals"}).json()["status"] == "RESUBMITTED"
+        assert client.get(f"/api/v1/certifications/{id}").json()["latest_comment"] == "Corrige la evidencia"
+        assert client.patch(f"/api/v1/certifications/{id}", json={"source_url": "https://issuer.example.test/corrected"}).json()["status"] == "RESUBMITTED"
         login(client, "validator")
         assert client.post(f"/api/v1/validations/{id}", json={"action": "START_REVIEW"}).status_code == 200
-        assert client.post(f"/api/v1/validations/{id}", json={"action": "APPROVE"}).status_code == 200
+        assert client.post(f"/api/v1/validations/{id}", json={"action": "APPROVE", "catalog_confirmed": True}).status_code == 200
         assert len(client.get(f"/api/v1/validations/{id}/history").json()) == 6
         assert client.get("/api/v1/etl/runs?period_code=2026-II").status_code == 403
         login(client, "admin")

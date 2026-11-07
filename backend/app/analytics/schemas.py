@@ -69,13 +69,40 @@ class MetricDefinition(BaseModel):
     notes: str
 
 
+class ReportMetadata(BaseModel):
+    report: str
+    granularity: str
+    date_from: date | None
+    date_to: date | None
+    generated_from: str
+
+
+class EtlQualityPoint(BaseModel):
+    cutoff_date: date
+    status: str
+    total_rows: int = Field(ge=0)
+    accepted_rows: int = Field(ge=0)
+    rejected_rows: int = Field(ge=0)
+    duplicate_rows: int = Field(ge=0)
+
+
+class AnalyticsReport(BaseModel):
+    metadata: ReportMetadata
+    overview: AnalyticsOverview
+    temporal: list[EvolutionPoint]
+    quality: list[EtlQualityPoint] = Field(default_factory=list)
+
+
 __all__ = [
     "AnalyticsFilters",
     "AnalyticsKpis",
     "AnalyticsOverview",
+    "AnalyticsReport",
     "AnalyticsPeriod",
     "EvolutionPoint",
+    "EtlQualityPoint",
     "MetricDefinition",
     "MetricValue",
+    "ReportMetadata",
     "SkillGap",
 ]

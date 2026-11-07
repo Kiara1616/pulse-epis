@@ -23,14 +23,11 @@ concurrency:
 
 jobs:
   etl:
-    # Configure ETL_PERIOD_CODE and PULSE_DATABASE_URL as repository
-    # variables/secrets before enabling the scheduled execution.
-    if: github.event_name == 'workflow_dispatch' || vars.ETL_PERIOD_CODE != ''
     runs-on: ubuntu-latest
     env:
       PULSE_DATABASE_URL: ${{ secrets.PULSE_DATABASE_URL }}
-      PULSE_ETL_PERIOD_CODE: ${{ github.event.inputs.period_code || vars.ETL_PERIOD_CODE }}
-      PULSE_ETL_CUTOFF_DATE: ${{ github.event.inputs.cutoff_date || vars.ETL_CUTOFF_DATE }}
+      PULSE_ETL_PERIOD_CODE: ${{ inputs.period_code }}
+      PULSE_ETL_CUTOFF_DATE: ${{ inputs.cutoff_date }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,13 +46,28 @@ jobs:
         shell: bash
         run: |
           test -n "$PULSE_DATABASE_URL" || { echo "Missing PULSE_DATABASE_URL secret"; exit 1; }
-          test -n "$PULSE_ETL_PERIOD_CODE" || { echo "Missing ETL_PERIOD_CODE variable"; exit 1; }
-          test -n "$PULSE_ETL_CUTOFF_DATE" || { echo "Missing ETL_CUTOFF_DATE variable"; exit 1; }
+          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
+            test -n "$PULSE_ETL_PERIOD_CODE" || { echo 'Missing period_code input'; exit 1; }
+            test -n "$PULSE_ETL_CUTOFF_DATE" || { echo 'Missing cutoff_date input'; exit 1; }
+          fi
 
       - name: Run idempotent certification ETL
         env:
           PYTHONPATH: .
-        run: >-
-          python -m backend.scripts_etl.main
-          --period-code "$PULSE_ETL_PERIOD_CODE"
-          --cutoff-date "$PULSE_ETL_CUTOFF_DATE"
+        shell: bash
+        run: |
+          mkdir -p artifacts/etl
+          if [ "${{ github.event_name }}" = 'schedule' ]; then
+            python -m backend.scripts_etl.main --scheduled > artifacts/etl/report.json
+          else
+            python -m backend.scripts_etl.main --period-code "$PULSE_ETL_PERIOD_CODE" --cutoff-date "$PULSE_ETL_CUTOFF_DATE" > artifacts/etl/report.json
+          fi
+          python -c 'import json; r=json.load(open("artifacts/etl/report.json",encoding="utf-8")); print("run_id={id} period={period_code} cutoff={cutoff_date} status={status} accepted={accepted_rows} rejected={rejected_rows} idempotent={idempotent}".format(**r))'
+
+      - name: Preserve ETL report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: certification-etl-report
+          path: artifacts/etl/report.json
+          if-no-files-found: warn

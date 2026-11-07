@@ -3,6 +3,7 @@ export type AppRole = "ADMIN" | "VALIDATOR" | "STUDENT";
 export type AuthenticatedUser = {
   id: string;
   email: string;
+  display_name?: string | null;
   role: AppRole;
   student_id: string | null;
   permissions: string[];
@@ -63,6 +64,28 @@ export type AnalyticsOverview = {
     gap_students: number;
     coverage_percent: number;
   }>;
+};
+
+export type EtlQualityPoint = {
+  cutoff_date: string;
+  status: string;
+  total_rows: number;
+  accepted_rows: number;
+  rejected_rows: number;
+  duplicate_rows: number;
+};
+
+export type AnalyticsReport = {
+  metadata: {
+    report: string;
+    granularity: "day" | "month" | "year";
+    date_from: string | null;
+    date_to: string | null;
+    generated_from: string;
+  };
+  overview: AnalyticsOverview;
+  temporal: AnalyticsOverview["evolution"];
+  quality: EtlQualityPoint[];
 };
 
 export type CertificationEvidence = {

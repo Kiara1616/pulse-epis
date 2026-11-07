@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { ExternalLink, Info, Plus, RefreshCw, X } from "lucide-react";
+import { ExternalLink, Plus, RefreshCw, X } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
+import { ContextNote, PageHeader } from "@/shared/ui/DashboardPrimitives";
 import {
   getLearningErrorMessage,
   learningApi,
@@ -11,6 +12,7 @@ import {
   type LearningCourse,
   type LearningInterest,
   type LearningOffer,
+  type DiscoverySource,
 } from "@/shared/api/learning";
 
 const field = "mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm";
@@ -35,6 +37,7 @@ type RadarData = {
   courses: LearningCourse[];
   offers: LearningOffer[];
   interests: LearningInterest[];
+  sources: DiscoverySource[];
 };
 
 function RadarAdmin() {
@@ -45,14 +48,16 @@ function RadarAdmin() {
   const [filter, setFilter] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [working, setWorking] = useState(false);
+  const sources = data?.sources ?? [];
 
   const fetchCatalog = useCallback(async (): Promise<RadarData> => {
-    const [courses, offers, interests] = await Promise.all([
+    const [courses, offers, interests, discoverySources] = await Promise.all([
       learningApi.courses(),
       learningApi.offers(),
       learningApi.interests(),
+      learningApi.discoverySources(),
     ]);
-    return { courses, offers, interests };
+    return { courses, offers, interests, sources: discoverySources };
   }, []);
 
   useEffect(() => {
@@ -133,6 +138,34 @@ function RadarAdmin() {
     if (saved) formElement.reset();
   }
 
+  async function registerDiscoverySource(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const element = event.currentTarget;
+    const form = new FormData(element);
+    const saved = await runAction(() => learningApi.addDiscoverySource({
+      name: String(form.get("name")).trim(),
+      url: String(form.get("url")).trim(),
+      kind: String(form.get("kind")) as DiscoverySource["kind"],
+      terms_reviewed: form.get("terms_reviewed") === "on",
+    }), "Fuente autorizada registrada. Explórala para encontrar cursos pendientes de revisión.");
+    if (saved) element.reset();
+  }
+
+  async function scanSource(id: string) {
+    setWorking(true);
+    setError("");
+    try {
+      const result = await learningApi.scanDiscoverySource(id);
+      if (result.error) throw new Error(result.error);
+      setData(await fetchCatalog());
+      setNotice(`${result.detected} cursos nuevos; ${result.updated} actualizados. Revisa cada hallazgo antes de publicarlo.`);
+    } catch (cause) {
+      setError(getLearningErrorMessage(cause));
+    } finally {
+      setWorking(false);
+    }
+  }
+
   async function saveCourseReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedCourse) return;
@@ -181,33 +214,33 @@ function RadarAdmin() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-sm font-bold uppercase tracking-wider text-blue-600">
-          Gestión administrativa
-        </p>
-        <h1 className="mt-1 text-3xl font-black text-slate-900">Radar de cursos</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Registra fuentes, revisa su contenido y publica oportunidades en el catálogo de estudiantes.
-        </p>
-      </header>
-
-      <div role="note" className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-        <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
-        <p>Las fuentes se registran manualmente. Publicar una oportunidad requiere una audiencia y una explicación de relevancia; la API valida y registra cada cambio.</p>
-      </div>
+      <PageHeader title="Radar de cursos" description="Registra fuentes y publica oportunidades para estudiantes." />
+      <ContextNote>Los cursos externos se publican en Mi ruta tras revisión; los talleres de EPIS se gestionan en Talleres.</ContextNote>
 
       {error && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
           <p>{error}</p>
-          <button type="button" onClick={() => void reloadCatalog()} className="mt-2 font-bold underline underline-offset-2">
+          <button type="button" onClick={() => void reloadCatalog()} className="mt-2 font-semibold underline underline-offset-2">
             Reintentar
           </button>
         </div>
       )}
       {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
 
+      <section className="surface-card space-y-4 p-5 sm:p-6" aria-label="Fuentes autorizadas para descubrir cursos">
+        <div><h2 className="section-title">Explorar fuentes autorizadas</h2><p className="mt-1 text-sm text-slate-600">Consulta RSS o enlaces de un sitio público autorizado. Cada curso encontrado queda pendiente de revisión.</p></div>
+        <form onSubmit={registerDiscoverySource} className="grid gap-3 md:grid-cols-[1fr_2fr_auto]">
+          <label className="text-sm font-medium">Proveedor o fuente<input name="name" required minLength={3} maxLength={150} className={field} /></label>
+          <label className="text-sm font-medium">URL HTTPS<input name="url" type="url" pattern="https://.*" required className={field} /></label>
+          <label className="text-sm font-medium">Formato<select name="kind" className={field}><option value="RSS">RSS/Atom</option><option value="HTML_LINKS">Enlaces HTML</option></select></label>
+          <label className="flex items-center gap-2 text-sm md:col-span-3"><input name="terms_reviewed" type="checkbox" required /> He comprobado que las condiciones del sitio permiten esta consulta.</label>
+          <button disabled={working} className="w-fit rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Agregar fuente</button>
+        </form>
+        {sources.length > 0 && <div className="divide-y divide-slate-200 border-t border-slate-200">{sources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"><div><strong>{source.name}</strong><p className="break-all text-slate-600">{source.url}</p><p className="text-xs text-slate-500">{source.last_checked_at ? `Última consulta: ${new Date(source.last_checked_at).toLocaleString("es-PE")}` : "Sin consultar"}{source.last_error ? ` · Error: ${source.last_error}` : ""}</p></div><div className="flex gap-3"><button type="button" disabled={working || !source.active} onClick={() => void scanSource(source.id)} className="font-semibold text-blue-700 disabled:opacity-50">Explorar ahora</button><button type="button" disabled={working} onClick={() => void runAction(() => learningApi.setDiscoverySourceActive(source.id, !source.active), source.active ? "Fuente pausada." : "Fuente activada.")} className="text-slate-600">{source.active ? "Pausar" : "Activar"}</button></div></div>)}</div>}
+      </section>
+
       <details className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center gap-2 p-5 font-bold text-slate-950">
+        <summary className="card-title flex cursor-pointer list-none items-center gap-2 p-5">
           <Plus size={18} aria-hidden="true" className="text-blue-700" /> Registrar fuente de curso
         </summary>
         <form onSubmit={registerCourse} className="grid gap-4 border-t border-slate-100 p-5 md:grid-cols-2">
@@ -236,7 +269,7 @@ function RadarAdmin() {
             <input name="requirements" placeholder="Fundamentos de programación" className={field} />
           </label>
           <div className="md:col-span-2">
-            <button disabled={working} className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">
+            <button disabled={working} className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
               {working ? "Guardando…" : "Registrar para revisión"}
             </button>
           </div>
@@ -251,7 +284,7 @@ function RadarAdmin() {
             {Object.entries(courseLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
-        <button type="button" disabled={loading} onClick={() => void reloadCatalog()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+        <button type="button" disabled={loading} onClick={() => void reloadCatalog()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
           <RefreshCw size={15} aria-hidden="true" /> Actualizar
         </button>
       </div>
@@ -261,11 +294,10 @@ function RadarAdmin() {
       ) : data ? (
         <>
           {selectedCourse && selectedCourse.status === "IN_REVIEW" && (
-            <section className="space-y-6 rounded-2xl border border-blue-200 bg-blue-50/40 p-5 shadow-sm sm:p-6">
+            <section className="surface-card space-y-6 p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Revisión de contenido</p>
-                  <h2 className="mt-1 text-xl font-bold text-slate-950">{selectedCourse.title}</h2>
+                  <h2 className="section-title">Revisar: {selectedCourse.title}</h2>
                 </div>
                 <button type="button" aria-label="Cerrar revisión" onClick={() => setSelectedCourseId("")} className="rounded-lg p-2 text-slate-500 hover:bg-white">
                   <X size={18} aria-hidden="true" />
@@ -273,7 +305,7 @@ function RadarAdmin() {
               </div>
 
               <form onSubmit={saveCourseReview} className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2">
-                <h3 className="font-bold text-slate-900 md:col-span-2">Datos del curso</h3>
+                <h3 className="font-semibold text-slate-900 md:col-span-2">Datos del curso</h3>
                 <label className="text-sm font-semibold text-slate-800">
                   Título
                   <input name="title" required minLength={1} defaultValue={selectedCourse.title} className={field} />
@@ -298,7 +330,7 @@ function RadarAdmin() {
                   Requisitos previos (separados por coma)
                   <input name="requirements" defaultValue={selectedCourse.requirements.join(", ")} className={field} />
                 </label>
-                <button disabled={working} className="w-fit rounded-lg border border-blue-300 px-4 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">
+                <button disabled={working} className="w-fit rounded-lg border border-blue-300 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50">
                   Guardar correcciones
                 </button>
               </form>
@@ -314,7 +346,7 @@ function RadarAdmin() {
               ) : (
                 <form onSubmit={saveOpportunity} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
                   <div>
-                    <h3 className="font-bold text-slate-900">Oportunidad para estudiantes</h3>
+                    <h3 className="font-semibold text-slate-900">Oportunidad para estudiantes</h3>
                     <p className="mt-1 text-sm text-slate-600">Declara a quién está dirigida y por qué es relevante. No se filtra el acceso al catálogo por audiencia.</p>
                   </div>
                   <label className="block text-sm font-semibold text-slate-800">
@@ -352,10 +384,10 @@ function RadarAdmin() {
                     <textarea name="relevance" required minLength={10} maxLength={2000} rows={4} defaultValue={selectedOffer?.relevance ?? ""} className={field} />
                   </label>
                   <div className="flex flex-wrap gap-3">
-                    <button name="intent" value="draft" disabled={working} className="rounded-lg border border-blue-300 px-4 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">
+                    <button name="intent" value="draft" disabled={working} className="rounded-lg border border-blue-300 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50">
                       Guardar borrador
                     </button>
-                    <button name="intent" value="publish" disabled={working} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">
+                    <button name="intent" value="publish" disabled={working} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
                       {working ? "Publicando…" : "Guardar y publicar"}
                     </button>
                   </div>
@@ -370,8 +402,8 @@ function RadarAdmin() {
               return (
                 <article key={course.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <h2 className="font-bold text-slate-950">{course.title}</h2>
-                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800">{courseLabels[course.status]}</span>
+                    <h2 className="card-title">{course.title}</h2>
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{courseLabels[course.status]}</span>
                   </div>
                   <p className="mt-2 text-sm text-slate-600">{course.provider} · Consultado {course.checked_on}</p>
                   <a href={course.source_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 break-all text-xs text-blue-700 underline underline-offset-2">
@@ -385,12 +417,12 @@ function RadarAdmin() {
                       <button type="button" disabled={working} onClick={() => void runAction(
                         () => learningApi.setStatus<LearningCourse>("courses", course.id, "IN_REVIEW", "Revisión administrativa iniciada."),
                         "Curso enviado a revisión.",
-                      ).then(() => setSelectedCourseId(course.id))} className="text-sm font-bold text-blue-700 disabled:opacity-50">
+                      ).then(() => setSelectedCourseId(course.id))} className="text-sm font-semibold text-blue-700 disabled:opacity-50">
                         Iniciar revisión
                       </button>
                     )}
                     {course.status === "IN_REVIEW" && (
-                      <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-bold text-blue-700">
+                      <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-semibold text-blue-700">
                         Revisar y gestionar oportunidad
                       </button>
                     )}
@@ -411,7 +443,7 @@ function RadarAdmin() {
                       </button>
                     )}
                     {offer?.status === "DRAFT" && course.status === "IN_REVIEW" && (
-                      <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-bold text-blue-700">
+                      <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-semibold text-blue-700">
                         Continuar borrador
                       </button>
                     )}

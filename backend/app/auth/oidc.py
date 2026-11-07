@@ -136,6 +136,7 @@ class GoogleOidcClient:
             email=email,
             email_verified=email_verified,
             nonce=claims.get("nonce") if isinstance(claims.get("nonce"), str) else None,
+            display_name=claims.get("name").strip() if isinstance(claims.get("name"), str) and claims.get("name").strip() else None,
         )
 
 

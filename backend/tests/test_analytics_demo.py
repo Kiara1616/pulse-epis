@@ -29,7 +29,7 @@ def test_demo_covers_2020_to_2026_with_consistent_unique_counts():
     }
 
 def test_demo_is_unavailable_without_local_authentication():
-    app = create_app(Settings())
+    app = create_app(Settings(_env_file=None))
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(id=uuid4(), email="admin@example.test", role=Role.ADMIN)
     with TestClient(app) as client:
         assert client.get("/api/v1/indicators/periods?dataset=demo").status_code == 403

@@ -51,7 +51,7 @@ def test_integral_synthetic_pilot(tmp_path):
     with factory.begin() as session:
         session.add(AcademicPeriod(code='2026-II', name='Pilot', starts_on=date(2026, 8, 1), ends_on=date(2026, 12, 31)))
         session.add_all([User(email='pilot-admin@virtual.upt.pe', role='ADMIN'), User(email='pilot-validator@virtual.upt.pe', role='VALIDATOR')])
-    settings = Settings(environment='test', database_url=database_url, auth_session_secret='synthetic-session-only', roster_pseudonym_secret='synthetic-roster-only', evidence_access_secret='synthetic-evidence-only', evidence_storage_path=str(tmp_path / 'evidence'), log_level='WARNING')
+    settings = Settings(environment='test', database_url=database_url, auth_provider='google', local_auth_seed=False, demo_data_seed=False, auth_session_secret='synthetic-session-only', roster_pseudonym_secret='synthetic-roster-only', evidence_access_secret='synthetic-evidence-only', evidence_storage_path=str(tmp_path / 'evidence'), log_level='WARNING')
     with ExitStack() as stack:
         admin = stack.enter_context(TestClient(create_app(settings=settings, oidc_client=SyntheticOidc('pilot-admin@virtual.upt.pe'))))
         validator = stack.enter_context(TestClient(create_app(settings=settings, oidc_client=SyntheticOidc('pilot-validator@virtual.upt.pe'))))
@@ -71,9 +71,12 @@ def test_integral_synthetic_pilot(tmp_path):
             assert client.get('/api/v1/auth/me').json()['role'] == role
         assert student.get('/api/v1/validations').status_code == 403
         assert validator.post('/api/v1/padron/imports', params={'period_code': '2026-II'}, files={'file': ('pilot.csv', roster.encode(), 'text/csv')}).status_code == 403
+        issuer = admin.post('/api/v1/catalog/issuers', json={'name': 'AWS'}).json()
+        skill = admin.post('/api/v1/catalog/skills', json={'name': 'Cloud Computing'}).json()
+        catalog = [admin.post('/api/v1/catalog/credentials', json={'issuer_id': issuer['id'], 'name': f'Synthetic Cloud {i}', 'skill_ids': [skill['id']]}).json() for i in range(3)]
         certification_ids = []
         for i in range(3):
-            response = student.post('/api/v1/certifications', json={'issuer_name': 'AWS', 'credential_name': f'Synthetic Cloud {i}', 'issued_on': '2026-08-15', 'skills': [{'name': 'Cloud Computing', 'level': 'Fundamentals'}]})
+            response = student.post('/api/v1/certifications', json={'issuer_id': issuer['id'], 'catalog_credential_id': catalog[i]['id'], 'issued_on': '2026-08-15', 'skill_ids': [skill['id']]})
             assert response.status_code == 201, response.text
             certification_id = response.json()['id']
             certification_ids.append(certification_id)
@@ -84,7 +87,7 @@ def test_integral_synthetic_pilot(tmp_path):
             assert access.status_code == 200, access.text
             assert validator.get(access.json()['access_url']).status_code == 200
             for action in ['START_REVIEW', 'APPROVE' if i < 2 else 'REJECT']:
-                decision = validator.post(f'/api/v1/validations/{certification_id}', json={'action': action, 'comment': 'Synthetic pilot decision'})
+                decision = validator.post(f'/api/v1/validations/{certification_id}', json={'action': action, 'catalog_confirmed': action == 'APPROVE', 'comment': 'Synthetic pilot decision'})
                 assert decision.status_code == 200, decision.text
             assert validator.get(f'/api/v1/validations/{certification_id}/history').status_code == 200
         cutoff = date(2026, 9, 13)

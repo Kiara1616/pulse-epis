@@ -1,14 +1,16 @@
 """Explicit role-scoped learning API with atomic publication and capacity decisions."""
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import select, delete, func
 from sqlalchemy.exc import IntegrityError
 from ...auth.dependencies import require_roles
 from ...auth.models import AuthenticatedUser, Role
 from ...db.models import Student
-from ...learning.models import LearningInterest as Interest, LearningRoute as Route, LearningStep as Step, StudentLearningProfile as Profile, StudentLearningInterest as StudentInterest, LearningCourse as Course, LearningOpportunity as Offer, LearningOfferInterest as OfferInterest, LearningWorkshop as Workshop, LearningApplication as Application, LearningAudit as Audit
+from ...learning.models import LearningInterest as Interest, LearningRoute as Route, LearningStep as Step, StudentLearningProfile as Profile, StudentLearningInterest as StudentInterest, LearningCourse as Course, LearningOpportunity as Offer, LearningOfferInterest as OfferInterest, LearningWorkshop as Workshop, LearningApplication as Application, LearningAudit as Audit, LearningDiscoverySource as DiscoverySource
+from ...learning.discovery import scan as scan_discovery
 from ...learning.schemas import InterestOutput, RouteOutput, CourseOutput, OfferOutput, WorkshopOutput, ApplicationOutput, AuditOutput
 from ...learning.schemas import InterestInput, RouteInput, CourseInput, OfferInput, WorkshopInput, PreferenceInput, Decision, ApplyInput
 router = APIRouter(prefix='/learning', tags=['learning'])
@@ -16,6 +18,53 @@ admin = require_roles(Role.ADMIN)
 student = require_roles(Role.STUDENT)
 reader = require_roles(Role.ADMIN, Role.STUDENT)
 MODELS = {'routes': Route, 'courses': Course, 'offers': Offer, 'workshops': Workshop}
+
+class DiscoverySourceInput(BaseModel):
+    name: str = Field(min_length=3, max_length=150)
+    url: HttpUrl
+    kind: str
+    terms_reviewed: bool
+
+@router.get('/admin/discovery-sources')
+def discovery_sources(request: Request, actor: AuthenticatedUser=Depends(admin)):
+    with transaction(request) as s:
+        return [serialize(s, item) for item in s.scalars(select(DiscoverySource).order_by(DiscoverySource.created_at.desc()))]
+
+@router.post('/admin/discovery-sources', status_code=201)
+def create_discovery_source(request: Request, payload: DiscoverySourceInput, actor: AuthenticatedUser=Depends(admin)):
+    from ...learning.discovery import public_https
+    if payload.kind not in {'RSS', 'HTML_LINKS'} or not payload.terms_reviewed:
+        fail('SOURCE_REVIEW_REQUIRED', 422, 'Revisa las condiciones de uso y elige RSS o enlaces HTML')
+    try:
+        url = public_https(str(payload.url))
+    except (ValueError, OSError) as exc:
+        fail('INVALID_SOURCE', 422, str(exc))
+    with transaction(request) as s:
+        item = DiscoverySource(name=payload.name.strip(), url=url, kind=payload.kind, active=True, terms_reviewed_at=datetime.now(timezone.utc))
+        s.add(item)
+        s.flush()
+        return serialize(s, item)
+
+@router.post('/admin/discovery-sources/{identifier}/scan')
+def scan_source(identifier: UUID, request: Request, actor: AuthenticatedUser=Depends(admin)):
+    with transaction(request) as s:
+        source = get(s, DiscoverySource, identifier, True)
+        if not source.active or source.terms_reviewed_at is None:
+            fail('SOURCE_DISABLED', 409, 'La fuente no está habilitada')
+        try:
+            return scan_discovery(s, source)
+        except Exception as exc:
+            # Network and parsing errors are reported without exposing response content.
+            source.last_error = str(exc)[:300]
+            source.last_checked_at = datetime.now(timezone.utc)
+            return {'detected': 0, 'updated': 0, 'scanned': 0, 'error': source.last_error}
+
+@router.put('/admin/discovery-sources/{identifier}/active')
+def set_source_active(identifier: UUID, request: Request, active: bool, actor: AuthenticatedUser=Depends(admin)):
+    with transaction(request) as s:
+        source = get(s, DiscoverySource, identifier, True)
+        source.active = active
+        return serialize(s, source)
 
 def fail(code, status, message):
     raise HTTPException(status, detail={'code': code, 'message': message})
@@ -261,7 +310,7 @@ def transition(kind: str, identifier: UUID, request: Request, payload: Decision,
             if payload.status == 'PUBLISHED':
                 ids = list(s.scalars(select(OfferInterest.interest_id).where(OfferInterest.offer_id == item.id)))
                 active_interests(s, ids)
-                if course.status != 'IN_REVIEW' or (not ids and (not item.cycles)) or len(item.relevance) < 10:
+                if course.status != 'IN_REVIEW' or (not ids and (not item.cycles)) or len(item.relevance) < 10 or course.skills == ['Por revisar']:
                     fail('PUBLICATION_INCOMPLETE', 422, 'Revisa contenido, audiencia y relevancia antes de publicar')
             course_before = serialize(s, course)
             course.status = 'PUBLISHED' if payload.status == 'PUBLISHED' else 'RETIRED'

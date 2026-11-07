@@ -8,6 +8,7 @@ import { RoleGate } from "@/features/access/RoleGate";
 import { apiFetch } from "@/shared/api/client";
 import { ValidationHistory } from "@/features/certifications/ValidationHistory";
 import { ReferenceValidationRecords } from "@/features/certifications/ReferenceValidationRecords";
+import { MetricCard, PageHeader } from "@/shared/ui/DashboardPrimitives";
 
 type Status =
   | "PENDING"
@@ -34,6 +35,7 @@ type ValidationRecord = {
   student_key: string;
   credential_name: string;
   issuer_name: string;
+  catalog_credential_id: string | null;
   issued_on: string;
   expires_on: string | null;
   stored_status: Status;
@@ -166,6 +168,7 @@ function ValidationsContent() {
     evidence: ValidationEvidence;
   } | null>(null);
   const [previewError, setPreviewError] = useState(false);
+  const [catalogConfirmed, setCatalogConfirmed] = useState(false);
   const [historyId, setHistoryId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | "ALL">("ALL");
   const [ageFilter, setAgeFilter] = useState<AgeFilter>("ALL");
@@ -242,6 +245,10 @@ function ValidationsContent() {
 
   async function decide(record: ValidationRecord, action: Action) {
     const decisionComment = comment.trim() || null;
+    if (action === "APPROVE" && !catalogConfirmed) {
+      setError("Confirma que la entidad, la certificación y las habilidades coinciden con la evidencia.");
+      return;
+    }
     if ((action === "OBSERVE" || action === "REJECT") && !decisionComment) {
       setError("Escribe el motivo o las correcciones que debe realizar el estudiante.");
       return;
@@ -251,10 +258,11 @@ function ValidationsContent() {
     try {
       await apiFetch(`/validations/${record.id}`, {
         method: "POST",
-        body: JSON.stringify({ action, comment: decisionComment }),
+        body: JSON.stringify({ action, comment: decisionComment, catalog_confirmed: action === "APPROVE" && catalogConfirmed }),
       });
       await loadRecords();
       setComment("");
+      setCatalogConfirmed(false);
     } catch (decisionError) {
       setError(
         decisionError instanceof Error
@@ -289,6 +297,7 @@ function ValidationsContent() {
 
   function selectRecord(record: ValidationRecord) {
     setSelectedId(record.id);
+    setCatalogConfirmed(false);
     setComment("");
     setPreview(null);
     setPreviewError(false);
@@ -299,6 +308,7 @@ function ValidationsContent() {
 
   function closeDetail() {
     setSelectedId(null);
+    setCatalogConfirmed(false);
     setPreview(null);
     setPreviewError(false);
     setHistoryId(null);
@@ -313,13 +323,7 @@ function ValidationsContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm font-bold uppercase tracking-wider text-blue-600">Control de evidencia</p>
-        <h2 className="mt-1 text-3xl font-black text-gray-900">Bandeja de validaciones</h2>
-        <p className="mt-2 max-w-3xl text-gray-500">
-          Prioriza los casos, revisa la evidencia y registra una decisión trazable para cada certificación.
-        </p>
-      </div>
+      <PageHeader title="Bandeja de validaciones" description="Revisa evidencias y registra una decisión por certificación." />
 
       {referenceAvailable && <ReferenceValidationRecords />}
 
@@ -343,23 +347,18 @@ function ValidationsContent() {
           ["En revisión", counts.review],
           ["Aprobadas", counts.approved],
           ["Observadas", counts.observed],
-        ].map(([label, count]) => (
-          <article key={label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <p className="text-sm text-gray-500">{label}</p>
-            <p className="mt-1 text-3xl font-black text-gray-900">{count}</p>
-          </article>
-        ))}
+        ].map(([label, count]) => <MetricCard key={label} label={String(label)} value={count} />)}
       </section>
 
       <section
         aria-label="Filtros de la bandeja"
-        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        className="surface-card p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <Filter size={18} className="text-blue-600" aria-hidden="true" />
-              <h3 className="font-bold text-slate-900">Filtrar casos de revisión</h3>
+              <h3 className="card-title">Filtrar casos de revisión</h3>
             </div>
             <p className="mt-1 text-sm text-slate-500">
               {visibleRecords.length} de {records.length} casos visibles · ordenados por prioridad
@@ -433,11 +432,11 @@ function ValidationsContent() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-xl font-bold text-slate-900">{selected.credential_name}</h3>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass(selected.status)}`}>
+                <h3 className="text-xl font-semibold text-slate-900">{selected.credential_name}</h3>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(selected.status)}`}>
                   {statusLabel(selected.status)}
                 </span>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${priorityClass(priorityFor(selected, currentTime ?? 0))}`}>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityClass(priorityFor(selected, currentTime ?? 0))}`}>
                   Prioridad {priorityLabel(priorityFor(selected, currentTime ?? 0))}
                 </span>
               </div>
@@ -577,6 +576,8 @@ function ValidationsContent() {
 
           {selected.status === "UNDER_REVIEW" && (
             <div className="space-y-3 border-t pt-4">
+              <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700"><input type="checkbox" checked={catalogConfirmed} onChange={(event) => setCatalogConfirmed(event.target.checked)} className="mt-1" /><span>Verifiqué en la evidencia que <strong>{selected.issuer_name}</strong> emitió <strong>{selected.credential_name}</strong> y que sustenta las habilidades declaradas{selected.skills?.length ? `: ${selected.skills.map((item) => item.name).join(", ")}` : "."}</span></label>
+              {!selected.catalog_credential_id && <p role="note" className="text-sm text-amber-800">Este registro antiguo requiere vinculación con el catálogo por administración antes de aprobarse. Puedes observarlo para solicitar una corrección.</p>}
               <label htmlFor="review-comment" className="block font-semibold text-slate-900">
                 Comentario para el estudiante
               </label>
@@ -604,7 +605,7 @@ function ValidationsContent() {
                   <button
                     key={action}
                     type="button"
-                    disabled={actingId !== null}
+                    disabled={actingId !== null || (action === "APPROVE" && (!catalogConfirmed || !selected.catalog_credential_id))}
                     onClick={() => void decide(selected, action)}
                     className={`rounded-lg px-4 py-2 font-semibold disabled:opacity-50 ${color}`}
                   >
@@ -653,11 +654,11 @@ function ValidationsContent() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-bold text-gray-900">{record.credential_name}</h3>
-                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${statusClass(record.status)}`}>
+                    <h3 className="font-semibold text-gray-900">{record.credential_name}</h3>
+                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusClass(record.status)}`}>
                       {statusLabel(record.status)}
                     </span>
-                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${priorityClass(priority)}`}>
+                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${priorityClass(priority)}`}>
                       Prioridad {priorityLabel(priority)}
                     </span>
                   </div>
