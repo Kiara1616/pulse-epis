@@ -99,4 +99,3 @@ if ($failed.Count -gt 0) {
 }
 
 Write-Host 'Preflight U2 correcto.' -ForegroundColor Green
-

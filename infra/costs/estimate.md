@@ -1,7 +1,7 @@
 # Estimación mensual de costos GCP — Pulse EPIS
 
-**Corte de precios:** 2026-11-07  
-**Región:** `southamerica-west1`  
+**Corte de precios:** 2026-11-07
+**Región:** `southamerica-west1`
 **Moneda:** USD, antes de impuestos, créditos y descuentos.
 
 | Componente | Demo | Piloto |

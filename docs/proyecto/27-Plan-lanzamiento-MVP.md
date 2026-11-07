@@ -1,7 +1,7 @@
 # Plan de lanzamiento del MVP de Pulse EPIS
 
-**Fecha de corte:** 7 de noviembre de 2026  
-**Objetivo:** llevar el estado local posterior a `main` a un MVP estable, trazable y aceptado para un piloto controlado con datos sintéticos o expresamente autorizados.  
+**Fecha de corte:** 7 de noviembre de 2026
+**Objetivo:** llevar el estado local posterior a `main` a un MVP estable, trazable y aceptado para un piloto controlado con datos sintéticos o expresamente autorizados.
 **Decisión actual:** **NO-GO**. El producto tiene una base funcional sólida, pero las puertas de seguridad, navegador, despliegue y aceptación todavía no están cerradas.
 
 ## 1. Estado actualizado del proyecto

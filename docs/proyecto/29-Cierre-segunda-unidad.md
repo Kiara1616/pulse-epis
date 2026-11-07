@@ -1,7 +1,7 @@
 # Cierre de requisitos de la segunda unidad
 
-**Fecha de revisión:** 07/11/2026  
-**Plataforma elegida:** Google Cloud Platform  
+**Fecha de revisión:** 07/11/2026
+**Plataforma elegida:** Google Cloud Platform
 **Regla de cierre:** una configuración local no equivale a un recurso desplegado. Los estados distinguen implementación, validación local y evidencia cloud.
 
 ## Matriz de cumplimiento
@@ -81,4 +81,3 @@
 4. Publicar cifras institucionales únicamente después de la aprobación del responsable EPIS.
 
 El padrón no bloquea la demostración técnica con datos sintéticos. Sí bloquea cualquier afirmación de cobertura institucional real.
-
