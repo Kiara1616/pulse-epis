@@ -32,6 +32,7 @@ def make_settings() -> Settings:
         auth_session_secret="test-session-secret",
         google_allowed_domains="virtual.upt.pe",
         roster_pseudonym_secret="test-roster-secret",
+        demo_data_seed=False,
     )
 
 
