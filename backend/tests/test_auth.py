@@ -334,12 +334,12 @@ def test_rbac_prevents_validator_from_admin_and_student_from_other_records():
     assert other.status_code == 403
 
 
-def test_admin_can_manage_but_validator_only_validates():
+def test_admin_can_manage_and_validate_but_validator_only_validates():
     admin = make_user(Role.ADMIN, "admin@virtual.upt.pe")
     validator = make_user(Role.VALIDATOR, "validator@virtual.upt.pe")
 
     for user, expected_admin, expected_validator in (
-        (admin, 200, 403),
+        (admin, 200, 200),
         (validator, 403, 200),
     ):
         identity = GoogleIdentity(f"google-{user.role.value.lower()}", user.email, True)
