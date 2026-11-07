@@ -6,13 +6,20 @@
 
 | Dato | Cómo ingresa | Responsable | Frecuencia | Comprobación y destino | Estado |
 |---|---|---|---|---|---|
-| Padrón EPIS, periodo, ciclo, nombre, código, correo y estado | El administrador prepara un CSV desde el Excel institucional, previsualiza e importa por periodo en `/admin/estudiantes` | Administración EPIS | Cada actualización oficial del padrón | Formato, duplicados, correo institucional y periodo; tablas de estudiantes y matrículas | Implementado; el padrón de producción debe importarse en la base de Render |
+| Padrón EPIS, periodo, ciclo, código, correo y estado | El administrador prepara un CSV desde el Excel institucional, previsualiza e importa por periodo en `/admin/estudiantes` | Administración EPIS | Cada actualización oficial del padrón | Formato, duplicados, correo institucional y periodo; tablas de estudiantes y matrículas | Implementado; nombre completo está en la PR #99 y el padrón de producción debe importarse en Render |
 | Certificación y evidencia | El estudiante autenticado declara la credencial y adjunta archivo o URL | Estudiante | Al obtener una credencial | Fechas, emisor, duplicados y vínculo con su propia cuenta; tablas operativas de certificaciones y evidencias | Implementado |
 | Decisión de validación | El validador o administrador revisa evidencia y registra aprobación, observación o rechazo | Validador/administrador | Por solicitud | Historial con actor y fecha; solo aprobaciones elegibles entran al KPI | Implementado |
 | Oferta de cursos y talleres | El administrador registra y publica opciones | Administración EPIS | Al cambiar la oferta | Catálogo con estado, proveedor, URL y fecha de revisión | Registro manual implementado |
 | Cursos externos de Cisco, DataCamp u otros | Feed/API oficial o lectura acotada de páginas públicas que la fuente permita; hallazgos pasan a revisión antes de publicarse | Administración EPIS | Semanal o según proveedor | URL canónica, título, proveedor, fecha, hash y estado `DETECTED`; no se crean certificaciones estudiantiles desde esta fuente | Descubrimiento automatizado en la PR #99; no desplegado en Render |
+| Lista pública de alumnos EPIS | Consulta auxiliar a la página pública de la escuela, si está disponible para el periodo vigente | Administración EPIS | Por periodo | Comparar nombre y ciclo contra padrón institucional; nunca asignar código o correo por coincidencia de nombre | Propuesta; no importada automáticamente |
 
 El **Excel no se convierte directamente en un dashboard**: primero se exporta a la plantilla de padrón, se previsualiza, se resuelven errores y se importa. El correo identifica la cuenta institucional; el código se conserva como dato del padrón. Una persona fuera del padrón activo no debe aparecer como estudiante autenticado ni incrementar la población activa.
+
+### Nombres públicos y correos institucionales
+
+La [página pública de alumnos de Ingeniería de Sistemas](https://eped.upt.edu.pe/upt/web/modulos/alumno.php?depe=314048000) muestra nombres y ciclos, pero la versión recuperable durante esta revisión estaba marcada **2025-I** y no exponía código ni correo. El [reporte oficial de matriculados 2026-II](https://portal.upt.edu.pe/site/web/contenido/oficina-de-gestion-de-procesos-academicos-y-docencia-gpad/reportes-de-estudiantes-pregrado) publica un total por carrera, no la correspondencia persona–correo. Por tanto, ninguna de esas páginas basta para crear cuentas del periodo actual ni asignar correos.
+
+El flujo objetivo sería: **(1)** el administrador prepara el CSV institucional con periodo, código, nombre, correo, ciclo y estado; **(2)** antes de cargarlo, un conversor comprueba que el código explícito corresponda a los dígitos confirmados del correo; **(3)** una lectura opcional de la lista pública genera un informe de diferencias de nombre/ciclo para revisión; **(4)** el administrador resuelve diferencias y confirma la importación. El importador actualmente exige una columna `code`; no la deduce del correo. La columna `full_name` está en la PR #99, todavía sin publicar. Nunca se combinan dos personas por similitud de nombres: pueden existir homónimos o cambios ortográficos. El dato público no sustituye al padrón que determina quién puede entrar.
 
 ## Del dato operacional al reporte
 
