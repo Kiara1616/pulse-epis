@@ -17,7 +17,7 @@ def test_settings_are_loaded_from_pulse_environment_variables(monkeypatch):
     monkeypatch.setenv("PULSE_API_PREFIX", "api/internal/")
     monkeypatch.setenv("PULSE_LOG_LEVEL", "debug")
 
-    settings = Settings()
+    settings = Settings(_env_file=None)
 
     assert settings.environment == "staging"
     assert settings.api_prefix == "/api/internal"

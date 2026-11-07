@@ -1,8 +1,34 @@
 "use client";
-export function AnalyticsSource({dataset, available, onChange}: {dataset: "registered" | "demo"; available: boolean; onChange: (value: "registered" | "demo") => void}) {
+
+export function AnalyticsSource({
+  dataset,
+  available,
+  onChange,
+}: {
+  dataset: "registered" | "demo";
+  available: boolean;
+  onChange: (value: "registered" | "demo") => void;
+}) {
   if (!available) return null;
-  return <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-    <div><p className="text-sm font-semibold text-slate-800">{dataset === "demo" ? "Datos de referencia · no oficiales" : "Datos publicados"}</p><p className="mt-1 max-w-3xl text-xs text-slate-500">{dataset === "demo" ? "Indicadores agregados para visualizar las gráficas. Los estudiantes, credenciales y eventos no corresponden a registros institucionales publicados." : "Último corte institucional publicado."}</p></div>
-    <label className="text-xs font-medium text-slate-600">Fuente de datos<select value={dataset} onChange={(e) => onChange(e.target.value as "registered" | "demo")} className="ml-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"><option value="demo">Datos de referencia · no oficiales</option><option value="registered">Datos publicados</option></select></label>
-  </div>;
+
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+      <p className="max-w-3xl text-sm text-slate-600">
+        {dataset === "demo"
+          ? "Datos de demostración: los estudiantes y las certificaciones son ejemplos, no registros institucionales."
+          : "Consulta los registros institucionales publicados."}
+      </p>
+      <label className="text-xs font-semibold text-slate-600">
+        Fuente de datos
+        <select
+          value={dataset}
+          onChange={(event) => onChange(event.target.value as "registered" | "demo")}
+          className="mt-1 block rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+        >
+          <option value="demo">Demostración</option>
+          <option value="registered">Publicados</option>
+        </select>
+      </label>
+    </div>
+  );
 }

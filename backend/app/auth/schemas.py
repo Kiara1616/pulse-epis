@@ -13,6 +13,7 @@ from .models import Permission, Role
 class CurrentUserResponse(BaseModel):
     id: UUID
     email: str
+    display_name: str | None = None
     role: Role
     student_id: UUID | None
     permissions: list[Permission]

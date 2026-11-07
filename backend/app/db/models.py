@@ -68,6 +68,7 @@ class Student(Base):
     )
     student_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     student_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     entry_year: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     created_at: Mapped[datetime] = mapped_column(
@@ -268,6 +269,7 @@ class Issuer(Base):
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     website_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -280,9 +282,70 @@ class Skill(Base):
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class IssuerAlias(Base):
+    __tablename__ = "issuer_aliases"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    issuer_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("issuers.id", ondelete="RESTRICT"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    normalized_name: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
+
+
+class CredentialCatalog(Base):
+    __tablename__ = "credential_catalog"
+    __table_args__ = (UniqueConstraint("issuer_id", "normalized_name", name="uq_credential_catalog_identity"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    issuer_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("issuers.id", ondelete="RESTRICT"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    normalized_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class CredentialCatalogSkill(Base):
+    __tablename__ = "credential_catalog_skills"
+
+    credential_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("credential_catalog.id", ondelete="CASCADE"), primary_key=True)
+    skill_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("skills.id", ondelete="RESTRICT"), primary_key=True)
+
+
+class CatalogProposal(Base):
+    __tablename__ = "catalog_proposals"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    student_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    proposed_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    issuer_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("issuers.id", ondelete="RESTRICT"), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
+    resolved_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    reviewer_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CertificationSubmissionDraft(Base):
+    __tablename__ = "certification_submission_drafts"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    student_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    form_data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    proposal_ids: Mapped[list] = mapped_column(JSON, nullable=False)
+    evidence_object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    evidence_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    evidence_content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    evidence_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    evidence_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    submitted_certification_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), ForeignKey("certifications.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class Certification(Base):
@@ -318,6 +381,9 @@ class Certification(Base):
     )
     issuer_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("issuers.id", ondelete="RESTRICT"), nullable=False
+    )
+    catalog_credential_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("credential_catalog.id", ondelete="RESTRICT"), nullable=True
     )
     credential_name: Mapped[str] = mapped_column(String(200), nullable=False)
     external_id: Mapped[str | None] = mapped_column(String(200), nullable=True)

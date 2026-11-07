@@ -93,6 +93,10 @@ class CourseOutput(CourseInput):
     id: UUID
     status: Literal['DETECTED', 'IN_REVIEW', 'PUBLISHED', 'DISCARDED', 'RETIRED']
     created_at: datetime
+    discovery_source_id: UUID | None = None
+    content_hash: str | None = None
+    first_seen_at: datetime | None = None
+    last_seen_at: datetime | None = None
 
 class OfferOutput(OfferInput):
     id: UUID

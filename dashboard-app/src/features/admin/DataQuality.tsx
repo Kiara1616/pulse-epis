@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/shared/api/client";
 import { qualityAtCutoff, type QualityRun } from "./priorities";
+import { SectionHeading, SurfaceCard } from "@/shared/ui/DashboardPrimitives";
 function QualityReport({ period, cutoff }: { period: string; cutoff: string }) {
   const [report, setReport] = useState<QualityRun | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +34,7 @@ function QualityReport({ period, cutoff }: { period: string; cutoff: string }) {
     <>
       {loading ? (
         <p role="status" className="mt-4 text-sm text-slate-500">
-          Consultando calidad del corte…
+          Consultando la calidad de los datos…
         </p>
       ) : error ? (
         <div className="mt-4 text-sm text-rose-700" role="alert">
@@ -44,15 +45,14 @@ function QualityReport({ period, cutoff }: { period: string; cutoff: string }) {
               setError(null);
               setAttempt((n) => n + 1);
             }}
-            className="mt-2 font-bold underline"
+            className="mt-2 font-semibold underline"
           >
             Reintentar calidad
           </button>
         </div>
       ) : !report ? (
         <p className="mt-4 text-sm text-slate-500">
-          No hay un informe de publicación para este periodo y corte. La calidad
-          no está evaluada.
+          Todavía no hay un informe de calidad para esta fecha. Revisa las publicaciones del periodo.
         </p>
       ) : (
         <div className="mt-4 space-y-3 text-sm text-slate-700">
@@ -66,27 +66,25 @@ function QualityReport({ period, cutoff }: { period: string; cutoff: string }) {
           <dl className="grid gap-3 sm:grid-cols-3">
             <div>
               <dt>Filas de entrada</dt>
-              <dd className="font-bold">{report.total_rows}</dd>
+              <dd className="font-semibold tabular-nums">{report.total_rows}</dd>
             </div>
             <div>
               <dt>Filas aceptadas</dt>
-              <dd className="font-bold">{report.accepted_rows}</dd>
+              <dd className="font-semibold tabular-nums">{report.accepted_rows}</dd>
             </div>
             <div>
               <dt>Filas rechazadas</dt>
-              <dd className="font-bold">{report.rejected_rows}</dd>
+              <dd className="font-semibold tabular-nums">{report.rejected_rows}</dd>
             </div>
           </dl>
           <p className="text-xs text-slate-500">
-            Último intento registrado para el corte {report.cutoff_date}. Las
-            filas del proceso no equivalen al número de estudiantes ni de
-            credenciales distintas.
+            Las filas procesadas no equivalen al número de estudiantes ni de credenciales distintas.
           </p>
         </div>
       )}
       <Link
         href="/admin/publicaciones"
-        className="mt-4 inline-block text-sm font-bold text-blue-600"
+        className="mt-4 inline-block text-sm font-semibold text-blue-700"
       >
         Revisar publicaciones y calidad →
       </Link>
@@ -102,31 +100,16 @@ export function DataQuality({
   cutoff: string;
   dataset?: "registered" | "demo";
 }) {
+  if (dataset === "demo") return null;
+
   return (
-    <section
-      aria-label="Calidad de datos"
-      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-    >
-      <h2 className="text-lg font-bold text-slate-900">Calidad de datos</h2>
-      <p className="mt-2 text-sm text-slate-500">
-        Resultado de validación del proceso de publicación para el periodo
-        completo; no cambia con filtros de proveedor, cohorte o ciclo.
-      </p>
-      <p className="mt-2 text-xs text-slate-500">
-        Fuente: GET /api/v1/etl/runs · periodo {period} · corte {cutoff}
-      </p>
-      {dataset === "demo" ? (
-        <p className="mt-4 text-sm text-slate-500">
-          La calidad institucional se consulta en los datos publicados. Esta
-          vista presenta indicadores de referencia.
-        </p>
-      ) : (
-        <QualityReport
-          key={`${period}:${cutoff}`}
-          period={period}
-          cutoff={cutoff}
-        />
-      )}
-    </section>
+    <SurfaceCard className="p-5 sm:p-6" labelledBy="data-quality-heading">
+      <SectionHeading id="data-quality-heading" title="Calidad de datos" description="Resultado del periodo completo; no cambia con los filtros." />
+      <QualityReport
+        key={`${period}:${cutoff}`}
+        period={period}
+        cutoff={cutoff}
+      />
+    </SurfaceCard>
   );
 }

@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime, timezone
+import json
 import os
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from backend.app.db.models import (
     AcademicPeriod,
     Certification,
     CertificationSkill,
+    CredentialCatalog,
     Enrollment,
     EtlRejection,
     EtlRun,
@@ -21,7 +23,7 @@ from backend.app.db.models import (
 )
 from backend.app.db.session import create_session_factory
 from backend.app.etl.service import EtlService
-from backend.scripts_etl.main import transform
+from backend.scripts_etl.main import export_lake_snapshot, scheduled_target, transform
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -75,10 +77,14 @@ def _seed_database(database_url: str, *, missing_skill: bool = False):
         )
         session.add_all([period, student, issuer])
         session.flush()
+        catalog = CredentialCatalog(issuer_id=issuer.id, name="AWS Cloud Practitioner", normalized_name="aws cloud practitioner", active=True)
+        session.add(catalog)
+        session.flush()
         enrollment.student_id = student.id
         enrollment.period_id = period.id
         certification.student_id = student.id
         certification.issuer_id = issuer.id
+        certification.catalog_credential_id = catalog.id
         session.add_all([enrollment, certification])
         session.flush()
         if not missing_skill:
@@ -121,6 +127,36 @@ def test_transform_normalizes_catalogs_without_personal_email_data():
     ]
 
 
+def test_scheduled_target_uses_previous_day_in_lima_and_open_period(tmp_path):
+    database_url = f"sqlite+pysqlite:///{(tmp_path / 'etl-schedule.db').as_posix()}"
+    _migrate(database_url)
+    factory = create_session_factory(database_url)
+    with factory.begin() as session:
+        session.add(AcademicPeriod(code="2026-II", name="Segundo periodo", starts_on=date(2026, 8, 1), ends_on=date(2026, 12, 31), status="OPEN"))
+        session.add(AcademicPeriod(code="2026-I", name="Primer periodo", starts_on=date(2026, 1, 1), ends_on=date(2026, 7, 31), status="CLOSED"))
+
+    # Monday 05:00 UTC is Monday 00:00 in Lima; publish Sunday.
+    assert scheduled_target(factory, now=datetime(2026, 10, 26, 5, 0, tzinfo=timezone.utc)) == ("2026-II", date(2026, 10, 25))
+
+
+def test_scheduled_target_refuses_missing_or_ambiguous_period(tmp_path):
+    database_url = f"sqlite+pysqlite:///{(tmp_path / 'etl-schedule-ambiguous.db').as_posix()}"
+    _migrate(database_url)
+    factory = create_session_factory(database_url)
+    run_time = datetime(2026, 10, 26, 5, 0, tzinfo=timezone.utc)
+    with factory.begin() as session:
+        session.add(AcademicPeriod(code="2026-II", name="Segundo periodo", starts_on=date(2026, 8, 1), ends_on=date(2026, 12, 31), status="OPEN"))
+    with factory.begin() as session:
+        session.add(AcademicPeriod(code="2026-extra", name="Periodo solapado", starts_on=date(2026, 10, 1), ends_on=date(2026, 11, 1), status="OPEN"))
+
+    import pytest
+
+    with pytest.raises(ValueError, match="found 2"):
+        scheduled_target(factory, now=run_time)
+    with pytest.raises(ValueError, match="found 0"):
+        scheduled_target(factory, now=datetime(2027, 1, 4, 5, 0, tzinfo=timezone.utc))
+
+
 def test_etl_is_idempotent_and_publishes_normalized_facts(tmp_path):
     database_url = f"sqlite+pysqlite:///{(tmp_path / 'etl.db').as_posix()}"
     period_code, cutoff_date, certification_id = _seed_database(database_url)
@@ -149,6 +185,26 @@ def test_etl_is_idempotent_and_publishes_normalized_facts(tmp_path):
         assert student_fact.certification_count == 1
         assert student_fact.approved_certification_count == 1
         assert session.scalar(select(EtlRun).where(EtlRun.id == first.id)) is not None
+
+
+def test_etl_exports_partitioned_pseudonymized_data_lake_snapshot(tmp_path):
+    database_url = f"sqlite+pysqlite:///{(tmp_path / 'etl-lake.db').as_posix()}"
+    period_code, cutoff_date, _ = _seed_database(database_url)
+    factory = create_session_factory(database_url)
+    report = EtlService(factory).run(period_code, cutoff_date)
+
+    partition = export_lake_snapshot(factory, report, tmp_path / "lake")
+
+    assert partition.name == f"cutoff_date={cutoff_date.isoformat()}"
+    manifest = json.loads((partition / "manifest.json").read_text(encoding="utf-8"))
+    student_rows = (partition / "fact_student_period.jsonl").read_text(encoding="utf-8")
+    certification_rows = (partition / "fact_certification.jsonl").read_text(encoding="utf-8")
+    assert manifest["contains_personal_identifiers"] is False
+    assert manifest["student_fact_rows"] == 1
+    assert manifest["certification_fact_rows"] == 1
+    assert "stu-synthetic-001" in student_rows
+    assert "@" not in student_rows
+    assert "APPROVED" in certification_rows
 
 
 def test_etl_records_rejection_cause_and_does_not_publish_invalid_source(tmp_path):

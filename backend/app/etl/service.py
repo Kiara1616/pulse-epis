@@ -78,6 +78,7 @@ class EtlSourceRecord:
     skill_name: str | None
     skill_category: str | None
     level: str | None
+    catalog_credential_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,6 +190,8 @@ def stage_source_records(
             errors.append(("skill", "MISSING_SKILL", "la certificación debe tener una skill catalogada"))
         if record.status.strip().upper() not in ETL_STATUSES:
             errors.append(("status", "INVALID_STATUS", "status no pertenece al flujo de certificaciones"))
+        if record.status.strip().upper() == "APPROVED" and record.catalog_credential_id is None:
+            errors.append(("catalog_credential_id", "UNCATALOGUED_APPROVAL", "la certificación aprobada requiere vinculación al catálogo"))
         if record.issued_on > cutoff_date:
             errors.append(("issued_on", "ISSUED_AFTER_CUTOFF", "issued_on supera el cutoff solicitado"))
         if record.expires_on is not None and record.expires_on < record.issued_on:
@@ -322,6 +325,7 @@ class EtlService:
                     skill_name=skill.name if skill else None,
                     skill_category=skill.category if skill else None,
                     level=certification_skill.level if certification_skill else None,
+                    catalog_credential_id=certification.catalog_credential_id,
                 )
                 for index, (
                     certification,

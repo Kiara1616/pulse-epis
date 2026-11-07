@@ -1,0 +1,20 @@
+{
+  "demo": {
+    "Cloud SQL compute": 7.665,
+    "Cloud SQL SSD": 3.3999969,
+    "Cloud Storage": 0.13999867,
+    "Cloud Run ETL": 0.1067535,
+    "Cloud Run reserved services": 0.0,
+    "Artifact Registry": 0.04999989,
+    "Total bruto estimado": 11.36174896
+  },
+  "pilot": {
+    "Cloud SQL compute": 83.27475,
+    "Cloud SQL SSD": 8.49999225,
+    "Cloud Storage": 1.1999886,
+    "Cloud Run ETL": 0.3202605,
+    "Cloud Run reserved services": 62.344044,
+    "Artifact Registry": 0.04999989,
+    "Total bruto estimado": 155.68903523999998
+  }
+}

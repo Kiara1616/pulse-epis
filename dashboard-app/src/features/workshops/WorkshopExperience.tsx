@@ -7,12 +7,12 @@ import {
   Check,
   CheckCircle2,
   ClipboardList,
-  Info,
   Plus,
   RefreshCw,
   UsersRound,
 } from "lucide-react";
 import { useRole } from "@/features/access/RoleProvider";
+import { ContextNote, PageHeader } from "@/shared/ui/DashboardPrimitives";
 import {
   formatLearningDate,
   getLearningErrorMessage,
@@ -27,23 +27,23 @@ import {
 const field = "mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm";
 
 const applicationStatusPresentation: Record<LearningApplication["status"], { label: string; className: string }> = {
-  SUBMITTED: { label: "Enviada", className: "bg-sky-50 text-sky-700 ring-sky-200" },
-  ACCEPTED: { label: "Aceptada", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  REJECTED: { label: "Rechazada", className: "bg-rose-50 text-rose-700 ring-rose-200" },
-  COMPLETED: { label: "Finalizada", className: "bg-violet-50 text-violet-700 ring-violet-200" },
+  SUBMITTED: { label: "Enviada", className: "bg-blue-50 text-blue-700 ring-blue-200" },
+  ACCEPTED: { label: "Aceptada", className: "bg-blue-100 text-blue-900 ring-blue-200" },
+  REJECTED: { label: "Rechazada", className: "bg-slate-100 text-slate-700 ring-slate-200" },
+  COMPLETED: { label: "Finalizada", className: "bg-slate-100 text-slate-700 ring-slate-200" },
 };
 
 const workshopStatusPresentation: Record<LearningWorkshop["status"], { label: string; className: string }> = {
   DRAFT: { label: "Borrador", className: "bg-slate-100 text-slate-700" },
-  OPEN: { label: "Abierto", className: "bg-emerald-50 text-emerald-700" },
-  CLOSED: { label: "Cerrado", className: "bg-amber-50 text-amber-800" },
-  COMPLETED: { label: "Finalizado", className: "bg-violet-50 text-violet-700" },
+  OPEN: { label: "Abierto", className: "bg-blue-50 text-blue-700" },
+  CLOSED: { label: "Cerrado", className: "bg-slate-100 text-slate-700" },
+  COMPLETED: { label: "Finalizado", className: "bg-slate-100 text-slate-700" },
 };
 
 function StatusPill({ status }: { status: LearningApplication["status"] }) {
   const presentation = applicationStatusPresentation[status];
   return (
-    <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-bold ring-1 ring-inset ${presentation.className}`}>
+    <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${presentation.className}`}>
       {presentation.label}
     </span>
   );
@@ -57,7 +57,7 @@ function ErrorPanel({ message, retry }: { message: string; retry: () => void }) 
   return (
     <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
       <p>{message}</p>
-      <button type="button" onClick={retry} className="mt-2 font-bold underline underline-offset-2">Reintentar</button>
+      <button type="button" onClick={retry} className="mt-2 font-semibold underline underline-offset-2">Reintentar</button>
     </div>
   );
 }
@@ -139,23 +139,10 @@ function StudentWorkshopView() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">Aprende haciendo</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Talleres para ti</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Consulta talleres abiertos y envía una solicitud guardada en el sistema.
-          </p>
-        </div>
-        <Link href="/mi-ruta" className="text-sm font-bold text-blue-700 hover:text-blue-900">Volver a oportunidades</Link>
-      </header>
-
-      <aside role="note" className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-        <Info size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
-        <p>Solo verás tus solicitudes. Confirmar que leíste los requisitos no significa que acredites cumplirlos ni reserva un cupo; la decisión se registra en el sistema.</p>
-      </aside>
+      <PageHeader title="Talleres para ti" description="Consulta talleres abiertos y envía una solicitud." action={<Link href="/mi-ruta" className="text-sm font-semibold text-blue-700 hover:text-blue-900">Volver a oportunidades</Link>} />
+      <ContextNote>Enviar una solicitud no reserva un cupo. Confirmar los requisitos tampoco acredita su cumplimiento.</ContextNote>
       {error && <ErrorPanel message={error} retry={retryStudentLoad} />}
-      {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
+      {notice && <p role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">{notice}</p>}
 
       {loading ? <LoadingPanel label="Cargando talleres y tus solicitudes…" /> : !error ? (
         <>
@@ -170,55 +157,54 @@ function StudentWorkshopView() {
                 const confirmed = acknowledged.includes(workshop.id);
                 const full = workshop.available_places <= 0;
                 return (
-                  <article key={workshop.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                    <div className="bg-gradient-to-br from-[#102c52] via-blue-900 to-indigo-800 p-6 text-white">
+                  <article key={workshop.id} className="surface-card min-w-0 overflow-hidden">
+                    <div className="border-b border-slate-100 p-5 sm:p-6">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-50">Taller</span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${workshopStatusPresentation[workshop.status].className}`}>
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${workshopStatusPresentation[workshop.status].className}`}>
                           {workshopStatusPresentation[workshop.status].label}
                         </span>
                       </div>
-                      <h2 className="mt-4 text-2xl font-black leading-tight">{workshop.title}</h2>
-                      <p className="mt-2 text-sm text-blue-100">Oportunidad: {offerNames.get(workshop.offer_id) ?? "Formación publicada"}</p>
+                      <h2 className="section-title mt-3">{workshop.title}</h2>
+                      <p className="mt-1 text-sm text-slate-600">Oportunidad: {offerNames.get(workshop.offer_id) ?? "Formación publicada"}</p>
                     </div>
                     <div className="space-y-5 p-5 sm:p-6">
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3">
-                            <span className="rounded-xl bg-white p-2.5 text-blue-700 shadow-sm"><UsersRound size={19} aria-hidden="true" /></span>
+                            <span className="text-slate-500"><UsersRound size={19} aria-hidden="true" /></span>
                             <div>
-                              <h3 className="text-sm font-bold text-slate-950">Cupos disponibles</h3>
+                              <h3 className="card-title">Cupos disponibles</h3>
                               <p className="mt-1 text-sm text-slate-600">{workshop.occupied_places} de {workshop.capacity} ocupados</p>
                             </div>
                           </div>
-                          <span className="rounded-xl bg-white px-3 py-2 text-lg font-black text-blue-800 shadow-sm">{workshop.available_places}</span>
+                          <span className="text-xl font-semibold tabular-nums text-slate-950">{workshop.available_places}</span>
                         </div>
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-slate-950">Requisitos de participación</h3>
+                        <h3 className="card-title">Requisitos de participación</h3>
                         {workshop.requirements.length > 0 ? (
                           <ul className="mt-3 flex flex-wrap gap-2">
                             {workshop.requirements.map((requirement) => (
                               <li key={requirement} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                                <Check size={15} aria-hidden="true" className="shrink-0 text-emerald-600" /> {requirement}
+                                <Check size={15} aria-hidden="true" className="shrink-0 text-blue-600" /> {requirement}
                               </li>
                             ))}
                           </ul>
                         ) : <p className="mt-2 text-sm text-slate-600">No se indicaron requisitos previos.</p>}
                       </div>
                       {application ? (
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
                           <div className="flex items-center gap-3">
-                            <CheckCircle2 size={20} aria-hidden="true" className="text-emerald-700" />
+                            <CheckCircle2 size={20} aria-hidden="true" className="text-blue-700" />
                             <div>
-                              <p className="font-bold text-slate-950">Solicitud registrada</p>
+                              <p className="font-semibold text-slate-950">Solicitud registrada</p>
                               <p className="mt-1 text-xs text-slate-600">{formatLearningDate(application.created_at)}</p>
                             </div>
                           </div>
                           <StatusPill status={application.status} />
                         </div>
                       ) : (
-                        <div className="space-y-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                        <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                           <label className="flex items-start gap-3 text-sm leading-5 text-slate-800">
                             <input type="checkbox" checked={confirmed} onChange={() => toggleAcknowledgement(workshop.id)} className="mt-0.5 accent-blue-700" />
                             <span>Confirmo que leí los requisitos de participación.</span>
@@ -227,7 +213,7 @@ function StudentWorkshopView() {
                             type="button"
                             disabled={!confirmed || full || Boolean(workingId)}
                             onClick={() => void apply(workshop.id)}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {workingId === workshop.id ? "Enviando…" : full ? "Sin cupos disponibles" : "Enviar solicitud"}
                             {workingId !== workshop.id && <ArrowUpRight size={16} aria-hidden="true" />}
@@ -245,8 +231,7 @@ function StudentWorkshopView() {
             <div className="flex items-start gap-3">
               <span className="rounded-xl bg-blue-50 p-2.5 text-blue-700"><ClipboardList size={20} aria-hidden="true" /></span>
               <div>
-                <h2 id="my-applications-heading" className="font-bold text-slate-950">Mis solicitudes</h2>
-                <p className="mt-1 text-sm text-slate-600">Estados obtenidos de tu perfil autenticado.</p>
+                <h2 id="my-applications-heading" className="section-title">Mis solicitudes</h2>
               </div>
             </div>
             {applications.length > 0 ? (
@@ -398,18 +383,10 @@ function AdminWorkshopView() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">Formación complementaria</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Gestión de talleres</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Publica talleres vinculados a oportunidades vigentes y revisa las solicitudes persistidas.</p>
-      </header>
-
-      <aside role="note" className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-        <Info size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
-        <p>Las solicitudes pertenecen a cada estudiante. La aceptación consume cupo; el backend controla los límites y registra cada decisión.</p>
-      </aside>
+      <PageHeader title="Gestión de talleres" description="Publica talleres y revisa las solicitudes de estudiantes." />
+      <ContextNote>Aceptar una solicitud consume un cupo y registra la decisión.</ContextNote>
       {error && <ErrorPanel message={error} retry={retryAdminLoad} />}
-      {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
+      {notice && <p role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">{notice}</p>}
 
       {loading ? <LoadingPanel label="Cargando talleres y solicitudes…" /> : !error || workshops.length > 0 ? (
         <>
@@ -417,7 +394,7 @@ function AdminWorkshopView() {
             <div className="flex items-start gap-3">
               <span className="rounded-xl bg-blue-50 p-2.5 text-blue-700"><Plus size={20} aria-hidden="true" /></span>
               <div>
-                <h2 className="font-bold text-slate-950">Publicar un taller</h2>
+                <h2 className="section-title">Publicar un taller</h2>
                 <p className="mt-1 text-sm text-slate-600">Elige una oportunidad ya publicada. El taller se abrirá para solicitudes después de guardarse.</p>
               </div>
             </div>
@@ -442,13 +419,13 @@ function AdminWorkshopView() {
                   Requisitos (separados por coma)
                   <input name="requirements" placeholder="Conocimientos básicos de programación" className={field} />
                 </label>
-                <button disabled={working} className="w-fit rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">
+                <button disabled={working} className="w-fit rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50">
                   {working ? "Publicando…" : "Crear y abrir taller"}
                 </button>
               </form>
             ) : (
               <p className="mt-5 rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-600">
-                No hay oportunidades publicadas para asociar un taller. <Link href="/admin/radar" className="font-bold text-blue-700 underline">Revisar oportunidades</Link>
+                No hay oportunidades publicadas para asociar un taller. <Link href="/admin/radar" className="font-semibold text-blue-700 underline">Revisar oportunidades</Link>
               </p>
             )}
           </section>
@@ -456,10 +433,9 @@ function AdminWorkshopView() {
           <section aria-labelledby="admin-workshops-heading" className="space-y-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Catálogo persistido</p>
-                <h2 id="admin-workshops-heading" className="mt-1 text-xl font-bold text-slate-950">Talleres</h2>
+                <h2 id="admin-workshops-heading" className="section-title">Talleres publicados</h2>
               </div>
-              <button type="button" disabled={working} onClick={() => void perform(async () => applyAdminData(await fetchAdminData()), "Datos actualizados.")} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+              <button type="button" disabled={working} onClick={() => void perform(async () => applyAdminData(await fetchAdminData()), "Datos actualizados.")} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
                 <RefreshCw size={15} aria-hidden="true" /> Actualizar
               </button>
             </div>
@@ -469,17 +445,17 @@ function AdminWorkshopView() {
                   <article key={workshop.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-bold text-slate-950">{workshop.title}</h3>
+                        <h3 className="font-semibold text-slate-950">{workshop.title}</h3>
                         <p className="mt-1 text-sm text-slate-600">Oportunidad: {offerNames.get(workshop.offer_id) ?? "No disponible"}</p>
                       </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${workshopStatusPresentation[workshop.status].className}`}>{workshopStatusPresentation[workshop.status].label}</span>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${workshopStatusPresentation[workshop.status].className}`}>{workshopStatusPresentation[workshop.status].label}</span>
                     </div>
                     <p className="mt-3 text-sm text-slate-700">{workshop.occupied_places} de {workshop.capacity} cupos ocupados · {workshop.available_places} disponibles</p>
                     {workshop.requirements.length > 0 && <p className="mt-2 text-sm text-slate-600">Requisitos: {workshop.requirements.join(", ")}</p>}
                     <div className="mt-4 flex flex-wrap gap-3">
-                      {workshop.status === "DRAFT" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "OPEN")} className="text-sm font-bold text-blue-700">Abrir solicitudes</button>}
-                      {workshop.status === "OPEN" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "CLOSED")} className="text-sm font-bold text-amber-800">Cerrar solicitudes</button>}
-                      {workshop.status === "CLOSED" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "COMPLETED")} className="text-sm font-bold text-violet-800">Marcar finalizado</button>}
+                      {workshop.status === "DRAFT" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "OPEN")} className="text-sm font-semibold text-blue-700">Abrir solicitudes</button>}
+                      {workshop.status === "OPEN" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "CLOSED")} className="text-sm font-semibold text-blue-800">Cerrar solicitudes</button>}
+                      {workshop.status === "CLOSED" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "COMPLETED")} className="text-sm font-semibold text-slate-700">Marcar finalizado</button>}
                     </div>
                   </article>
                 ))}
@@ -493,7 +469,7 @@ function AdminWorkshopView() {
             <div className="flex items-start gap-3">
               <span className="rounded-xl bg-blue-50 p-2.5 text-blue-700"><ClipboardList size={20} aria-hidden="true" /></span>
               <div>
-                <h2 id="admin-requests-heading" className="font-bold text-slate-950">Solicitudes de participación</h2>
+                <h2 id="admin-requests-heading" className="section-title">Solicitudes de participación</h2>
                 <p className="mt-1 text-sm text-slate-600">{applications.length} {applications.length === 1 ? "solicitud" : "solicitudes"} registradas.</p>
               </div>
             </div>
@@ -521,11 +497,11 @@ function AdminWorkshopView() {
                           <div className="flex flex-wrap gap-3">
                             {application.status === "SUBMITTED" && (
                               <>
-                                <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "ACCEPTED")} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">Aceptar</button>
-                                <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "REJECTED")} className="rounded-lg border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700 disabled:opacity-50">Rechazar</button>
+                                <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "ACCEPTED")} className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">Aceptar</button>
+                                <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "REJECTED")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50">Rechazar</button>
                               </>
                             )}
-                            {application.status === "ACCEPTED" && <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "COMPLETED")} className="rounded-lg bg-violet-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">Marcar finalizada</button>}
+                            {application.status === "ACCEPTED" && <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "COMPLETED")} className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">Marcar finalizada</button>}
                           </div>
                         </div>
                       ) : null}

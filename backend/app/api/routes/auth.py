@@ -42,22 +42,32 @@ def _http_error(status_code: int, code: str, message: str) -> HTTPException:
     )
 
 
-def _current_user_response(user: AuthenticatedUser) -> CurrentUserResponse:
+def _current_user_response(
+    user: AuthenticatedUser,
+    display_name: str | None = None,
+) -> CurrentUserResponse:
     return CurrentUserResponse(
         id=user.id,
         email=user.email,
+        display_name=display_name,
         role=user.role,
         student_id=user.student_id,
         permissions=sorted(permissions_for(user.role), key=lambda permission: permission.value),
     )
 
 
-def _start_session(request: Request, user: AuthenticatedUser) -> None:
-    """Store only the internal user identifier in the signed session cookie."""
+def _start_session(
+    request: Request,
+    user: AuthenticatedUser,
+    display_name: str | None = None,
+) -> None:
+    """Store the identity and verified display name in the signed session cookie."""
 
     request.session.clear()
     request.session["user_id"] = str(user.id)
     request.session["authenticated_at"] = datetime.now(timezone.utc).isoformat()
+    if display_name:
+        request.session["display_name"] = display_name
 
 
 @router.get(
@@ -74,6 +84,7 @@ def auth_config(request: Request) -> AuthConfigurationResponse:
 @router.post(
     "/local/login",
     response_model=CurrentUserResponse,
+    response_model_exclude_none=True,
     summary="Sign in with a development-only local account",
 )
 def local_login(request: Request, payload: LocalLoginRequest) -> CurrentUserResponse:
@@ -195,9 +206,8 @@ def google_callback(
             "The institutional user directory is unavailable",
         ) from exc
 
-    # Only an internal identifier and timestamp are kept in the signed cookie;
-    # role and active status are reloaded from the directory on every request.
-    _start_session(request, user)
+    # Role and active status are reloaded from the directory on every request.
+    _start_session(request, user, identity.display_name)
     return RedirectResponse(
         url=request.app.state.settings.auth_success_redirect,
         status_code=status.HTTP_302_FOUND,
@@ -207,10 +217,15 @@ def google_callback(
 @router.get(
     "/me",
     response_model=CurrentUserResponse,
+    response_model_exclude_none=True,
     summary="Return the current authorized user",
 )
-def current_user(current_user: CurrentUser) -> CurrentUserResponse:
-    return _current_user_response(current_user)
+def current_user(request: Request, current_user: CurrentUser) -> CurrentUserResponse:
+    display_name = request.session.get("display_name")
+    return _current_user_response(
+        current_user,
+        display_name if isinstance(display_name, str) else None,
+    )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, summary="End the current session")

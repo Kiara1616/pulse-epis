@@ -24,6 +24,9 @@ class RosterPeriodCreate(BaseModel):
     def dates(self):
         if self.ends_on < self.starts_on:
             raise ValueError("La fecha final debe ser posterior al inicio.")
+        period_year = int(self.code[:4])
+        if self.starts_on.year != period_year or self.ends_on.year > period_year + 1:
+            raise ValueError("Las fechas deben corresponder al año del periodo o, para el fin, al año siguiente.")
         return self
 
 

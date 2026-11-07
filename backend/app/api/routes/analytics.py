@@ -8,7 +8,8 @@ from fastapi.responses import Response
 from ...analytics.pdf_report import generate_pdf
 from ...analytics.excel_report import generate_excel
 
-from ...analytics.schemas import AnalyticsOverview, AnalyticsPeriod, MetricDefinition
+from ...analytics.schemas import AnalyticsOverview, AnalyticsPeriod, AnalyticsReport, MetricDefinition
+from ...analytics.reports import Granularity, assemble_report, quality_points
 from ...analytics.service import (
     AnalyticsPeriodNotFound,
     AnalyticsServiceProtocol,
@@ -94,6 +95,45 @@ def overview(
         raise _error(status.HTTP_404_NOT_FOUND, "SNAPSHOT_NOT_FOUND", "Este periodo o fecha todavía no tiene indicadores publicados. Consulta una publicación disponible o publícala desde Administración.") from exc
     except AnalyticsUnavailable as exc:
         raise _error(status.HTTP_503_SERVICE_UNAVAILABLE, "ANALYTICS_UNAVAILABLE", "Analytics are unavailable") from exc
+
+
+_REPORTS = {"panorama", "evolucion", "certificaciones", "habilidades", "cohortes", "calidad"}
+
+
+@router.get("/reports/{report}", response_model=AnalyticsReport, dependencies=[Depends(_ANALYTICS_READ)])
+def analytics_report(
+    report: str,
+    request: Request,
+    period_code: str = Query(min_length=1, max_length=32),
+    cutoff_date: date | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    granularity: Granularity = "month",
+    cohort: str | None = Query(default=None, max_length=32),
+    cycle: str | None = Query(default=None, max_length=32),
+    issuer: str | None = Query(default=None, max_length=150),
+    level: str | None = Query(default=None, max_length=50),
+    dataset: Literal["registered", "demo"] = "registered",
+) -> AnalyticsReport:
+    if report not in _REPORTS:
+        raise _error(status.HTTP_404_NOT_FOUND, "REPORT_NOT_FOUND", "El reporte solicitado no existe.")
+    if date_from and date_to and date_from > date_to:
+        raise _error(status.HTTP_422_UNPROCESSABLE_ENTITY, "INVALID_DATE_RANGE", "date_from no puede ser posterior a date_to.")
+    data = overview(request, period_code, cutoff_date, cohort, cycle, issuer, level, dataset)
+    quality = quality_points(
+        request.app.state.session_factory if dataset == "registered" and report == "calidad" else None,
+        period_code=period_code,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    return assemble_report(
+        report,
+        data,
+        granularity=granularity,
+        date_from=date_from,
+        date_to=date_to,
+        quality=quality,
+    )
 
 
 @router.get("/periods", response_model=list[AnalyticsPeriod], dependencies=[Depends(_ANALYTICS_READ)])

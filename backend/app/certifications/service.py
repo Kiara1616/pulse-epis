@@ -103,6 +103,7 @@ class CertificationDraft:
     expires_on: date | None
     source_url: str | None
     skills: tuple[SkillInput, ...]
+    catalog_credential_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,6 +130,7 @@ class EvidenceView:
 class CertificationView:
     id: UUID
     issuer_id: UUID
+    catalog_credential_id: UUID | None
     issuer_name: str
     issuer_url: str | None
     credential_name: str
@@ -454,6 +456,7 @@ class CertificationService:
         return CertificationView(
             id=certification.id,
             issuer_id=issuer.id,
+            catalog_credential_id=certification.catalog_credential_id,
             issuer_name=issuer.name,
             issuer_url=issuer.website_url,
             credential_name=certification.credential_name,
@@ -582,6 +585,7 @@ class CertificationService:
                     id=uuid4(),
                     student_id=student.id,
                     issuer_id=issuer.id,
+                    catalog_credential_id=draft.catalog_credential_id,
                     credential_name=credential_name,
                     external_id=external_id,
                     issued_on=issued_on,

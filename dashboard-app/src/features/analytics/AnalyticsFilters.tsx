@@ -20,6 +20,11 @@ type AnalyticsFiltersProps = {
     key: K,
     value: AnalyticsFilterValues[K],
   ) => void;
+  source?: {
+    dataset: "registered" | "demo";
+    available: boolean;
+    onChange: (value: "registered" | "demo") => void;
+  };
 };
 
 function optionsFor(items: AnalyticsMetric[]) {
@@ -31,18 +36,36 @@ export function AnalyticsFilters({
   filters,
   options,
   onChange,
+  source,
 }: AnalyticsFiltersProps) {
   return (
     <section
-      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+      className="surface-card p-4 sm:p-5"
       aria-label="Filtros de indicadores"
     >
-      <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
-        <Filter size={16} className="text-blue-600" />
-        Filtrar indicadores
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 pb-4">
+        <div>
+          <h2 className="card-title flex items-center gap-2">
+            <Filter size={17} className="text-blue-600" />
+            Explorar indicadores
+          </h2>
+        </div>
+        {source?.available && (
+          <label className="text-xs font-semibold text-slate-600">
+            Fuente de datos
+            <select
+              value={source.dataset}
+              onChange={(event) => source.onChange(event.target.value as "registered" | "demo")}
+              className="mt-1 block min-w-48 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="demo">Demostración · no oficial</option>
+              <option value="registered">Datos publicados</option>
+            </select>
+          </label>
+        )}
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <label className="text-xs font-bold text-slate-600">
+        <label className="text-xs font-semibold text-slate-600">
           Periodo
           <select
             value={filters.period_code}
@@ -57,8 +80,8 @@ export function AnalyticsFilters({
             ))}
           </select>
         </label>
-        <label className="text-xs font-bold text-slate-600">
-          Fecha de corte
+        <label className="text-xs font-semibold text-slate-600">
+          Fecha de los datos
           <div className="relative mt-1">
             <CalendarDays
               size={15}
@@ -91,6 +114,11 @@ export function AnalyticsFilters({
           onChange={(value) => onChange("cycle", value)}
         />
       </div>
+      {source?.dataset === "demo" && (
+        <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+          Demostración: cifras sintéticas, no registros institucionales publicados.
+        </p>
+      )}
     </section>
   );
 }
@@ -107,7 +135,7 @@ function SelectFilter({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="text-xs font-bold text-slate-600">
+    <label className="text-xs font-semibold text-slate-600">
       {label}
       <select
         aria-label={label}

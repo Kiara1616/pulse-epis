@@ -8,7 +8,11 @@ El ETL lee estudiantes, matrículas, certificaciones, emisores, habilidades y de
 python -m backend.scripts_etl.main --period-code 2026-II --cutoff-date 2026-10-02
 ```
 
-La fecha del comando es ilustrativa; el operador debe sustituirla por el corte aprobado. PULSE_DATABASE_URL identifica la base. El workflow etl-scheduled requiere ese secreto y ETL_PERIOD_CODE/ETL_CUTOFF_DATE. El operador necesita acceso de infraestructura: no hay botón web ni endpoint general para ejecutar corridas.
+La fecha del comando es ilustrativa; el operador debe sustituirla por el corte aprobado. `PULSE_DATABASE_URL` identifica la base. El workflow `etl-scheduled` requiere ese secreto. Su ejecución semanal usa `--scheduled`: selecciona el día anterior en `America/Lima` y exige un único periodo `OPEN` que contenga esa fecha. La ejecución manual conserva `period_code` y `cutoff_date` explícitos. Si no hay periodo o hay solapamiento, falla antes de publicar. El operador necesita acceso de infraestructura: no hay botón web ni endpoint general para ejecutar corridas.
+
+```bash
+python -m backend.scripts_etl.main --scheduled
+```
 
 ```mermaid
 flowchart TD

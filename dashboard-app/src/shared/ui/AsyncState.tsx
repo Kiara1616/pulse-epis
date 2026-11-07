@@ -38,7 +38,7 @@ export function AsyncState({
         className="flex min-h-48 flex-col items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center"
       >
         <AlertCircle aria-hidden="true" className="text-rose-500" size={28} />
-        <h3 className="mt-3 font-bold text-rose-900">
+        <h3 className="mt-3 font-semibold text-rose-900">
           No se pudo cargar la información
         </h3>
         <p className="mt-1 max-w-lg break-words text-sm text-rose-800">
@@ -46,7 +46,7 @@ export function AsyncState({
         </p>
         <button
           onClick={onRetry}
-          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <RefreshCw aria-hidden="true" size={16} />
           Reintentar

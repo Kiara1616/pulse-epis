@@ -59,9 +59,12 @@ class SkillRequest(BaseModel):
 
 
 class CertificationCreateRequest(BaseModel):
-    issuer_name: str = Field(min_length=1, max_length=150)
+    issuer_id: UUID
+    catalog_credential_id: UUID
+    skill_ids: list[UUID] = Field(min_length=1, max_length=20)
+    issuer_name: str | None = Field(default=None, max_length=150)
     issuer_url: str | None = Field(default=None, max_length=2048)
-    credential_name: str = Field(min_length=1, max_length=200)
+    credential_name: str | None = Field(default=None, max_length=200)
     external_id: str | None = Field(default=None, max_length=200)
     issued_on: date
     expires_on: date | None = None
@@ -70,13 +73,13 @@ class CertificationCreateRequest(BaseModel):
 
     @field_validator("issuer_name")
     @classmethod
-    def normalize_issuer_name(cls, value: str) -> str:
-        return _text(value, field="issuer_name", maximum=150)
+    def normalize_issuer_name(cls, value: str | None) -> str | None:
+        return _text(value, field="issuer_name", maximum=150) if value is not None else None
 
     @field_validator("credential_name")
     @classmethod
-    def normalize_credential_name(cls, value: str) -> str:
-        return _text(value, field="credential_name", maximum=200)
+    def normalize_credential_name(cls, value: str | None) -> str | None:
+        return _text(value, field="credential_name", maximum=200) if value is not None else None
 
     @field_validator("external_id")
     @classmethod
@@ -166,6 +169,7 @@ class CertificationResponse(BaseModel):
 
     id: UUID
     issuer_id: UUID
+    catalog_credential_id: UUID | None = None
     issuer_name: str
     issuer_url: str | None
     credential_name: str

@@ -82,7 +82,7 @@ Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se re
 
 ## Diccionario físico de tablas
 
-Extraído de backend/app/db/models.py para el corte documentado. Las ocho migraciones versionadas complementan los tipos y restricciones. No se afirma cifrado por campo donde el modelo declara String.
+Extraído de `backend/app/db/models.py` para el corte documentado. El catálogo, el aprendizaje y el descubrimiento posteriores amplían el esquema; la fuente vigente de las tablas y restricciones son los modelos y las migraciones de `backend/migrations/versions`. El [diagrama BI](26-Arquitectura-Data-Warehouse.md) documenta el grano de las tablas de hechos. No se afirma cifrado por campo donde el modelo declara `String`.
 
 ### Tabla academic_periods
 

@@ -16,9 +16,11 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse, RedirectResponse, Response
+from sqlalchemy import select
 
 from ...auth.dependencies import require_permissions
 from ...auth.models import AuthenticatedUser, Permission, Role
+from ...db.models import CredentialCatalog, Issuer, Skill
 from ...certifications.schemas import (
     CertificationCreateRequest,
     CertificationResponse,
@@ -60,6 +62,7 @@ def _certification_response(item) -> CertificationResponse:
     return CertificationResponse(
         id=item.id,
         issuer_id=item.issuer_id,
+        catalog_credential_id=item.catalog_credential_id,
         issuer_name=item.issuer_name,
         issuer_url=item.issuer_url,
         credential_name=item.credential_name,
@@ -123,15 +126,38 @@ def create_certification(
     current_user: AuthenticatedUser = Depends(_CERTIFICATION_WRITE),
 ) -> CertificationResponse:
     service = _service(request)
+    factory = request.app.state.session_factory
+    if factory is None:
+        raise _http_error(503, "CATALOG_UNAVAILABLE", "El catálogo no está disponible.")
+    if payload.skills:
+        raise _http_error(422, "CATALOG_REQUIRED", "Selecciona habilidades del catálogo.")
+    with factory() as session:
+        issuer = session.get(Issuer, payload.issuer_id)
+        credential = session.get(CredentialCatalog, payload.catalog_credential_id)
+        if issuer is None or not issuer.active or credential is None or not credential.active or credential.issuer_id != issuer.id:
+            raise _http_error(422, "CATALOG_REQUIRED", "Selecciona una entidad y certificación activas del catálogo.")
+        if payload.issuer_name and payload.issuer_name != issuer.name:
+            raise _http_error(422, "CATALOG_REQUIRED", "El nombre de la entidad debe coincidir con el catálogo.")
+        if payload.credential_name and payload.credential_name != credential.name:
+            raise _http_error(422, "CATALOG_REQUIRED", "El nombre de la certificación debe coincidir con el catálogo.")
+        ids = list(dict.fromkeys(payload.skill_ids))
+        selected = list(session.scalars(select(Skill).where(Skill.id.in_(ids), Skill.active.is_(True)))) if ids else []
+        if len(ids) != len(selected):
+            raise _http_error(422, "CATALOG_REQUIRED", "Selecciona habilidades activas del catálogo.")
+        issuer_name = issuer.name
+        issuer_url = issuer.website_url
+        credential_name = credential.name
+        skill_values = tuple(SkillInput(name=item.name) for item in selected)
     draft = CertificationDraft(
-        issuer_name=payload.issuer_name,
-        issuer_url=payload.issuer_url,
-        credential_name=payload.credential_name,
+        issuer_name=issuer_name,
+        issuer_url=issuer_url,
+        credential_name=credential_name,
         external_id=payload.external_id,
         issued_on=payload.issued_on,
         expires_on=payload.expires_on,
         source_url=payload.source_url,
-        skills=tuple(SkillInput(name=skill.name, level=skill.level) for skill in payload.skills),
+        skills=skill_values,
+        catalog_credential_id=credential.id,
     )
     try:
         return _certification_response(service.create_certification(current_user.id, draft))
@@ -241,6 +267,8 @@ def update_certification(
     request: Request,
     current_user: AuthenticatedUser = Depends(_CERTIFICATION_WRITE),
 ) -> CertificationResponse:
+    if payload.model_fields_set.intersection({"issuer_name", "issuer_url", "credential_name", "skills"}):
+        raise _http_error(422, "CATALOG_REQUIRED", "La entidad, certificación y habilidades se gestionan en el catálogo; corrige la evidencia, fechas o identificador.")
     try:
         item = _service(request).update_own(
             current_user.id,

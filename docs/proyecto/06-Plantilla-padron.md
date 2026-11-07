@@ -13,10 +13,11 @@ La plantilla [`padron.csv`](../recursos/templates/padron.csv) es el contrato mí
 | `cycle` | Sí | Ciclo o semestre académico, hasta 32 caracteres. |
 | `status` | Sí | `ACTIVE`, `INACTIVE` o `GRADUATED`; también se aceptan sus equivalentes `ACTIVO`, `INACTIVO`, `EGRESADO` y `GRADUADO`. |
 | `period` | Sí | Código del periodo previamente creado en `academic_periods`; debe coincidir con el periodo de la solicitud. |
+| `name` | No | Nombre completo confirmado, hasta 200 caracteres. Se vincula al código y correo en el directorio administrativo. |
 
 ## Reglas de carga
 
-- El archivo debe estar codificado en UTF-8 y respetar exactamente las siete columnas.
+- El archivo debe estar codificado en UTF-8 y contener las siete columnas obligatorias. Puede incluir `name` como octava columna.
 - La importación valida todas las filas antes de persistir. Si existe un rechazo, el lote queda `REJECTED` y no aplica cambios parciales.
 - Una misma combinación de periodo y contenido se procesa una sola vez. Una nueva solicitud devuelve el mismo reporte con `idempotent: true`.
 - Los rechazos devuelven número de fila, campo, código y mensaje genérico; no devuelven el valor inválido.

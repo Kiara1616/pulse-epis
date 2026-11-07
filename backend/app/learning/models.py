@@ -53,10 +53,27 @@ class LearningCourse(Base):
     title = mapped_column(sa.String(200), nullable=False)
     provider = mapped_column(sa.String(150), nullable=False)
     source_url = mapped_column(sa.String(2048), nullable=False, unique=True)
+    discovery_source_id = mapped_column(sa.Uuid(), sa.ForeignKey("learning_discovery_sources.id", ondelete="SET NULL"), nullable=True, index=True)
+    content_hash = mapped_column(sa.String(64), nullable=True)
+    first_seen_at = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    last_seen_at = mapped_column(sa.DateTime(timezone=True), nullable=True)
     checked_on = mapped_column(sa.Date(), nullable=False)
     requirements = mapped_column(sa.JSON(), nullable=False)
     skills = mapped_column(sa.JSON(), nullable=False)
     status = mapped_column(sa.String(20), nullable=False, default="DETECTED")
+    created_at = mapped_column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
+
+
+class LearningDiscoverySource(Base):
+    __tablename__ = "learning_discovery_sources"
+    id = mapped_column(sa.Uuid(), primary_key=True, default=uuid4)
+    name = mapped_column(sa.String(150), nullable=False)
+    url = mapped_column(sa.String(2048), nullable=False, unique=True)
+    kind = mapped_column(sa.String(20), nullable=False)
+    active = mapped_column(sa.Boolean(), nullable=False, default=True)
+    terms_reviewed_at = mapped_column(sa.DateTime(timezone=True), nullable=False)
+    last_checked_at = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    last_error = mapped_column(sa.String(500), nullable=True)
     created_at = mapped_column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
 
 class LearningOpportunity(Base):

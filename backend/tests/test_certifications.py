@@ -27,7 +27,7 @@ from backend.app.certifications.service import (
 )
 from backend.app.core.config import Settings
 from backend.app.db.base import Base
-from backend.app.db.models import AuditLog, Certification, Evidence, Student, User, Validation
+from backend.app.db.models import AuditLog, Certification, CredentialCatalog, CredentialCatalogSkill, Evidence, Issuer, Skill, Student, User, Validation
 from backend.app.main import create_app
 
 
@@ -255,7 +255,16 @@ def _sign_in(client: TestClient) -> None:
 
 
 def test_student_certification_and_temporary_download_api(tmp_path):
-    service, _, settings, actor_id, _, engine = make_service(tmp_path)
+    service, session_factory, settings, actor_id, _, engine = make_service(tmp_path)
+    with session_factory.begin() as session:
+        issuer = Issuer(name="AWS", website_url="https://aws.amazon.com")
+        skill = Skill(name="Cloud")
+        session.add_all([issuer, skill])
+        session.flush()
+        credential = CredentialCatalog(issuer_id=issuer.id, name="AWS Cloud Practitioner", normalized_name="aws cloud practitioner")
+        session.add(credential)
+        session.flush()
+        session.add(CredentialCatalogSkill(credential_id=credential.id, skill_id=skill.id))
     principal = AuthenticatedUser(
         id=actor_id,
         email="student.one@virtual.upt.pe",
@@ -273,19 +282,19 @@ def test_student_certification_and_temporary_download_api(tmp_path):
         oidc_client=FakeOidcClient(identity),
         certification_service=service,
     )
+    app.state.session_factory = session_factory
 
     with TestClient(app) as client:
         _sign_in(client)
         response = client.post(
             "/api/v1/certifications",
             json={
-                "issuer_name": "AWS",
-                "issuer_url": "https://aws.amazon.com",
-                "credential_name": "AWS Cloud Practitioner",
+                "issuer_id": str(issuer.id),
+                "catalog_credential_id": str(credential.id),
+                "skill_ids": [str(skill.id)],
                 "issued_on": "2026-01-15",
                 "expires_on": "2029-01-15",
                 "source_url": "https://verify.example.test/aws-001",
-                "skills": [{"name": "Cloud", "level": "Fundamentals"}],
             },
         )
         assert response.status_code == 201

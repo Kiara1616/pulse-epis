@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from threading import RLock
 from datetime import date, timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -23,6 +24,25 @@ from ..db.models import (
 )
 from ..demo_catalog import DEMO_CERTIFICATION_CATALOG
 from .service import AnalyticsService
+
+
+class _SynchronizedDemoAnalytics:
+    """Protect StaticPool's single SQLite connection from parallel requests."""
+
+    def __init__(self, service: AnalyticsService):
+        self._service = service
+        self._lock = RLock()
+
+    def periods(self):
+        with self._lock:
+            return self._service.periods()
+
+    def overview(self, **filters):
+        with self._lock:
+            return self._service.overview(**filters)
+
+    def dictionary(self):
+        return self._service.dictionary()
 
 
 REFERENCE_STUDENT_ACCOUNTS = {
@@ -123,7 +143,7 @@ def _students_for_period(students: list[Student], year: int, count: int) -> list
 
 
 @lru_cache(maxsize=1)
-def demo_analytics() -> AnalyticsService:
+def demo_analytics() -> _SynchronizedDemoAnalytics:
     """Create the shared reference dataset without touching the operational DB."""
 
     global _SESSION_FACTORY
@@ -204,7 +224,15 @@ def demo_analytics() -> AnalyticsService:
                     session.flush()
                     records.append((student, other, other_skills))
 
-            points = sorted({start + timedelta(days=14), start + timedelta(days=35), cutoff})
+            # Reference snapshots are derived from the synthetic issue dates.
+            # Weekly checkpoints make the progression visible without inventing
+            # values between snapshots in the operational dataset.
+            points = sorted(
+                {
+                    *(start + timedelta(days=day) for day in (14, 21, 28, 35, 42) if start + timedelta(days=day) <= cutoff),
+                    cutoff,
+                }
+            )
             for point in points:
                 certifications_per_student: dict[str, int] = {}
                 for student, certification, credential_skills in records:
@@ -242,7 +270,7 @@ def demo_analytics() -> AnalyticsService:
                             approved_certification_count=count,
                         )
                     )
-    return AnalyticsService(factory)
+    return _SynchronizedDemoAnalytics(AnalyticsService(factory))
 
 
 def _student_display_name(student: Student) -> str:

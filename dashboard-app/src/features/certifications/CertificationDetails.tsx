@@ -18,12 +18,9 @@ const editableFields: Array<{
   type: "date" | "text" | "url";
   required?: boolean;
 }> = [
-  { key: "credential_name", label: "Nombre de la certificación", type: "text", required: true },
-  { key: "issuer_name", label: "Entidad emisora", type: "text", required: true },
   { key: "issued_on", label: "Fecha de emisión", type: "date", required: true },
   { key: "expires_on", label: "Fecha de vencimiento (opcional)", type: "date" },
   { key: "source_url", label: "URL de verificación (opcional)", type: "url" },
-  { key: "skills", label: "Habilidades, separadas por comas", type: "text", required: true },
 ];
 
 export function CertificationDetails({
@@ -88,22 +85,14 @@ export function CertificationDetails({
         setFile(null);
       }
 
-      const { skills, level, ...values } = form;
-      const normalizedSourceUrl = values.source_url.trim() || null;
+      const { issued_on, expires_on, source_url } = form;
+      const normalizedSourceUrl = source_url.trim() || null;
       await apiFetch(`/certifications/${item.id}`, {
         method: "PATCH",
         body: JSON.stringify({
-          ...values,
-          expires_on: values.expires_on || null,
+          issued_on,
+          expires_on: expires_on || null,
           source_url: normalizedSourceUrl,
-          skills: skills
-            .split(",")
-            .map((name) => name.trim())
-            .filter(Boolean)
-            .map((name) => ({
-              name,
-              level: item.skills.find((skill) => skill.name === name)?.level ?? level,
-            })),
         }),
       });
       setErrors({});
@@ -149,12 +138,12 @@ export function CertificationDetails({
     <section
       role="region"
       aria-labelledby="certification-detail-heading"
-      className="rounded-xl border border-blue-200 bg-white p-5"
+      className="surface-card p-5"
     >
       <div className="flex justify-between gap-3">
         <h2
           id="certification-detail-heading"
-          className="font-semibold text-slate-900"
+          className="section-title"
         >
           Detalle de certificación
         </h2>
@@ -208,6 +197,7 @@ export function CertificationDetails({
 
       {item.correction_allowed ? (
         <form noValidate onSubmit={save} className="mt-5 space-y-4">
+          <p className="text-sm text-slate-600">Entidad, nombre y habilidades: {item.issuer_name} · {item.credential_name} · {item.skills.map((skill) => skill.name).join(", ") || "Sin habilidades"}. Si alguno no coincide con la evidencia, solicita su corrección a administración.</p>
           {hasCertificationFormErrors(errors) && (
             <p
               role="alert"

@@ -25,11 +25,14 @@ def test_certification_to_learning_request_with_real_sessions(tmp_path):
         login(admin,'admin');login(validator,'validator');login(student,'student')
         interest=post(admin,'/interests',{'name':'IA sintética'})
         route=post(admin,'/routes',{'title':'Ruta sintética de IA','description':'Formación de ejemplo con evidencia registrada','steps':[{'title':'Fundamentos','skills':['Python'],'prerequisites':[]}]});publish(admin,'routes',route,'PUBLISHED')
-        response=student.post('/api/v1/certifications',json={'credential_name':'Python sintético','issuer_name':'Emisor demo','issued_on':'2026-09-01','skills':[{'name':'Python','level':'Fundamentals'}]});assert response.status_code==201,response.text
+        issuer=admin.post('/api/v1/catalog/issuers',json={'name':'Emisor demo'}).json()
+        skill=admin.post('/api/v1/catalog/skills',json={'name':'Python'}).json()
+        catalog=admin.post('/api/v1/catalog/credentials',json={'issuer_id':issuer['id'],'name':'Python sintético','skill_ids':[skill['id']]}).json()
+        response=student.post('/api/v1/certifications',json={'catalog_credential_id':catalog['id'],'issuer_id':issuer['id'],'issued_on':'2026-09-01','skill_ids':[skill['id']]});assert response.status_code==201,response.text
         credential=response.json()['id']
         evidence=student.post(f'/api/v1/certifications/{credential}/evidence',files={'file':('evidencia-demo.pdf',b'%PDF-1.4\nsynthetic evidence\n%%EOF','application/pdf')});assert evidence.status_code==201,evidence.text
         assert validator.post(f'/api/v1/validations/{credential}',json={'action':'START_REVIEW'}).status_code==200
-        approval=validator.post(f'/api/v1/validations/{credential}',json={'action':'APPROVE','comment':'Evidencia sintética revisada en prueba integral.'});assert approval.status_code==200,approval.text
+        approval=validator.post(f'/api/v1/validations/{credential}',json={'action':'APPROVE','catalog_confirmed':True,'comment':'Evidencia sintética revisada en prueba integral.'});assert approval.status_code==200,approval.text
         assert student.get(f'/api/v1/certifications/{credential}').json()['status']=='APPROVED'
         assert student.put('/api/v1/learning/me/profile',json={'route_id':route['id'],'interest_ids':[interest['id']]}).status_code==200
         course=post(admin,'/courses',{'title':'Curso de IA sintético','provider':'Proveedor demo','source_url':'https://example.invalid/course','checked_on':'2026-01-01','requirements':['Python'],'skills':['IA']});publish(admin,'courses',course,'IN_REVIEW')
