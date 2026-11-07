@@ -68,6 +68,8 @@ class AuthService:
             raise UserNotProvisioned("Identity is not in the institutional padrón")
         if user.role == Role.STUDENT and domain != STUDENT_EMAIL_DOMAIN:
             raise UserNotProvisioned("Student email must use the institutional virtual domain")
+        if user.role == Role.STUDENT and user.email.casefold() != email:
+            raise UserNotProvisioned("Student email does not match the institutional padrón")
         if not user.is_active:
             raise InactiveUser("The provisioned account is inactive")
         if user.role == Role.STUDENT and user.student_id is None:

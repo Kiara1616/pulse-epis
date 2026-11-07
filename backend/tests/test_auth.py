@@ -428,6 +428,20 @@ def test_students_require_virtual_domain_even_when_staff_domain_is_allowed():
     assert service.authenticate_google(GoogleIdentity("admin-subject", admin.email, True)).id == admin.id
 
 
+def test_bound_google_student_must_still_match_roster_email():
+    student = replace(
+        make_user(Role.STUDENT, "student@virtual.upt.pe", student_id=uuid4()),
+        google_subject="bound-subject",
+    )
+    service = AuthService(
+        settings=make_settings(),
+        directory=InMemoryUserDirectory([student]),
+    )
+
+    with pytest.raises(UserNotProvisioned):
+        service.authenticate_google(GoogleIdentity("bound-subject", "other@virtual.upt.pe", True))
+
+
 def test_callback_redirects_to_the_configured_frontend_origin():
     student = make_user(
         Role.STUDENT,
