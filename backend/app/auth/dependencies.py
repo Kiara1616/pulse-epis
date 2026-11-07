@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
 
-from .models import AuthenticatedUser, Permission, Role
+from .models import AuthenticatedUser, Permission, Role, STUDENT_EMAIL_DOMAIN
 from .rbac import has_permission
 from .store import UserDirectoryUnavailable
 
@@ -47,7 +47,13 @@ def get_current_user(request: Request) -> AuthenticatedUser:
             "AUTH_DIRECTORY_UNAVAILABLE",
             "The institutional user directory is unavailable",
         ) from exc
-    if user is None or not user.is_active:
+    if (
+        user is None
+        or not user.is_active
+        or (request.app.state.settings.auth_provider == "google" and user.role == Role.STUDENT and (
+            user.student_id is None or not user.email.casefold().endswith("@" + STUDENT_EMAIL_DOMAIN)
+        ))
+    ):
         request.session.clear()
         raise _http_error(
             status.HTTP_401_UNAUTHORIZED,

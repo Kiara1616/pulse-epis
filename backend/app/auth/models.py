@@ -7,6 +7,9 @@ from enum import StrEnum
 from uuid import UUID
 
 
+STUDENT_EMAIL_DOMAIN = "virtual.upt.pe"
+
+
 class Role(StrEnum):
     """The only technical roles supported by the MVP."""
 
