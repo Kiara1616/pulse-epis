@@ -56,7 +56,7 @@ class AuthService:
             raise InvalidIdentity("Google did not provide a verified identity")
 
         domain = email.rsplit("@", 1)[-1] if "@" in email else ""
-        if domain not in self.settings.allowed_google_email_domains:
+        if domain not in self.settings.allowed_google_email_domains and email not in self.settings.allowed_google_staff_emails:
             raise UserNotProvisioned("Email domain is not allowed")
 
         user = self.directory.find_by_google_subject(identity.subject)
@@ -66,6 +66,8 @@ class AuthService:
             # Matching the local directory is deliberate: a Google domain is not
             # evidence that the person belongs to EPIS.
             raise UserNotProvisioned("Identity is not in the institutional padrón")
+        if domain not in self.settings.allowed_google_email_domains and user.role not in {Role.ADMIN, Role.VALIDATOR}:
+            raise UserNotProvisioned("Only provisioned staff may use an allowed external email")
         if user.role == Role.STUDENT and domain != STUDENT_EMAIL_DOMAIN:
             raise UserNotProvisioned("Student email must use the institutional virtual domain")
         if user.role == Role.STUDENT and user.email.casefold() != email:

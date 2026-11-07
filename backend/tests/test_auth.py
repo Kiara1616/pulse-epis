@@ -442,6 +442,19 @@ def test_bound_google_student_must_still_match_roster_email():
         service.authenticate_google(GoogleIdentity("bound-subject", "other@virtual.upt.pe", True))
 
 
+def test_explicit_personal_email_can_access_only_as_provisioned_staff():
+    admin = make_user(Role.ADMIN, "kiaramurillo193@gmail.com")
+    student = make_user(Role.STUDENT, "student@gmail.com", student_id=uuid4())
+    service = AuthService(
+        settings=make_settings(google_allowed_staff_emails="kiaramurillo193@gmail.com,student@gmail.com"),
+        directory=InMemoryUserDirectory([admin, student]),
+    )
+
+    assert service.authenticate_google(GoogleIdentity("admin-subject", admin.email, True)).id == admin.id
+    with pytest.raises(UserNotProvisioned):
+        service.authenticate_google(GoogleIdentity("student-subject", student.email, True))
+
+
 def test_callback_redirects_to_the_configured_frontend_origin():
     student = make_user(
         Role.STUDENT,
