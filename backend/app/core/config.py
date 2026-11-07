@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     google_client_secret: SecretStr | None = None
     google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
     google_allowed_domains: str = "virtual.upt.pe,upt.edu.pe"
+    google_allowed_staff_emails: str = ""
     local_auth_seed: bool = False
     local_auth_password: SecretStr = SecretStr("pulse-local-demo")
     demo_data_seed: bool = False
@@ -108,6 +109,14 @@ class Settings(BaseSettings):
         if any("@" in domain or "/" in domain for domain in domains):
             raise ValueError("google_allowed_domains must contain host names only")
         return ",".join(dict.fromkeys(domains))
+
+    @field_validator("google_allowed_staff_emails")
+    @classmethod
+    def normalize_google_allowed_staff_emails(cls, value: str) -> str:
+        emails = [email.strip().casefold() for email in value.split(",") if email.strip()]
+        if any(email.count("@") != 1 or " " in email for email in emails):
+            raise ValueError("google_allowed_staff_emails must contain email addresses")
+        return ",".join(dict.fromkeys(emails))
 
     @field_validator("auth_session_cookie")
     @classmethod
@@ -234,6 +243,10 @@ class Settings(BaseSettings):
             for domain in self.google_allowed_domains.split(",")
             if domain.strip()
         )
+
+    @property
+    def allowed_google_staff_emails(self) -> tuple[str, ...]:
+        return tuple(email for email in self.google_allowed_staff_emails.split(",") if email)
 
     @property
     def allowed_cors_origins(self) -> tuple[str, ...]:

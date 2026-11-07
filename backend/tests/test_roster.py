@@ -77,6 +77,16 @@ bad-code,student@outside.example,OTHER,,VI,UNKNOWN,2025-I
     assert all("bad-code" not in rejection.message for rejection in parsed.rejections)
 
 
+def test_roster_rejects_staff_domain_even_when_google_allows_staff():
+    content = b"code,email,school,plan,cycle,status,period\n2023077087,student@upt.edu.pe,EPIS,Plan 2020,VIII,ACTIVE,2026-II\n"
+    settings = make_settings().model_copy(update={"google_allowed_domains": "virtual.upt.pe,upt.edu.pe"})
+
+    parsed = parse_roster_csv(content, period_code="2026-II", settings=settings)
+
+    assert parsed.records == ()
+    assert [item.reason_code for item in parsed.rejections] == ["EMAIL_DOMAIN_NOT_ALLOWED"]
+
+
 def test_import_is_atomic_pseudonymized_and_idempotent(caplog):
     service, session_factory, period, actor_id, engine = make_service()
     caplog.set_level("INFO", logger="backend.app.roster.service")

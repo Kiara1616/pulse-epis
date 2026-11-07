@@ -35,6 +35,8 @@ def main() -> int:
     config = Path('/tmp/pulse-nginx.conf')
     config.write_text(Path('/app/deploy/render/nginx.conf').read_text().replace('__PORT__', str(port)))
     subprocess.run(['alembic', '-c', '/app/backend/alembic.ini', 'upgrade', 'head'], check=True)
+    if os.environ.get('PULSE_BOOTSTRAP_ADMIN_EMAIL'):
+        subprocess.run(['python', '-m', 'deploy.render.bootstrap_admin'], check=True)
     children: list[subprocess.Popen] = []
     stopping = False
 

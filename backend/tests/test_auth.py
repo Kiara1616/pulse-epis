@@ -17,6 +17,7 @@ from backend.app.auth.local_seed import seed_local_users
 from backend.app.auth.models import AuthenticatedUser, GoogleIdentity, Permission, Role
 from backend.app.auth.oidc import GOOGLE_SCOPE, GoogleOidcClient
 from backend.app.auth.passwords import hash_password
+from backend.app.auth.service import AuthService, UserNotProvisioned
 from backend.app.auth.store import InMemoryUserDirectory, SqlAlchemyUserDirectory
 from backend.app.core.config import Settings
 from backend.app.db.base import Base
@@ -407,7 +408,51 @@ def test_sqlalchemy_directory_resolves_students_and_binds_google_subject():
     assert before.google_subject is None
     assert after.google_subject == "google-student-123"
     assert directory.find_by_google_subject("google-student-123").id == user_id
+    with Session(engine) as session:
+        student = session.get(Student, student_id)
+        student.status = "INACTIVE"
+        session.commit()
+    assert directory.get_by_id(user_id).is_active is False
     engine.dispose()
+
+
+def test_students_require_virtual_domain_even_when_staff_domain_is_allowed():
+    student = make_user(Role.STUDENT, "student@upt.edu.pe", student_id=uuid4())
+    admin = make_user(Role.ADMIN, "admin@upt.edu.pe")
+    service = AuthService(
+        settings=make_settings(google_allowed_domains="virtual.upt.pe,upt.edu.pe"),
+        directory=InMemoryUserDirectory([student, admin]),
+    )
+    with pytest.raises(UserNotProvisioned):
+        service.authenticate_google(GoogleIdentity("student-subject", student.email, True))
+    assert service.authenticate_google(GoogleIdentity("admin-subject", admin.email, True)).id == admin.id
+
+
+def test_bound_google_student_must_still_match_roster_email():
+    student = replace(
+        make_user(Role.STUDENT, "student@virtual.upt.pe", student_id=uuid4()),
+        google_subject="bound-subject",
+    )
+    service = AuthService(
+        settings=make_settings(),
+        directory=InMemoryUserDirectory([student]),
+    )
+
+    with pytest.raises(UserNotProvisioned):
+        service.authenticate_google(GoogleIdentity("bound-subject", "other@virtual.upt.pe", True))
+
+
+def test_explicit_personal_email_can_access_only_as_provisioned_staff():
+    admin = make_user(Role.ADMIN, "kiaramurillo193@gmail.com")
+    student = make_user(Role.STUDENT, "student@gmail.com", student_id=uuid4())
+    service = AuthService(
+        settings=make_settings(google_allowed_staff_emails="kiaramurillo193@gmail.com,student@gmail.com"),
+        directory=InMemoryUserDirectory([admin, student]),
+    )
+
+    assert service.authenticate_google(GoogleIdentity("admin-subject", admin.email, True)).id == admin.id
+    with pytest.raises(UserNotProvisioned):
+        service.authenticate_google(GoogleIdentity("student-subject", student.email, True))
 
 
 def test_callback_redirects_to_the_configured_frontend_origin():
