@@ -22,6 +22,7 @@ Estas fuentes permiten comprender, desarrollar, verificar y operar Pulse EPIS. S
 | [Desarrollo local](12-Desarrollo-local.md) | Configuración, ejecución y migraciones |
 | [Autenticación y seguridad](13-Autenticacion-y-seguridad.md) | Identidad, permisos, evidencia y controles pendientes |
 | [ETL y calidad](14-ETL-y-calidad.md) | Extracción, idempotencia y publicación de snapshots |
+| [Fuentes y captura de datos](30-Fuentes-y-captura-de-datos.md) | Cómo ingresan padrón, evidencias, decisiones y catálogos externos al ETL |
 | [API y contratos](15-API-y-contratos.md) | Rutas, formato de errores y esquema vigente |
 | [Despliegue y recuperación](16-Despliegue-y-recuperacion.md) | Ambientes, respaldos, rollback y restauración |
 | [Pruebas y aceptación](17-Pruebas-y-aceptacion.md) | Suites, evidencia y condiciones de cierre |
