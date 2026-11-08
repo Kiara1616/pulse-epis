@@ -2,17 +2,8 @@ name: Certification ETL
 
 on:
   schedule:
-    - cron: "0 5 * * 1"
+    - cron: "0 10 * * 1"
   workflow_dispatch:
-    inputs:
-      period_code:
-        description: "Academic period to publish"
-        required: true
-        type: string
-      cutoff_date:
-        description: "Snapshot cutoff in YYYY-MM-DD"
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -25,49 +16,37 @@ jobs:
   etl:
     runs-on: ubuntu-latest
     env:
-      PULSE_DATABASE_URL: ${{ secrets.PULSE_DATABASE_URL }}
-      PULSE_ETL_PERIOD_CODE: ${{ inputs.period_code }}
-      PULSE_ETL_CUTOFF_DATE: ${{ inputs.cutoff_date }}
+      PULSE_ETL_BASE_URL: ${{ vars.PULSE_ETL_BASE_URL }}
+      PULSE_ETL_SCHEDULER_SECRET: ${{ secrets.PULSE_ETL_SCHEDULER_SECRET }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
-          cache: pip
-          cache-dependency-path: backend/requirements.txt
-
-      - name: Install backend dependencies
-        run: python -m pip install -r backend/requirements.txt
-
-      - name: Validate scheduler configuration
+      - name: Validate configuration
         shell: bash
         run: |
-          test -n "$PULSE_DATABASE_URL" || { echo "Missing PULSE_DATABASE_URL secret"; exit 1; }
-          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
-            test -n "$PULSE_ETL_PERIOD_CODE" || { echo 'Missing period_code input'; exit 1; }
-            test -n "$PULSE_ETL_CUTOFF_DATE" || { echo 'Missing cutoff_date input'; exit 1; }
-          fi
+          test -n "$PULSE_ETL_BASE_URL" || { echo 'Missing PULSE_ETL_BASE_URL variable'; exit 1; }
+          test -n "$PULSE_ETL_SCHEDULER_SECRET" || { echo 'Missing PULSE_ETL_SCHEDULER_SECRET secret'; exit 1; }
 
-      - name: Run idempotent certification ETL
-        env:
-          PYTHONPATH: .
+      - name: Run ETL inside Pulse EPIS service
         shell: bash
         run: |
-          mkdir -p artifacts/etl
-          if [ "${{ github.event_name }}" = 'schedule' ]; then
-            python -m backend.scripts_etl.main --scheduled > artifacts/etl/report.json
-          else
-            python -m backend.scripts_etl.main --period-code "$PULSE_ETL_PERIOD_CODE" --cutoff-date "$PULSE_ETL_CUTOFF_DATE" > artifacts/etl/report.json
-          fi
-          python -c 'import json; r=json.load(open("artifacts/etl/report.json",encoding="utf-8")); print("run_id={id} period={period_code} cutoff={cutoff_date} status={status} accepted={accepted_rows} rejected={rejected_rows} idempotent={idempotent}".format(**r))'
+          curl --silent --show-error --fail-with-body --retry 2 --retry-delay 15 --max-time 180 \
+            --request POST \
+            --header "X-Pulse-ETL-Secret: $PULSE_ETL_SCHEDULER_SECRET" \
+            "${PULSE_ETL_BASE_URL%/}/api/v1/etl/scheduled" \
+            --output etl-result.json
+          python - <<'PY'
+          import json
+          with open("etl-result.json", encoding="utf-8") as result_file:
+              result = json.load(result_file)
+          print("status={status} reason={reason} period={period} cutoff={cutoff} run_id={run_id}".format(
+              status=result.get("status"), reason=result.get("reason", ""),
+              period=result.get("period_code", ""), cutoff=result.get("cutoff_date", ""),
+              run_id=result.get("id", "")))
+          PY
 
-      - name: Preserve ETL report
+      - name: Preserve ETL result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: certification-etl-report
-          path: artifacts/etl/report.json
+          name: certification-etl-result
+          path: etl-result.json
           if-no-files-found: warn

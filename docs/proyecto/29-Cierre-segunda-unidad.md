@@ -6,7 +6,17 @@
 
 El proyecto separado [BigQuery Sandbox](../../infra/bigquery/README.md) demuestra sin facturación dos tablas de hechos con datos sintéticos y una consulta por fecha de corte. No está conectado a la base de Render y no sustituye Cloud SQL, Cloud Storage ni el ETL programado de esta arquitectura objetivo.
 
-El workflow semanal `.github/workflows/etl-scheduled.yml` no constituye evidencia de ejecución: las corridas programadas recientes figuran como **omitidas** y el repositorio no tiene configurado `PULSE_DATABASE_URL`. La base de Render no expone una conexión externa para ese workflow. La carga periódica de datos institucionales permanece pendiente hasta disponer de una ejecución autorizada con acceso a la base y un periodo académico abierto.
+El workflow semanal `.github/workflows/etl-scheduled.yml` ahora llama por HTTPS a un endpoint de ETL dentro del servicio Render. GitHub conserva solo la credencial del programador, y el proceso de Pulse accede a PostgreSQL por la red interna de Render. La corrida se marca `SKIPPED` cuando no existe un periodo abierto único o un padrón aplicado. La primera ejecución programada con datos institucionales sigue pendiente hasta importar y confirmar el padrón.
+
+```mermaid
+flowchart LR
+    G[GitHub Actions lunes 05:00 Lima] -->|HTTPS y secreto| R[Pulse EPIS en Render]
+    R -->|red interna| P[(PostgreSQL Render)]
+    P --> E[ETL por periodo y corte]
+    E --> F[(Hechos analíticos)]
+    F --> D[Seis reportes BI]
+    E --> A[Resultado y artefacto de la corrida]
+```
 
 ## Matriz de cumplimiento
 
