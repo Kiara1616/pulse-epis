@@ -1,12 +1,12 @@
 # Obtención de datos y trazabilidad para Pulse EPIS
 
-**Estado al 07/11/2026:** este documento distingue las fuentes que ya alimentan Pulse EPIS de las integraciones propuestas. Los indicadores académicos nacen de datos institucionales y decisiones verificadas; los catálogos externos sirven para recomendar cursos, no para afirmar que un estudiante obtuvo una certificación.
+**Estado al 08/11/2026:** este documento distingue las fuentes que ya alimentan Pulse EPIS de las integraciones propuestas. Los indicadores académicos nacen de datos institucionales y decisiones verificadas; los catálogos externos sirven para recomendar cursos, no para afirmar que un estudiante obtuvo una certificación.
 
 ## Fuentes y responsables
 
 | Dato | Cómo ingresa | Responsable | Frecuencia | Comprobación y destino | Estado |
 |---|---|---|---|---|---|
-| Padrón EPIS, periodo, ciclo, código, correo y estado | El administrador prepara un CSV desde el Excel institucional, previsualiza e importa por periodo en `/admin/estudiantes` | Administración EPIS | Cada actualización oficial del padrón | Formato, duplicados, correo institucional y periodo; tablas de estudiantes y matrículas | Implementado; nombre completo está en la PR #99 y el padrón de producción debe importarse en Render |
+| Padrón EPIS, periodo, ciclo, código, nombre, correo y estado | El administrador prepara un CSV desde el Excel confirmado, previsualiza e importa por periodo en `/admin/estudiantes` | Administración EPIS | Cada actualización confirmada del padrón | Formato, duplicados, correo institucional y periodo; tablas de estudiantes y matrículas | Importador con nombre desplegado; el archivo 2026-II aún no se ha importado en Render |
 | Certificación y evidencia | El estudiante autenticado declara la credencial y adjunta archivo o URL | Estudiante | Al obtener una credencial | Fechas, emisor, duplicados y vínculo con su propia cuenta; tablas operativas de certificaciones y evidencias | Implementado |
 | Decisión de validación | El validador o administrador revisa evidencia y registra aprobación, observación o rechazo | Validador/administrador | Por solicitud | Historial con actor y fecha; solo aprobaciones elegibles entran al KPI | Implementado |
 | Oferta de cursos y talleres | El administrador registra y publica opciones | Administración EPIS | Al cambiar la oferta | Catálogo con estado, proveedor, URL y fecha de revisión | Registro manual implementado |
@@ -21,7 +21,9 @@ La [página pública de alumnos de Ingeniería de Sistemas](https://eped.upt.edu
 
 Como referencia de cobertura, el PDF oficial de **2026-II** informa **324 matriculados en Ingeniería de Sistemas**, con fuente OPLA al **28/09/2026**. Esa cifra sirve para contrastar el número de alumnos importados, pero no prueba que los 324 tengan correo confirmado, hayan ingresado en Pulse o posean certificaciones. El tablero debe mostrar por separado: población oficial reportada, padrón importado, cuentas con acceso y certificaciones aprobadas. Una diferencia entre esos números es una brecha de datos que se investiga, no se rellena automáticamente.
 
-El flujo objetivo sería: **(1)** el administrador prepara el CSV institucional con periodo, código, nombre, correo, ciclo y estado; **(2)** antes de cargarlo, un conversor comprueba que el código explícito corresponda a los dígitos confirmados del correo; **(3)** una lectura opcional de la lista pública genera un informe de diferencias de nombre/ciclo para revisión; **(4)** el administrador resuelve diferencias y confirma la importación. El importador actualmente exige una columna `code`; no la deduce del correo. La columna `full_name` está en la PR #99, todavía sin publicar. Nunca se combinan dos personas por similitud de nombres: pueden existir homónimos o cambios ortográficos. El dato público no sustituye al padrón que determina quién puede entrar.
+El flujo para 2026-II es: **(1)** el administrador convierte el Excel confirmado a CSV con periodo, código, nombre, correo, ciclo, plan y estado; **(2)** el conversor extrae el código de los números del correo según la regla confirmada y deja las filas incompletas en revisión; **(3)** el administrador registra el periodo y confirma la importación; **(4)** el ETL publica un corte. El importador exige una columna `code`, aunque el conversor local puede prepararla, y ya guarda `name` como `students.full_name`. Nunca se combinan dos personas por similitud de nombres: pueden existir homónimos o cambios ortográficos. El dato público no sustituye al padrón que determina quién puede entrar.
+
+El libro confirmado de 2026-II contiene **328 nombres** y **100 filas con correo institucional**. El CSV preparado contiene esas 100 filas con estado `ACTIVE` y plan textual `2026 II`, según indicación de la responsable. Las otras 228 filas no se importan como cuentas hasta tener correo y código confirmados. Una fila con código de ocho dígitos derivado del correo queda señalada para conciliación posterior. La fecha de inicio de matrícula informada es 15/07/2026; para el periodo de clases se usarán 17/08/2026 a 23/12/2026. A la fecha de este documento, el CSV aún no se ha cargado en la base de Render.
 
 ## Del dato operacional al reporte
 
@@ -50,7 +52,7 @@ Orden de integración: API/feed del proveedor; importación de catálogo proporc
 
 ## Evidencia sin gasto de nube
 
-La [prueba BigQuery Sandbox](../../infra/bigquery/README.md) contiene **solo hechos sintéticos** y demuestra una consulta de Data Warehouse en GCP sin facturación. No está conectada a la base de Render. La arquitectura completa con Cloud SQL, Cloud Storage y Cloud Run permanece definida en la PR #99, pendiente de integración y de un proyecto con facturación; no debe describirse como desplegada.
+La [prueba BigQuery Sandbox](../../infra/bigquery/README.md) contiene **solo hechos sintéticos** y demuestra una consulta de Data Warehouse en GCP sin facturación. No está conectada a la base de Render. La arquitectura con Cloud SQL, Cloud Storage y Cloud Run está definida en Terraform dentro del repositorio, pero no se ha aplicado a un proyecto con facturación; no debe describirse como desplegada.
 
 ## Datos que aún faltan para un corte institucional
 
