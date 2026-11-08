@@ -13,6 +13,7 @@ from ..auth.models import STUDENT_EMAIL_DOMAIN
 
 
 ROSTER_COLUMNS = ("code", "email", "school", "plan", "cycle", "status", "period")
+OPTIONAL_COLUMNS = ("name",)
 _CODE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$")
 _EMAIL_PATTERN = re.compile(r"^[^@\s]{1,254}@[^@\s]{1,253}$")
 _STATUS_ALIASES = {
@@ -38,6 +39,7 @@ class RosterRecord:
     status: str
     period: str
     row_number: int
+    name: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,7 +128,8 @@ def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings, se
     expected_headers = set(ROSTER_COLUMNS)
     if (
         len(normalized_headers) != len(set(normalized_headers))
-        or set(normalized_headers) != expected_headers
+        or not expected_headers.issubset(normalized_headers)
+        or not set(normalized_headers).issubset(expected_headers | set(OPTIONAL_COLUMNS))
     ):
         return _file_rejection(
             "INVALID_HEADERS",
@@ -148,6 +151,7 @@ def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings, se
             field: normalize_text(str(raw_row.get(header_map[field]) or ""))
             for field in ROSTER_COLUMNS
         }
+        name = normalize_text(str(raw_row.get(header_map["name"]) or "")) if "name" in header_map else ""
         if not any(row.values()):
             continue
         source_rows += 1
@@ -178,6 +182,8 @@ def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings, se
             continue
 
         row_rejections: list[RosterRejection] = []
+        if len(name) > 200:
+            row_rejections.append(_rejection(row_number, "name", "INVALID_NAME", "Student name exceeds 200 characters."))
         code = row["code"].casefold()
         if not code:
             row_rejections.append(
@@ -270,6 +276,7 @@ def parse_roster_csv(content: bytes, *, period_code: str, settings: Settings, se
                 status=status,
                 period=row["period"],
                 row_number=row_number,
+                name=name,
             )
         )
 

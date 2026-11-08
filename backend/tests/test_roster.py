@@ -25,6 +25,21 @@ kz2022011044,student.two@virtual.upt.pe,EPIS,Plan 2020,VI,ACTIVO,2026-II
 """
 
 
+def test_roster_preserves_confirmed_name_with_student_identity():
+    service, session_factory, _, actor_id, _ = make_service()
+    content = ("code,email,school,plan,cycle,status,period,name\n"
+               "2023077087,kz2023077087@virtual.upt.pe,EPIS,2026 II,VIII,ACTIVE,2026-II,Cuenta KZ\n").encode()
+
+    report = service.import_csv(content, period_code="2026-II", actor_user_id=actor_id)
+
+    assert report.status == "APPLIED"
+    with session_factory() as session:
+        student = session.scalar(select(Student).where(Student.student_code == "2023077087"))
+        assert student is not None
+        assert student.full_name == "Cuenta KZ"
+        assert session.scalar(select(User.email).where(User.id == student.user_id)) == "kz2023077087@virtual.upt.pe"
+
+
 def make_settings() -> Settings:
     return Settings(
         environment="test",
