@@ -37,7 +37,7 @@
 
 # Documento de Visión
 
-<p align="center">Código FD02<br>Versión <em>3.4</em></p>
+<p align="center">Código FD02<br>Versión <em>4.0</em></p>
 
 **CONTROL DE VERSIONES**
 
@@ -48,6 +48,7 @@
 | 3.1 | KHZM / VRLN | — | — | 02/10/2026 | Organización del documento |
 | 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de la presentación |
 | 3.4 | — | — | — | 08/10/2026 | Revisión de visión, perfiles, capacidades y prioridades |
+| 4.0 | KHZM / VRLN | — | — | 07/11/2026 | Actualización integral de capacidades, alcance BI y ruta de piloto institucional |
 
 **ÍNDICE GENERAL**
 
