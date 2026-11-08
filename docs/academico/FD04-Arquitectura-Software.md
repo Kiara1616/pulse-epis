@@ -37,7 +37,7 @@
 
 # Documento de Arquitectura de Software
 
-<p align="center">Código FD04<br>Versión <em>3.4</em></p>
+<p align="center">Código FD04<br>Versión <em>4.0</em></p>
 
 **CONTROL DE VERSIONES**
 
@@ -48,6 +48,7 @@
 | 3.1 | KHZM / VRLN | — | — | 02/10/2026 | Organización y revisión de las vistas |
 | 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de presentación y contenido |
 | 3.4 | — | — | — | 09/10/2026 | Adecuación de estructura SAD, diagramas y atributos de calidad |
+| 4.0 | KHZM / VRLN | — | — | 07/11/2026 | Actualización integral de arquitectura BI, Data Warehouse, Data Lake y operación cloud propuesta |
 
 **ÍNDICE GENERAL**
 
@@ -150,6 +151,7 @@ Los documentos del proyecto utilizados para mantener consistencia son los siguie
 | [FD02 — Visión](FD02-Informe-Vision.md) | Alcance, actores y prioridades |
 | [FD03 — Requerimientos](FD03-Especificacion-Requerimientos.md) | RF, RNF y casos de uso |
 | [Modelo de datos](../proyecto/05-Modelo-de-datos.md) | Entidades y organización relacional |
+| [Arquitectura Data Warehouse](../proyecto/26-Arquitectura-Data-Warehouse.md) | Grano de hechos, dimensiones lógicas, flujo ETL y reglas temporales de la segunda unidad |
 | [Diccionario de indicadores](../proyecto/09-Diccionario-indicadores.md) | Fórmulas y significado de los resultados |
 | [API y contratos](../proyecto/15-API-y-contratos.md) | Interfaces entre componentes |
 | Código de `backend/app`, `compose.yaml` y `deploy/operations.sh` | Comportamiento implementado y operación |

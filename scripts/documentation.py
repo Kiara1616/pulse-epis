@@ -442,7 +442,14 @@ def build_pdf(entry: dict, revision: dict) -> tuple[Path, int]:
         if not marker:
             marker=re.search(r"^## Resumen",text,re.M)
         if not marker: raise ValueError(f"Missing academic body start: {source}")
-        front=text[:marker.start()]
+        # The HTML block before the first Markdown H1 is the canonical source
+        # cover.  The PDF has already rendered that cover above, so including
+        # the block again would print its tags as an extra page.  Keep the H1,
+        # document code, version history and authored index only.
+        front_start = re.search(r"^# ", text, re.M)
+        if not front_start or front_start.start() >= marker.start():
+            raise ValueError(f"Missing academic title before body: {source}")
+        front=text[front_start.start():marker.start()]
         story.extend(body_flows(front,source,output,revision,st))
         story.append(PageBreak())
         text=text[marker.start():]

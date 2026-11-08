@@ -37,7 +37,7 @@
 
 # Informe Final del Proyecto
 
-<p align="center">Código FD05<br>Versión <em>3.4</em></p>
+<p align="center">Código FD05<br>Versión <em>4.0</em></p>
 
 **CONTROL DE VERSIONES**
 
@@ -46,6 +46,7 @@
 | 1.0 | KHZM / VRLN | — | — | 02/10/2026 | Elaboración del informe final |
 | 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de presentación y contenido |
 | 3.4 | — | — | — | 10/10/2026 | Revisión de estructura, resultados y presupuesto |
+| 4.0 | KHZM / VRLN | — | — | 07/11/2026 | Cierre documental de segunda unidad e integración de FD06 |
 
 **ÍNDICE GENERAL**
 
@@ -80,6 +81,7 @@
   - [Anexo 03. Documento SRS](#anexo-03-documento-srs)
   - [Anexo 04. Documento SAD](#anexo-04-documento-sad)
   - [Anexo 05. Manuales y otros documentos](#anexo-05-manuales-y-otros-documentos)
+  - [Anexo 06. Propuesta de proyecto](#anexo-06-propuesta-de-proyecto)
 
 ## 1. Antecedentes
 
@@ -87,7 +89,7 @@ Pulse EPIS se desarrolla en el contexto de la Escuela Profesional de Ingeniería
 
 La propuesta relaciona dos conjuntos que deben distinguirse: la población académica de cada periodo y los estudiantes con certificaciones admitidas para el análisis. Sin un padrón conciliado, contar documentos recibidos no permite determinar cobertura de la escuela. Asimismo, una declaración o un archivo adjunto no equivalen a una credencial validada. La línea base del proyecto identifica estas diferencias como condiciones para interpretar correctamente los indicadores.
 
-El desarrollo evolucionó desde una interfaz demostrativa hacia un portal integrado con API, persistencia relacional, revisión humana y publicación analítica. Los documentos FD01, FD02, FD03 y FD04 establecen factibilidad, visión, requisitos y arquitectura. El informe final reúne esos elementos y describe el alcance disponible en la copia local del proyecto al 10 de octubre de 2026.
+El desarrollo evolucionó desde una interfaz demostrativa hacia un portal integrado con API, persistencia relacional, revisión humana y publicación analítica. Los documentos FD01, FD02, FD03 y FD04 establecen factibilidad, visión, requisitos y arquitectura. Este informe describe el alcance local verificado al 7 de noviembre de 2026. La segunda unidad incorpora seis reportes con filtros diarios, mensuales y anuales, diagramas de Data Warehouse y Data Lake, ETL programable en Google Cloud y Terraform validado. La ejecución de esos recursos en GCP sigue pendiente de cuenta y proyecto configurados.
 
 La evidencia disponible incluye pruebas sintéticas, contratos, código y un registro de verificación del flujo académico local. Ese registro documenta carga de padrón, navegación por roles, publicación y reportes. La ejecución local constituye un avance técnico; la aceptación institucional, la autorización de cifras y la operación en infraestructura definitiva requieren sus propios registros de conformidad.
 
@@ -389,6 +391,8 @@ El [FD04 — Arquitectura de Software](FD04-Arquitectura-Software.md) presenta o
 
 ### Anexo 05. Manuales y otros documentos
 
+Los manuales de usuario, operación, seguridad, despliegue, pruebas y generación documental se encuentran en la [documentación del proyecto](../proyecto/README.md). Incluyen los recorridos por rol, el plan de segunda unidad BI, la arquitectura de Data Warehouse, el plan de lanzamiento y el cierre verificable de la segunda unidad.
+
 | Documento | Contenido |
 |---|---|
 | [Manual de usuario](../proyecto/10-Manual-de-usuario.md) | Tareas y navegación de usuarios autorizados. |
@@ -400,3 +404,7 @@ El [FD04 — Arquitectura de Software](FD04-Arquitectura-Software.md) presenta o
 | [Registro de validación](../proyecto/19-Registro-de-validacion.md) | Evidencia técnica registrada por versión. |
 | [Flujo académico local](../proyecto/20-Cierre-funcional-local.md) | Avances y resultados consignados en la verificación local. |
 | [Reporte del piloto sintético](../../pilot/synthetic-report.json) | Datos ficticios y contraste previo de indicadores. |
+
+### Anexo 06. Propuesta de proyecto
+
+La [propuesta FD06](FD06-Propuesta-Proyecto.md) consolida el problema, la solución, el alcance, los interesados, la arquitectura BI, el plan de trabajo, los recursos, los riesgos y los criterios de aceptación para decidir un piloto institucional controlado.

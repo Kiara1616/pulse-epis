@@ -37,7 +37,7 @@
 
 # Documento de Especificación de Requerimientos de Software
 
-<p align="center">Código FD03<br>Versión <em>3.6</em></p>
+<p align="center">Código FD03<br>Versión <em>4.0</em></p>
 
 **CONTROL DE VERSIONES**
 
@@ -50,6 +50,7 @@
 | 3.4 | — | — | — | 09/10/2026 | Ampliación a 15 casos de uso, objetos y secuencias |
 | 3.5 | — | — | — | 09/10/2026 | Adecuación del formato SRS y diagramas Mermaid |
 | 3.6 | — | — | — | 09/10/2026 | Índice detallado y modelos independientes por caso de uso |
+| 4.0 | KHZM / VRLN | — | — | 07/11/2026 | Consolidación de requisitos con reportes temporales, gobierno de datos y despliegue BI |
 
 
 **ÍNDICE GENERAL**
