@@ -79,7 +79,7 @@ test("error, reintento y vacío accesibles para validador", async ({ page }) => 
     page.getByText("No hay certificaciones para revisar."),
   ).toBeVisible();
   await expect(
-    page.getByText("Revisión académica", { exact: true }),
+    page.getByRole("heading", { name: "Bandeja de validaciones" }),
   ).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(

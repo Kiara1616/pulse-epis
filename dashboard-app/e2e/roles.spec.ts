@@ -190,6 +190,7 @@ test.describe("navegación por rol", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: "test-results/dashboard-mobile.png", fullPage: true });
     await page.route("**/api/v1/auth/logout", (route) => route.fulfill({ status: 204 }));
+    await page.getByRole("button", { name: "Abrir menú lateral" }).click();
     await page.getByRole("button", { name: "Cerrar sesión" }).click();
     await expect(page.getByRole("heading", { name: "Ingresa a Pulse EPIS" })).toBeVisible();
     await page.screenshot({ path: "test-results/login-mobile.png", fullPage: true });
