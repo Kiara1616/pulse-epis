@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime, timezone
+import json
 import os
 from pathlib import Path
 
@@ -21,7 +22,31 @@ from backend.app.db.models import (
 )
 from backend.app.db.session import create_session_factory
 from backend.app.etl.service import EtlService
-from backend.scripts_etl.main import transform
+from backend.scripts_etl.main import export_lake_snapshot, scheduled_target, transform
+
+
+def test_scheduled_target_uses_previous_day_in_lima(tmp_path):
+    database_url = f"sqlite+pysqlite:///{(tmp_path / 'etl-schedule.db').as_posix()}"
+    _migrate(database_url)
+    factory = create_session_factory(database_url)
+    with factory.begin() as session:
+        session.add(AcademicPeriod(code="2026-II", name="Segundo periodo", starts_on=date(2026, 8, 1), ends_on=date(2026, 12, 31), status="OPEN"))
+    assert scheduled_target(factory, now=datetime(2026, 10, 26, 5, 0, tzinfo=timezone.utc)) == ("2026-II", date(2026, 10, 25))
+
+
+def test_lake_export_contains_only_pseudonymized_facts(tmp_path):
+    database_url = f"sqlite+pysqlite:///{(tmp_path / 'etl-lake.db').as_posix()}"
+    period_code, cutoff_date, _ = _seed_database(database_url)
+    factory = create_session_factory(database_url)
+    report = EtlService(factory).run(period_code, cutoff_date)
+    partition = export_lake_snapshot(factory, report, tmp_path / "lake")
+    manifest = json.loads((partition / "manifest.json").read_text(encoding="utf-8"))
+    students = (partition / "fact_student_period.jsonl").read_text(encoding="utf-8")
+    assert partition.name == f"cutoff_date={cutoff_date.isoformat()}"
+    assert manifest["contains_personal_identifiers"] is False
+    assert manifest["student_fact_rows"] == 1
+    assert "stu-synthetic-001" in students
+    assert "@" not in students
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]

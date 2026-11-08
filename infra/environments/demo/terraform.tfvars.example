@@ -1,0 +1,11 @@
+project_id          = "replace-with-gcp-project-id"
+region              = "southamerica-west1"
+app_image           = "southamerica-west1-docker.pkg.dev/PROJECT/pulse-epis-demo/app:COMMIT_SHA"
+frontend_image      = "southamerica-west1-docker.pkg.dev/PROJECT/pulse-epis-demo/frontend:COMMIT_SHA"
+etl_image           = "southamerica-west1-docker.pkg.dev/PROJECT/pulse-epis-demo/etl:COMMIT_SHA"
+api_public_url      = "https://api.pulse.example.edu"
+frontend_origin     = "https://pulse.example.edu"
+google_client_id    = "replace-with-google-client-id.apps.googleusercontent.com"
+google_client_secret = "replace-with-google-client-secret"
+monthly_budget_usd  = 25
+billing_account     = "000000-000000-000000"

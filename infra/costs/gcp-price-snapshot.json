@@ -1,0 +1,23 @@
+{
+  "captured_on": "2026-11-07",
+  "currency": "USD",
+  "region": "southamerica-west1",
+  "hours_per_month": 730,
+  "rates": {
+    "cloud_run_vcpu_second": 0.000011244,
+    "cloud_run_gib_second": 0.000001235,
+    "cloud_sql_f1_micro_hour": 0.0105,
+    "cloud_sql_custom_vcpu_hour": 0.0537,
+    "cloud_sql_custom_gib_hour": 0.0161,
+    "cloud_sql_ssd_gib_hour": 0.000465753,
+    "cloud_storage_standard_gib_hour": 0.000027397,
+    "artifact_registry_gib_hour": 0.000136986
+  },
+  "sources": {
+    "cloud_run": "https://cloud.google.com/run/pricing",
+    "cloud_sql": "https://cloud.google.com/sql/pricing?hl=es-419",
+    "cloud_storage": "https://cloud.google.com/storage/pricing",
+    "artifact_registry": "https://cloud.google.com/artifact-registry/pricing",
+    "secret_manager": "https://cloud.google.com/secret-manager/pricing"
+  }
+}

@@ -16,6 +16,7 @@ export function Sidebar() {
     { href:"/tecnologias", label:"Tecnologías", icon:Cpu, roles:["ADMIN","VALIDATOR"] },
     { href:"/estudiantes", label:"Estudiantes", icon:GraduationCap, roles:["ADMIN","VALIDATOR"] },
     { href:"/brechas", label:"Brechas", icon:ScanSearch, roles:["ADMIN"] },
+    { href:"/reportes/panorama", label:"Reportes BI", icon:LayoutDashboard, roles:["ADMIN","VALIDATOR"] },
     { href:"/admin", label:"Administrar", icon:Settings, roles:["ADMIN"] },
     { href:"/admin/estudiantes", label:"Padrón", icon:UsersRound, roles:["ADMIN"] },
     { href:"/admin/radar", label:"Radar de cursos", icon:ScanSearch, roles:["ADMIN"] },

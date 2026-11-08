@@ -8,6 +8,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --surface: #ffffff;
+  --border: #dbe3ef;
+  --muted: #52627a;
+}
+
+@layer components {
+  .page-title { font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -.025em; color: #0f172a; }
+  .page-intro { color: var(--muted); font-size: .875rem; line-height: 1.5rem; }
+  .section-title { color: #0f172a; font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+  .metric-value { color: #0f172a; font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; }
+  .surface-card { border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); box-shadow: 0 1px 2px rgb(15 23 42 / .05); }
+  .context-note { border: 1px solid var(--border); border-radius: .75rem; background: #f8fafc; color: #475569; font-size: .875rem; line-height: 1.5rem; }
 }
 
 

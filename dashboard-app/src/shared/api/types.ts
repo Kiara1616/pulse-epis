@@ -65,6 +65,28 @@ export type AnalyticsOverview = {
   }>;
 };
 
+export type EtlQualityPoint = {
+  cutoff_date: string;
+  status: string;
+  total_rows: number;
+  accepted_rows: number;
+  rejected_rows: number;
+  duplicate_rows: number;
+};
+
+export type AnalyticsReport = {
+  metadata: {
+    report: string;
+    granularity: "day" | "month" | "year";
+    date_from: string | null;
+    date_to: string | null;
+    generated_from: string;
+  };
+  overview: AnalyticsOverview;
+  temporal: AnalyticsOverview["evolution"];
+  quality: EtlQualityPoint[];
+};
+
 export type CertificationEvidence = {
   id: string;
   evidence_type: "URL" | "FILE";
