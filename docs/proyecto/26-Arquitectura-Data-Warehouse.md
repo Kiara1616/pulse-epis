@@ -1,6 +1,6 @@
 # Arquitectura Data Warehouse de Pulse EPIS
 
-**Alcance físico actual:** PostgreSQL conserva tablas operativas y dos tablas de hechos analíticos publicadas por ETL. Cada corrida aplicada también exporta esas tablas en JSONL seudonimizado y un manifiesto de calidad a una partición `period_code/cutoff_date` del Data Lake. En local se usa una ruta de archivos y en GCP Terraform la monta sobre Cloud Storage mediante FUSE. Las dimensiones lógicas se obtienen de tablas canónicas y atributos de los hechos.
+**Alcance físico actual:** PostgreSQL privado en Render conserva tablas operativas y dos tablas de hechos analíticos que publica el ETL. La exportación JSONL seudonimizada con manifiesto existe en el comando ETL cuando se configura `PULSE_DATA_LAKE_PATH`; el endpoint programado de Render no la ejecuta ni conserva un Data Lake persistente. Terraform define la alternativa GCP con Cloud Storage, pero no se ha aplicado porque el proyecto no tiene facturación. BigQuery Sandbox contiene solo datos sintéticos. Las dimensiones lógicas se obtienen de tablas canónicas y atributos de los hechos.
 
 ## Lectura en capas Bronze, Silver y Gold
 
