@@ -49,8 +49,8 @@ export function EnrollmentHistory() {
   }, []);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5">
-      <h2 className="font-semibold text-slate-900">
+    <section className="surface-card min-w-0 p-5">
+      <h2 className="section-title">
         Matrícula por periodo · 2020–2026
       </h2>
       <p className="mt-2 text-xs leading-5 text-slate-500">
@@ -70,7 +70,7 @@ export function EnrollmentHistory() {
         <div className="mt-5 h-72 overflow-x-auto">
           <div className="h-full min-w-[650px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={rows}>
+              <BarChart data={rows} margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid
                   stroke="#e2e8f0"
                   strokeDasharray="3 4"
@@ -83,6 +83,7 @@ export function EnrollmentHistory() {
                 />
                 <YAxis
                   allowDecimals={false}
+                  domain={[0, (dataMax: number) => Math.ceil((dataMax + Math.max(15, dataMax * 0.12)) / 10) * 10]}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: "#94a3b8" }}
@@ -99,7 +100,7 @@ export function EnrollmentHistory() {
                   isAnimationActive={false}
                   dataKey="active_students"
                   name="Estudiantes matriculados"
-                  fill="#94a3b8"
+                  fill="#60a5fa"
                   radius={[5, 5, 0, 0]}
                 >
                   <LabelList
@@ -111,7 +112,7 @@ export function EnrollmentHistory() {
                   {rows.map((row) => (
                     <Cell
                       key={row.period_code}
-                      fill={row.basis === "reference" ? "#2563eb" : row.period_code.startsWith("2023-") || row.period_code.startsWith("2024-") ? "#0d9488" : "#94a3b8"}
+                      fill={row.basis === "reference" ? "#1d4ed8" : row.period_code.startsWith("2023-") || row.period_code.startsWith("2024-") ? "#3b82f6" : "#93c5fd"}
                     />
                   ))}
                 </Bar>

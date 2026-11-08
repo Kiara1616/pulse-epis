@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/widgets/Sidebar/ui/Sidebar";
-import { Header } from "@/widgets/Header/ui/Header";
+import { AppShell } from "@/features/layout/AppShell";
 import { AuthBoundary } from "@/features/access/AuthBoundary";
 import { AuthProvider } from "@/features/access/AuthProvider";
 
@@ -23,13 +22,7 @@ export default function RootLayout({
       >
           <AuthProvider>
             <AuthBoundary>
-            <div className="flex min-h-screen bg-[#f3f6fb] w-full">
-              <Sidebar />
-              <main className="flex-1 min-w-0 ml-20 md:ml-56 flex flex-col min-h-screen bg-[#f3f6fb]">
-                <Header />
-                <div className="px-4 md:px-8 py-7 md:py-9 flex-1 w-full max-w-[1500px] mx-auto">{children}</div>
-              </main>
-            </div>
+            <AppShell>{children}</AppShell>
             </AuthBoundary>
           </AuthProvider>
       </body>

@@ -200,7 +200,7 @@ test.describe("navegación por rol", () => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: "Panorama de certificaciones" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Administrar" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Administrar" })).toBeVisible();
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Centro de administración" })).toBeVisible();
     await expect(page.getByText("Indicadores agregados")).toBeVisible();
@@ -212,7 +212,7 @@ test.describe("navegación por rol", () => {
 
     await expect(page.getByRole("heading", { name: "Bandeja de validaciones" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Validar" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Administrar" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Administrar" })).toHaveCount(0);
     await expect(page.getByText("No hay certificaciones para revisar.")).toBeVisible();
   });
 
@@ -223,7 +223,7 @@ test.describe("navegación por rol", () => {
     await expect(page.getByRole("heading", { name: "Mi avance" })).toBeVisible();
     await expect(page.getByText("Todavía no tienes certificaciones registradas.")).toBeVisible();
     await expect(page.getByRole("link", { name: "Credenciales" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Administrar" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Administrar" })).toHaveCount(0);
   });
 
   test("el estudiante ve estados resumidos y abre una corrección desde su siguiente acción", async ({ page }) => {
