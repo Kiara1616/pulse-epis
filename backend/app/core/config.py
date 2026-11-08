@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
     google_allowed_domains: str = "virtual.upt.pe,upt.edu.pe"
     google_allowed_staff_emails: str = ""
+    etl_scheduler_secret: SecretStr | None = None
     local_auth_seed: bool = False
     local_auth_password: SecretStr = SecretStr("pulse-local-demo")
     demo_data_seed: bool = False
