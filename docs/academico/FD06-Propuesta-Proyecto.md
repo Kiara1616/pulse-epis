@@ -297,4 +297,3 @@ La propuesta no debe pasar directamente a producción. Primero se requiere desig
 - evaluación de seguridad y protección de datos;
 - prueba de respaldo, restauración y reversión;
 - informe de resultados y aceptación del piloto.
-
