@@ -68,6 +68,7 @@ class Student(Base):
     )
     student_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     student_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     entry_year: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     created_at: Mapped[datetime] = mapped_column(

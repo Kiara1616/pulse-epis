@@ -293,6 +293,8 @@ class RosterImportService:
             student.entry_year = student.entry_year or _entry_year(record.code)
 
         student.student_code = record.code
+        if record.name:
+            student.full_name = record.name
         session.flush()
         enrollment = session.scalar(
             select(Enrollment).where(
