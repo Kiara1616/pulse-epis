@@ -16,6 +16,8 @@ backend/.venv/
 artifacts/
 dashboard-app/test-results/
 dashboard-app/playwright-report/
+test-results/
+.terraform/
 
 .venv-docs/
 .tmp-docs/

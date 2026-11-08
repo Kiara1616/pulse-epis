@@ -1,0 +1,134 @@
+name: Deploy Pulse EPIS to GCP
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_public_url:
+        description: Public HTTPS API origin without a trailing slash
+        required: true
+        type: string
+      frontend_origin:
+        description: Public HTTPS frontend origin without a trailing slash
+        required: true
+        type: string
+      apply:
+        description: Apply the reviewed Terraform plan
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: pulse-epis-gcp-demo
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: gcp-demo
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION || 'southamerica-west1' }}
+      TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+      TF_VAR_region: ${{ vars.GCP_REGION || 'southamerica-west1' }}
+      TF_VAR_api_public_url: ${{ inputs.api_public_url }}
+      TF_VAR_frontend_origin: ${{ inputs.frontend_origin }}
+      TF_VAR_google_client_id: ${{ vars.GOOGLE_CLIENT_ID }}
+      TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      TF_VAR_billing_account: ${{ vars.GCP_BILLING_ACCOUNT }}
+      TF_VAR_monthly_budget_usd: ${{ vars.MONTHLY_BUDGET_USD || '25' }}
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate without service-account keys
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.2
+
+      - name: Configure Artifact Registry
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Define immutable images
+        shell: bash
+        run: |
+          repository="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/pulse-epis-demo"
+          echo "TF_VAR_app_image=${repository}/backend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "TF_VAR_frontend_image=${repository}/frontend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "TF_VAR_etl_image=${repository}/etl:${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Initialize Terraform state
+        working-directory: infra/environments/demo
+        shell: bash
+        run: terraform init -backend-config="bucket=${TF_STATE_BUCKET}" -backend-config="prefix=pulse-epis/demo"
+
+      - name: Bootstrap Artifact Registry through Terraform
+        if: ${{ inputs.apply }}
+        working-directory: infra/environments/demo
+        run: terraform apply -auto-approve -target=google_artifact_registry_repository.containers
+
+      - name: Verify existing registry for plan-only execution
+        if: ${{ !inputs.apply }}
+        shell: bash
+        run: gcloud artifacts repositories describe pulse-epis-demo --location "$GCP_REGION"
+
+      - name: Build and publish immutable containers
+        shell: bash
+        run: |
+          docker build -f backend/Dockerfile -t "$TF_VAR_app_image" .
+          docker build -f dashboard-app/Dockerfile \
+            --build-arg "NEXT_PUBLIC_API_URL=${TF_VAR_api_public_url}/api/v1" \
+            -t "$TF_VAR_frontend_image" dashboard-app
+          docker build -f deploy/cloud/etl.Dockerfile -t "$TF_VAR_etl_image" .
+          docker push "$TF_VAR_app_image"
+          docker push "$TF_VAR_frontend_image"
+          docker push "$TF_VAR_etl_image"
+
+      - name: Terraform plan
+        working-directory: infra/environments/demo
+        shell: bash
+        run: |
+          terraform fmt -check
+          terraform validate
+          terraform plan -out=tfplan
+
+      - name: Estimate reviewed plan
+        if: ${{ env.INFRACOST_API_KEY != '' }}
+        uses: infracost/actions/setup@v3
+      - name: Generate Infracost evidence
+        if: ${{ env.INFRACOST_API_KEY != '' }}
+        working-directory: infra/environments/demo
+        run: infracost breakdown --path tfplan --format json --out-file ../../costs/infracost.json
+
+      - name: Apply reviewed plan
+        if: ${{ inputs.apply }}
+        working-directory: infra/environments/demo
+        run: terraform apply -auto-approve tfplan
+
+      - name: Smoke test public services
+        if: ${{ inputs.apply }}
+        shell: bash
+        run: |
+          curl --fail --retry 10 --retry-delay 5 "${TF_VAR_api_public_url}/health"
+          curl --fail --retry 10 --retry-delay 5 "${TF_VAR_frontend_origin}/"
+
+      - name: Upload deployment evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-epis-gcp-${{ github.sha }}
+          path: |
+            infra/environments/demo/tfplan
+            infra/costs/infracost.json
+          if-no-files-found: warn
+          retention-days: 30

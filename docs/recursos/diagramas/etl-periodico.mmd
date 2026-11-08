@@ -1,0 +1,18 @@
+flowchart TD
+  S[Cloud Scheduler 05:00 America/Lima] --> A[Invocar Cloud Run Job con identidad OIDC]
+  A --> P[Calcular día anterior]
+  P --> O{Existe exactamente un periodo OPEN}
+  O -->|No| ERR[Registrar error y emitir alerta]
+  O -->|Sí| E[Extraer padrón, decisiones y catálogos]
+  E --> N[Normalizar emisores, niveles y habilidades]
+  N --> H[Calcular hash de fuente]
+  H --> I{Mismo periodo, corte y hash}
+  I -->|Sí| OK[Finalizar como idempotente]
+  I -->|No| Q{Controles de calidad aprobados}
+  Q -->|No| REJ[Guardar corrida y rechazos sin publicar]
+  Q -->|Sí| TX[Publicar hechos en transacción]
+  TX --> DL[Escribir JSONL y manifiesto en Data Lake]
+  DL --> API[Disponibilizar API y 6 reportes]
+  API --> LOG[Cloud Logging y Monitoring]
+  ERR --> LOG
+  REJ --> LOG

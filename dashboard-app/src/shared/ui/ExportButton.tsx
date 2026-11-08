@@ -14,7 +14,7 @@ function escapeCsv(value: ExportValue) {
   return /[";,\n]/.test(normalized) ? `"${normalized.replaceAll('"', '""')}"` : normalized;
 }
 
-export const ExportButton = ({ filename, rows, metadata = [], filters, dataset = "registered" }: { filename: string; rows: ExportRow[]; metadata?: string[]; filters?: AnalyticsOverview["filters"]; dataset?: "registered" | "demo" }) => {
+export const ExportButton = ({ filename, rows, metadata = [], filters, csvFilters, csvOnly = false, dataset = "registered" }: { filename: string; rows: ExportRow[]; metadata?: string[]; filters?: AnalyticsOverview["filters"]; csvFilters?: AnalyticsOverview["filters"]; csvOnly?: boolean; dataset?: "registered" | "demo" }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   async function exportFile(format: "pdf" | "xlsx") {
@@ -39,7 +39,7 @@ export const ExportButton = ({ filename, rows, metadata = [], filters, dataset =
       const csv = [
         `# Fuente de datos: ${dataset === "demo" ? "Datos de referencia · no oficiales · indicadores agregados" : "Datos publicados"}`,
         ...metadata.map((line) => `# ${line}`),
-        ...Object.entries(filters ?? {}).filter(([key]) => key !== "level").map(([key, value]) => `# ${key}: ${value || "Todos"}`),
+        ...Object.entries(csvFilters ?? filters ?? {}).filter(([key]) => key !== "level").map(([key, value]) => `# ${key}: ${value || "Todos"}`),
         columns.map(escapeCsv).join(";"),
         ...rows.map((row) => columns.map((column) => escapeCsv(row[column])).join(";")),
       ].join("\r\n");
@@ -62,7 +62,7 @@ export const ExportButton = ({ filename, rows, metadata = [], filters, dataset =
       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
     >
       <Download size={16} />
-      {isExporting ? "Generando..." : "Exportar Excel"}
+      {isExporting ? "Generando..." : csvOnly ? "Descargar CSV" : "Exportar Excel"}
     </button>
     {filters && <button onClick={() => void exportFile("pdf")} disabled={isExporting || !filters.period_code} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50">Exportar PDF</button>}
     {filters && <button onClick={handleExport} disabled={isExporting || !rows.length} className="px-2 py-2 text-xs font-medium text-slate-500 disabled:opacity-40">CSV</button>}

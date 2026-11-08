@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "currency": "USD",
+  "region": "southamerica-west1",
+  "horizon": "monthly",
+  "scenarios": {
+    "demo": {
+      "active_users": 20,
+      "web_requests": 20000,
+      "cloud_run_min_instances": 0,
+      "etl_runs": 30,
+      "etl_minutes_per_run": 5,
+      "cloud_sql_tier": "db-f1-micro",
+      "database_storage_gb": 10,
+      "data_lake_storage_gb": 2,
+      "evidence_storage_gb": 5,
+      "log_ingestion_gb": 1
+    },
+    "pilot": {
+      "active_users": 300,
+      "web_requests": 250000,
+      "cloud_run_min_instances": 1,
+      "etl_runs": 30,
+      "etl_minutes_per_run": 15,
+      "cloud_sql_tier": "db-custom-1-3840",
+      "database_storage_gb": 25,
+      "data_lake_storage_gb": 10,
+      "evidence_storage_gb": 50,
+      "log_ingestion_gb": 5
+    }
+  },
+  "notes": [
+    "Credits and free-tier discounts are reported separately and never treated as zero resource cost.",
+    "Replace assumptions with measured usage after the controlled pilot.",
+    "Generate infracost.json and attach a dated GCP Pricing Calculator export before acceptance."
+  ]
+}
