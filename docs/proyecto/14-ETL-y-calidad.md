@@ -8,7 +8,7 @@ El ETL lee estudiantes, matrículas, certificaciones, emisores, habilidades y de
 python -m backend.scripts_etl.main --period-code 2026-II --cutoff-date 2026-10-02
 ```
 
-La fecha del comando es ilustrativa; el operador debe sustituirla por el corte aprobado. PULSE_DATABASE_URL identifica la base. En Render, el workflow semanal invoca `/api/v1/etl/scheduled` por HTTPS con un secreto separado y la aplicación ejecuta el ETL junto a su base privada. La publicación manual por periodo y corte sigue disponible al administrador mediante `/api/v1/etl/runs`.
+La fecha del comando es ilustrativa; el operador debe sustituirla por el corte aprobado. PULSE_DATABASE_URL identifica la base. En Render, el workflow diario a las 03:00 de Lima (08:00 UTC; GitHub puede iniciarlo con demora) invoca `/api/v1/etl/scheduled` por HTTPS con un secreto separado y la aplicación ejecuta el ETL junto a su base privada. La publicación manual por periodo y corte sigue disponible al administrador mediante `/api/v1/etl/runs`.
 
 ```mermaid
 flowchart TD
