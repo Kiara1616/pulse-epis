@@ -263,4 +263,3 @@ def downgrade():
     connection.execute(
         sa.text("DELETE FROM learning_offers WHERE relevance LIKE 'Catálogo oficial U2:%'")
     )
-
