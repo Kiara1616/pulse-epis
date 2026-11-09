@@ -2,7 +2,7 @@ from uuid import uuid4
 from concurrent.futures import ThreadPoolExecutor
 import os
 import pytest
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker
@@ -157,6 +157,18 @@ def test_catalog_sync_and_external_handoff(context, monkeypatch):
     response = student.get(f"/api/v1/learning/offers/{offer['id']}/external-link", follow_redirects=False)
     assert response.status_code == 302
     assert response.headers['location'] == 'https://example.invalid/detected'
+
+
+def test_catalog_feed_rejects_private_destinations(monkeypatch):
+    monkeypatch.setattr(
+        learning_routes.socket,
+        'getaddrinfo',
+        lambda *_args, **_kwargs: [(None, None, None, None, ('127.0.0.1', 443))],
+    )
+    with pytest.raises(HTTPException) as error:
+        learning_routes._ensure_public_feed_host('https://localhost/catalog.json')
+    assert error.value.status_code == 422
+    assert error.value.detail['code'] == 'CATALOG_SYNC_FAILED'
 
 def test_concurrent_acceptance_cannot_overbook_postgres(context):
     clients, app, _, pg = context

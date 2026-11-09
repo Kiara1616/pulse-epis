@@ -1,6 +1,9 @@
 """Explicit role-scoped learning API with atomic publication and capacity decisions."""
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
+import ipaddress
+import json
+import socket
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 import requests
@@ -20,6 +23,8 @@ admin = require_roles(Role.ADMIN)
 student = require_roles(Role.STUDENT)
 reader = require_roles(Role.ADMIN, Role.STUDENT)
 MODELS = {'routes': Route, 'courses': Course, 'offers': Offer, 'workshops': Workshop}
+MAX_CATALOG_BYTES = 2_000_000
+MAX_CATALOG_ITEMS = 500
 
 def fail(code, status, message):
     raise HTTPException(status, detail={'code': code, 'message': message})
@@ -116,17 +121,53 @@ def student_can_access_offer(session, student_item, offer):
             return False
     return True
 
+def _ensure_public_feed_host(url: str) -> None:
+    """Reject loopback and private addresses before fetching an admin-approved feed."""
+
+    host = urlparse(url).hostname
+    if not host:
+        fail('CATALOG_SYNC_FAILED', 422, 'La fuente no tiene un host válido')
+    try:
+        addresses = {
+            item[4][0]
+            for item in socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+        }
+    except socket.gaierror:
+        fail('CATALOG_SYNC_FAILED', 422, 'No se pudo resolver el host del feed')
+    if not addresses or any(not ipaddress.ip_address(address).is_global for address in addresses):
+        fail('CATALOG_SYNC_FAILED', 422, 'El feed debe pertenecer a un host público')
+
+
 def source_rows(source):
     """Parse an administrator-approved JSON or RSS catalog feed into candidate rows."""
+    _ensure_public_feed_host(source.feed_url)
     try:
-        response = requests.get(source.feed_url, timeout=15, headers={'User-Agent': 'Pulse-EPIS-Catalog/1.0'})
-        response.raise_for_status()
-    except requests.RequestException as exc:
-        fail('CATALOG_SYNC_FAILED', 422, f'No se pudo consultar el feed: {exc}')
+        with requests.get(
+            source.feed_url,
+            timeout=15,
+            headers={'User-Agent': 'Pulse-EPIS-Catalog/1.0', 'Accept': 'application/json,application/rss+xml,application/xml,text/xml'},
+            allow_redirects=False,
+            stream=True,
+        ) as response:
+            response.raise_for_status()
+            try:
+                size = int(response.headers.get('Content-Length', '0') or 0)
+            except ValueError:
+                size = 0
+            if size > MAX_CATALOG_BYTES:
+                fail('CATALOG_SYNC_FAILED', 422, 'El feed supera el tamaño permitido')
+            chunks = bytearray()
+            for chunk in response.iter_content(chunk_size=65_536):
+                chunks.extend(chunk)
+                if len(chunks) > MAX_CATALOG_BYTES:
+                    fail('CATALOG_SYNC_FAILED', 422, 'El feed supera el tamaño permitido')
+            content = bytes(chunks)
+    except requests.RequestException:
+        fail('CATALOG_SYNC_FAILED', 422, 'No se pudo consultar el feed autorizado')
     if source.format == 'JSON':
         try:
-            payload = response.json()
-        except ValueError as exc:
+            payload = json.loads(content)
+        except (UnicodeDecodeError, ValueError):
             fail('CATALOG_SYNC_FAILED', 422, 'El feed JSON no tiene un formato válido')
         rows = payload.get('courses', payload) if isinstance(payload, dict) else payload
         if not isinstance(rows, list):
@@ -136,7 +177,7 @@ def source_rows(source):
                 yield row
         return
     try:
-        root = ET.fromstring(response.content)
+        root = ET.fromstring(content)
     except ET.ParseError:
         fail('CATALOG_SYNC_FAILED', 422, 'El feed RSS no tiene un formato válido')
     for item in root.findall('.//item'):
@@ -149,7 +190,10 @@ def source_rows(source):
 
 def sync_source(session, actor, source):
     created = skipped = 0
-    for row in source_rows(source):
+    for position, row in enumerate(source_rows(source), start=1):
+        if position > MAX_CATALOG_ITEMS:
+            skipped += 1
+            break
         title = str(row.get('title') or '').strip()
         url = str(row.get('url') or row.get('source_url') or row.get('link') or '').strip()
         parsed = urlparse(url)
