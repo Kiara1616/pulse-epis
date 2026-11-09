@@ -46,6 +46,20 @@ class CourseInput(Input):
             raise ValueError('Fecha de consulta futura')
         return value
 
+class CatalogSourceInput(Input):
+    provider: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)]
+    feed_url: HttpUrl
+    format: Literal['JSON', 'RSS'] = 'JSON'
+    default_skills: list[Skill] = Field(default_factory=list, max_length=20)
+    default_requirements: list[Skill] = Field(default_factory=list, max_length=20)
+
+    @field_validator('feed_url')
+    @classmethod
+    def feed_https(cls, value):
+        if value.scheme != 'https' or value.username or value.password or len(str(value)) > 2048:
+            raise ValueError('Feed HTTPS sin credenciales requerido')
+        return value
+
 class OfferInput(Input):
     course_id: UUID
     title: Text
@@ -93,6 +107,23 @@ class CourseOutput(CourseInput):
     id: UUID
     status: Literal['DETECTED', 'IN_REVIEW', 'PUBLISHED', 'DISCARDED', 'RETIRED']
     created_at: datetime
+
+class CatalogSourceOutput(Input):
+    id: UUID
+    provider: str
+    feed_url: str
+    format: Literal['JSON', 'RSS']
+    default_skills: list[str]
+    default_requirements: list[str]
+    active: bool
+    last_synced_at: datetime | None
+    last_sync_summary: str | None
+    created_at: datetime
+
+class SyncOutput(Input):
+    created: int
+    skipped: int
+    summary: str
 
 class OfferOutput(OfferInput):
     id: UUID

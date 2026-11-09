@@ -49,11 +49,12 @@ test('evidencia, validación, perfil, oportunidad y participación con API real'
   await expect(student.getByRole('status').filter({ hasText: 'Tus preferencias quedaron guardadas.' })).toBeVisible();
   await admin.reload();
   await admin.getByText('Registrar fuente de curso').click();
-  await admin.getByLabel('Nombre del curso').fill('Curso sintético');
-  await admin.getByLabel('Proveedor', { exact: true }).fill('Proveedor sintético');
-  await admin.getByLabel('Fuente HTTPS', { exact: true }).fill('https://example.invalid/course');
-  await admin.getByLabel('Habilidades (separadas por coma)').fill('Python');
-  await admin.getByRole('button', { name: 'Registrar para revisión' }).click();
+  const manualSourceForm = admin.getByLabel('Nombre del curso').locator('xpath=ancestor::form');
+  await manualSourceForm.getByLabel('Nombre del curso').fill('Curso sintético');
+  await manualSourceForm.getByLabel('Proveedor', { exact: true }).fill('Proveedor sintético');
+  await manualSourceForm.getByLabel('Fuente HTTPS', { exact: true }).fill('https://example.invalid/course');
+  await manualSourceForm.getByLabel('Habilidades (separadas por coma)').fill('Python');
+  await manualSourceForm.getByRole('button', { name: 'Registrar para revisión' }).click();
   await admin.getByRole('button', { name: 'Iniciar revisión' }).click();
   await admin.getByLabel('Título de la oportunidad').fill('Oportunidad sintética');
   await admin.getByLabel('IA sintética', { exact: true }).check();

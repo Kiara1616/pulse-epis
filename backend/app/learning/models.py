@@ -59,6 +59,21 @@ class LearningCourse(Base):
     status = mapped_column(sa.String(20), nullable=False, default="DETECTED")
     created_at = mapped_column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
 
+class LearningCatalogSource(Base):
+    """An administrator-approved public feed; it is not a provider enrollment API."""
+    __tablename__ = "learning_catalog_sources"
+    __table_args__ = (sa.CheckConstraint("format IN ('JSON','RSS')", name='ck_learning_catalog_source_format'),)
+    id = mapped_column(sa.Uuid(), primary_key=True, default=uuid4)
+    provider = mapped_column(sa.String(150), nullable=False)
+    feed_url = mapped_column(sa.String(2048), nullable=False, unique=True)
+    format = mapped_column(sa.String(10), nullable=False, default="JSON")
+    default_skills = mapped_column(sa.JSON(), nullable=False, default=list)
+    default_requirements = mapped_column(sa.JSON(), nullable=False, default=list)
+    active = mapped_column(sa.Boolean(), nullable=False, default=True)
+    last_synced_at = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    last_sync_summary = mapped_column(sa.String(500), nullable=True)
+    created_at = mapped_column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
+
 class LearningOpportunity(Base):
     __tablename__ = "learning_offers"
     __table_args__ = (sa.CheckConstraint("status IN ('DRAFT','PUBLISHED','RETIRED')", name='ck_learning_offer_status'),)
@@ -77,6 +92,14 @@ class LearningOfferInterest(Base):
     offer_id = mapped_column(sa.Uuid(), sa.ForeignKey("learning_offers.id", ondelete="CASCADE"), nullable=False, index=True)
     interest_id = mapped_column(sa.Uuid(), sa.ForeignKey("learning_interests.id", ondelete="RESTRICT"), nullable=False)
     created_at = mapped_column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
+
+class LearningOpportunityVisit(Base):
+    """Audit-friendly record of an external-course handoff, never an enrollment."""
+    __tablename__ = "learning_opportunity_visits"
+    id = mapped_column(sa.Uuid(), primary_key=True, default=uuid4)
+    student_id = mapped_column(sa.Uuid(), sa.ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    offer_id = mapped_column(sa.Uuid(), sa.ForeignKey("learning_offers.id", ondelete="CASCADE"), nullable=False, index=True)
+    opened_at = mapped_column(sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now())
 
 class LearningWorkshop(Base):
     __tablename__ = "learning_workshops"
