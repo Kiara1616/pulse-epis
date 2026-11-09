@@ -38,6 +38,12 @@ export type LearningCourse = {
   created_at: string;
 };
 
+export type LearningCatalogSource = {
+  id: string; provider: string; feed_url: string; format: "JSON" | "RSS";
+  default_skills: string[]; default_requirements: string[]; active: boolean;
+  last_synced_at: string | null; last_sync_summary: string | null; created_at: string;
+};
+
 export type LearningOffer = {
   id: string;
   course_id: string;
@@ -89,6 +95,7 @@ export type LearningAuditEntry = {
 };
 
 export type CourseInput = Omit<LearningCourse, "id" | "status" | "created_at">;
+export type CatalogSourceInput = Omit<LearningCatalogSource, "id" | "active" | "last_synced_at" | "last_sync_summary" | "created_at">;
 export type OfferInput = Pick<
   LearningOffer,
   "course_id" | "title" | "cycles" | "interest_ids" | "relevance"
@@ -108,6 +115,7 @@ export const learningApi = {
   interests: () => apiFetch<LearningInterest[]>("/learning/interests"),
   routes: () => apiFetch<LearningRoute[]>("/learning/routes"),
   courses: () => apiFetch<LearningCourse[]>("/learning/courses"),
+  sources: () => apiFetch<LearningCatalogSource[]>("/learning/admin/sources"),
   offers: () => apiFetch<LearningOffer[]>("/learning/offers"),
   workshops: () => apiFetch<LearningWorkshop[]>("/learning/workshops"),
   profile: () => apiFetch<LearningProfile>("/learning/me/profile"),
@@ -131,6 +139,8 @@ export const learningApi = {
       method: "POST",
       body: JSON.stringify(course),
     }),
+  createSource: (source: CatalogSourceInput) => apiFetch<LearningCatalogSource>("/learning/admin/sources", { method: "POST", body: JSON.stringify(source) }),
+  syncSource: (id: string) => apiFetch<{ created: number; skipped: number; summary: string }>(`/learning/admin/sources/${id}/sync`, { method: "POST" }),
   updateCourse: (id: string, course: CourseInput) =>
     apiFetch<LearningCourse>(`/learning/courses/${id}`, {
       method: "PUT",

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
@@ -138,7 +137,7 @@ function StudentPathContent() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
           Administra tus áreas de interés, elige una ruta publicada y consulta las
-          oportunidades vigentes del catálogo.
+          oportunidades vigentes que corresponden a tu ciclo e intereses.
         </p>
       </header>
 
@@ -149,8 +148,8 @@ function StudentPathContent() {
         <Info size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
         <p className="leading-6">
           Las preferencias y la ruta se guardan en tu perfil. Las oportunidades
-          publicadas son un catálogo general, no una recomendación personalizada ni
-          una evaluación de tus conocimientos.
+          publicadas se dirigen según tu ciclo e intereses. Pulse te llevará al
+          enlace oficial; la matrícula se realiza directamente con el proveedor.
         </p>
       </aside>
 
@@ -330,7 +329,7 @@ function StudentPathContent() {
                 Oportunidades publicadas
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Contenido vigente compartido con estudiantes; la audiencia indicada no limita el acceso al catálogo.
+                Contenido publicado para tu ciclo e intereses. La inscripción se realiza fuera de Pulse.
               </p>
             </div>
             {offers.length > 0 ? (
@@ -359,12 +358,12 @@ function StudentPathContent() {
                         ))}
                       </div>
                     )}
-                    <Link
-                      href="/talleres"
+                    <a
+                      href={`/api/v1/learning/offers/${offer.id}/external-link`}
                       className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900"
                     >
-                      Ver talleres disponibles <ArrowRight size={16} aria-hidden="true" />
-                    </Link>
+                      Ir al curso oficial <ArrowRight size={16} aria-hidden="true" />
+                    </a>
                   </article>
                 ))}
               </div>

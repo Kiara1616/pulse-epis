@@ -1,16 +1,20 @@
 """Explicit role-scoped learning API with atomic publication and capacity decisions."""
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+from urllib.parse import urlparse
+import xml.etree.ElementTree as ET
+import requests
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select, delete, func
 from sqlalchemy.exc import IntegrityError
 from ...auth.dependencies import require_roles
 from ...auth.models import AuthenticatedUser, Role
-from ...db.models import Student
-from ...learning.models import LearningInterest as Interest, LearningRoute as Route, LearningStep as Step, StudentLearningProfile as Profile, StudentLearningInterest as StudentInterest, LearningCourse as Course, LearningOpportunity as Offer, LearningOfferInterest as OfferInterest, LearningWorkshop as Workshop, LearningApplication as Application, LearningAudit as Audit
-from ...learning.schemas import InterestOutput, RouteOutput, CourseOutput, OfferOutput, WorkshopOutput, ApplicationOutput, AuditOutput
-from ...learning.schemas import InterestInput, RouteInput, CourseInput, OfferInput, WorkshopInput, PreferenceInput, Decision, ApplyInput
+from ...db.models import Student, Enrollment, AcademicPeriod
+from ...learning.models import LearningInterest as Interest, LearningRoute as Route, LearningStep as Step, StudentLearningProfile as Profile, StudentLearningInterest as StudentInterest, LearningCourse as Course, LearningCatalogSource as CatalogSource, LearningOpportunity as Offer, LearningOfferInterest as OfferInterest, LearningOpportunityVisit as OpportunityVisit, LearningWorkshop as Workshop, LearningApplication as Application, LearningAudit as Audit
+from ...learning.schemas import InterestOutput, RouteOutput, CourseOutput, CatalogSourceOutput, SyncOutput, OfferOutput, WorkshopOutput, ApplicationOutput, AuditOutput
+from ...learning.schemas import InterestInput, RouteInput, CourseInput, CatalogSourceInput, OfferInput, WorkshopInput, PreferenceInput, Decision, ApplyInput
 router = APIRouter(prefix='/learning', tags=['learning'])
 admin = require_roles(Role.ADMIN)
 student = require_roles(Role.STUDENT)
@@ -94,6 +98,85 @@ def available_offer(session, item):
     if item.status != 'PUBLISHED' or course.status != 'PUBLISHED':
         fail('OFFER_UNAVAILABLE', 409, 'La oportunidad no está publicada')
 
+def student_can_access_offer(session, student_item, offer):
+    """Audience is applied locally; no third-party course account is created."""
+    enrollment = session.scalar(
+        select(Enrollment).join(AcademicPeriod, AcademicPeriod.id == Enrollment.period_id)
+        .where(Enrollment.student_id == student_item.id, Enrollment.status == 'ACTIVE')
+        .order_by(AcademicPeriod.starts_on.desc())
+    )
+    # Legacy/demo profiles may not yet have an academic enrollment. Once the
+    # padrón provides it, the configured cycle becomes a hard audience filter.
+    if offer.cycles and enrollment is not None and enrollment.cycle not in offer.cycles:
+        return False
+    targets = set(session.scalars(select(OfferInterest.interest_id).where(OfferInterest.offer_id == offer.id)))
+    if targets:
+        student_targets = set(session.scalars(select(StudentInterest.interest_id).where(StudentInterest.student_id == student_item.id)))
+        if not targets.intersection(student_targets):
+            return False
+    return True
+
+def source_rows(source):
+    """Parse an administrator-approved JSON or RSS catalog feed into candidate rows."""
+    try:
+        response = requests.get(source.feed_url, timeout=15, headers={'User-Agent': 'Pulse-EPIS-Catalog/1.0'})
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        fail('CATALOG_SYNC_FAILED', 422, f'No se pudo consultar el feed: {exc}')
+    if source.format == 'JSON':
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            fail('CATALOG_SYNC_FAILED', 422, 'El feed JSON no tiene un formato válido')
+        rows = payload.get('courses', payload) if isinstance(payload, dict) else payload
+        if not isinstance(rows, list):
+            fail('CATALOG_SYNC_FAILED', 422, 'El feed JSON debe ser una lista o contener la clave courses')
+        for row in rows:
+            if isinstance(row, dict):
+                yield row
+        return
+    try:
+        root = ET.fromstring(response.content)
+    except ET.ParseError:
+        fail('CATALOG_SYNC_FAILED', 422, 'El feed RSS no tiene un formato válido')
+    for item in root.findall('.//item'):
+        yield {
+            'title': item.findtext('title'),
+            'url': item.findtext('link'),
+            'skills': [],
+            'requirements': [],
+        }
+
+def sync_source(session, actor, source):
+    created = skipped = 0
+    for row in source_rows(source):
+        title = str(row.get('title') or '').strip()
+        url = str(row.get('url') or row.get('source_url') or row.get('link') or '').strip()
+        parsed = urlparse(url)
+        if not title or parsed.scheme != 'https' or parsed.username or parsed.password or len(url) > 2048:
+            skipped += 1
+            continue
+        if session.scalar(select(Course.id).where(Course.source_url == url)):
+            skipped += 1
+            continue
+        skills = row.get('skills') or source.default_skills
+        requirements = row.get('requirements') or source.default_requirements
+        if isinstance(skills, str): skills = [v.strip() for v in skills.split(',') if v.strip()]
+        if isinstance(requirements, str): requirements = [v.strip() for v in requirements.split(',') if v.strip()]
+        skills = [str(v).strip() for v in skills if str(v).strip()][:20]
+        requirements = [str(v).strip() for v in requirements if str(v).strip()][:20]
+        if not skills:
+            skipped += 1
+            continue
+        course = Course(title=title[:200], provider=source.provider, source_url=url, checked_on=date.today(), requirements=requirements, skills=skills, status='DETECTED')
+        session.add(course)
+        audit(session, actor, course, 'DETECTED', f'Curso detectado desde feed {source.provider}')
+        created += 1
+    source.last_synced_at = datetime.now(timezone.utc)
+    source.last_sync_summary = f'{created} candidatos detectados; {skipped} omitidos.'
+    audit(session, actor, source, 'SYNC', source.last_sync_summary)
+    return {'created': created, 'skipped': skipped, 'summary': source.last_sync_summary}
+
 def route_steps(session, item, steps):
     session.execute(delete(Step).where(Step.route_id == item.id))
     session.add_all((Step(route_id=item.id, position=n + 1, **step) for n, step in enumerate(steps)))
@@ -133,13 +216,66 @@ def catalog(kind: str, request: Request, actor: AuthenticatedUser=Depends(reader
     with transaction(request) as s:
         stmt = select(model).order_by(model.created_at, model.id)
         if actor.role == Role.STUDENT:
+            own = own_student(s, actor)
             if model is Workshop:
                 stmt = stmt.join(Offer, Offer.id == Workshop.offer_id).join(Course, Course.id == Offer.course_id).where(Workshop.status == 'OPEN', Offer.status == 'PUBLISHED', Course.status == 'PUBLISHED')
             elif model is Offer:
                 stmt = stmt.join(Course, Course.id == Offer.course_id).where(Offer.status == 'PUBLISHED', Course.status == 'PUBLISHED')
             else:
                 stmt = stmt.where(model.status == 'PUBLISHED')
-        return [serialize(s, i) for i in s.scalars(stmt)]
+        items = list(s.scalars(stmt))
+        if actor.role == Role.STUDENT and model in {Offer, Workshop}:
+            if model is Workshop:
+                offer_ids = {item.offer_id for item in items}
+                offers_by_id = {offer.id: offer for offer in s.scalars(select(Offer).where(Offer.id.in_(offer_ids)))}
+                items = [item for item in items if student_can_access_offer(s, own, offers_by_id[item.offer_id])]
+            else:
+                items = [item for item in items if student_can_access_offer(s, own, item)]
+        return [serialize(s, i) for i in items]
+
+@router.get('/admin/sources', response_model=list[CatalogSourceOutput])
+def catalog_sources(request: Request, actor: AuthenticatedUser=Depends(admin)):
+    with transaction(request) as s:
+        return [serialize(s, item) for item in s.scalars(select(CatalogSource).order_by(CatalogSource.provider, CatalogSource.created_at))]
+
+@router.post('/admin/sources', status_code=201, response_model=CatalogSourceOutput)
+def create_catalog_source(request: Request, payload: CatalogSourceInput, actor: AuthenticatedUser=Depends(admin)):
+    with transaction(request) as s:
+        values = payload.model_dump()
+        values['feed_url'] = str(payload.feed_url)
+        item = CatalogSource(**values)
+        s.add(item)
+        audit(s, actor, item, 'CREATE', 'Alta de feed autorizado para detectar cursos')
+        return serialize(s, item)
+
+@router.post('/admin/sources/{identifier}/sync', response_model=SyncOutput)
+def synchronize_catalog_source(identifier: UUID, request: Request, actor: AuthenticatedUser=Depends(admin)):
+    with transaction(request) as s:
+        item = get(s, CatalogSource, identifier, True)
+        if not item.active:
+            fail('SOURCE_INACTIVE', 409, 'La fuente está inactiva')
+        return sync_source(s, actor, item)
+
+@router.post('/admin/sources/sync', response_model=list[SyncOutput])
+def synchronize_catalog_sources(request: Request, actor: AuthenticatedUser=Depends(admin)):
+    with transaction(request) as s:
+        return [sync_source(s, actor, item) for item in s.scalars(select(CatalogSource).where(CatalogSource.active.is_(True)))]
+
+@router.get('/offers/{identifier}/external-link')
+def open_external_course(identifier: UUID, request: Request, actor: AuthenticatedUser=Depends(student)):
+    """Record the handoff, then redirect; Pulse never enrolls the student externally."""
+    with transaction(request) as s:
+        own = own_student(s, actor)
+        offer = get(s, Offer, identifier, True)
+        available_offer(s, offer)
+        if not student_can_access_offer(s, own, offer):
+            fail('OFFER_UNAVAILABLE', 404, 'La oportunidad no está disponible para tu perfil')
+        course = get(s, Course, offer.course_id)
+        visit = OpportunityVisit(student_id=own.id, offer_id=offer.id)
+        s.add(visit)
+        audit(s, actor, visit, 'OPEN_EXTERNAL', 'Apertura del enlace oficial; la matrícula ocurre en el proveedor externo')
+        destination = course.source_url
+    return RedirectResponse(destination, status_code=302)
 
 @router.post('/routes', status_code=201, response_model=RouteOutput)
 def create_route(request: Request, payload: RouteInput, actor: AuthenticatedUser=Depends(admin)):

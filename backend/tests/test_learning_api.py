@@ -13,6 +13,7 @@ from backend.app.db.base import Base
 from backend.app.db.models import Student, User
 from backend.app.auth.dependencies import get_current_user
 from backend.app.auth.models import AuthenticatedUser, Role
+from backend.app.api.routes import learning as learning_routes
 
 @pytest.fixture
 def context():
@@ -135,6 +136,27 @@ def test_authentication_and_unavailable_database():
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(id=uuid4(), email='demo@example.invalid', role=Role.ADMIN)
     with TestClient(app) as c:
         assert c.get('/api/v1/learning/interests').status_code == 503
+
+def test_catalog_sync_and_external_handoff(context, monkeypatch):
+    clients, _, _, _ = context
+    admin = clients['admin']
+    student = clients['one']
+    source = post(admin, '/admin/sources', {
+        'provider': 'Proveedor de prueba', 'feed_url': 'https://example.invalid/catalog.json',
+        'format': 'JSON', 'default_skills': ['Python'], 'default_requirements': []
+    })
+    monkeypatch.setattr(learning_routes, 'source_rows', lambda _: iter([{
+        'title': 'Curso detectado', 'url': 'https://example.invalid/detected', 'skills': ['Python']
+    }]))
+    synced = post(admin, f"/admin/sources/{source['id']}/sync", {}, 200)
+    assert synced == {'created': 1, 'skipped': 0, 'summary': '1 candidatos detectados; 0 omitidos.'}
+    course = admin.get('/api/v1/learning/courses').json()[0]
+    publish(admin, 'courses', course, 'IN_REVIEW')
+    offer = post(admin, '/offers', {'course_id': course['id'], 'title': 'Curso publicado', 'cycles': ['V'], 'interest_ids': [], 'relevance': 'Oportunidad revisada para prueba de derivación externa.'})
+    publish(admin, 'offers', offer, 'PUBLISHED')
+    response = student.get(f"/api/v1/learning/offers/{offer['id']}/external-link", follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers['location'] == 'https://example.invalid/detected'
 
 def test_concurrent_acceptance_cannot_overbook_postgres(context):
     clients, app, _, pg = context

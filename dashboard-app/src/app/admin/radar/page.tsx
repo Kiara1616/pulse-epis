@@ -7,6 +7,8 @@ import {
   getLearningErrorMessage,
   learningApi,
   splitList,
+  type CatalogSourceInput,
+  type LearningCatalogSource,
   type CourseInput,
   type LearningCourse,
   type LearningInterest,
@@ -35,6 +37,7 @@ type RadarData = {
   courses: LearningCourse[];
   offers: LearningOffer[];
   interests: LearningInterest[];
+  sources: LearningCatalogSource[];
 };
 
 function RadarAdmin() {
@@ -47,12 +50,13 @@ function RadarAdmin() {
   const [working, setWorking] = useState(false);
 
   const fetchCatalog = useCallback(async (): Promise<RadarData> => {
-    const [courses, offers, interests] = await Promise.all([
+    const [courses, offers, interests, sources] = await Promise.all([
       learningApi.courses(),
       learningApi.offers(),
       learningApi.interests(),
+      learningApi.sources(),
     ]);
-    return { courses, offers, interests };
+    return { courses, offers, interests, sources };
   }, []);
 
   useEffect(() => {
@@ -133,6 +137,21 @@ function RadarAdmin() {
     if (saved) formElement.reset();
   }
 
+  async function registerSource(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const input: CatalogSourceInput = {
+      provider: String(form.get("provider")).trim(),
+      feed_url: String(form.get("feed_url")).trim(),
+      format: String(form.get("format")) as "JSON" | "RSS",
+      default_skills: splitList(String(form.get("default_skills"))),
+      default_requirements: splitList(String(form.get("default_requirements"))),
+    };
+    const saved = await runAction(() => learningApi.createSource(input), "Fuente automática registrada. Sincronízala para detectar cursos.");
+    if (saved) formElement.reset();
+  }
+
   async function saveCourseReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedCourse) return;
@@ -193,8 +212,22 @@ function RadarAdmin() {
 
       <div role="note" className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
         <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
-        <p>Las fuentes se registran manualmente. Publicar una oportunidad requiere una audiencia y una explicación de relevancia; la API valida y registra cada cambio.</p>
+        <p>Agrega un feed público autorizado o registra una fuente manual. Pulse detecta candidatos, pero cada oportunidad se revisa antes de mostrarse a los estudiantes.</p>
       </div>
+
+      <details className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center gap-2 p-5 font-bold text-slate-950"><Plus size={18} aria-hidden="true" className="text-blue-700" /> Conectar feed de cursos</summary>
+        <form onSubmit={registerSource} className="grid gap-4 border-t border-slate-100 p-5 md:grid-cols-2">
+          <label className="text-sm font-semibold text-slate-800">Proveedor<input name="provider" required className={field} placeholder="Cisco, Grafana…" /></label>
+          <label className="text-sm font-semibold text-slate-800">Formato<select name="format" defaultValue="JSON" className={field}><option value="JSON">JSON</option><option value="RSS">RSS</option></select></label>
+          <label className="text-sm font-semibold text-slate-800 md:col-span-2">URL del feed autorizado<input name="feed_url" type="url" pattern="https://.*" required className={field} placeholder="https://proveedor.example/catalog.json" /></label>
+          <label className="text-sm font-semibold text-slate-800">Habilidades por defecto<input name="default_skills" className={field} placeholder="Python, Datos" /></label>
+          <label className="text-sm font-semibold text-slate-800">Requisitos por defecto<input name="default_requirements" className={field} placeholder="Programación básica" /></label>
+          <div className="md:col-span-2"><button disabled={working} className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">Guardar feed</button></div>
+        </form>
+      </details>
+
+      {data && data.sources.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-slate-950">Fuentes conectadas</h2><div className="mt-4 space-y-3">{data.sources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><div><p className="font-semibold text-slate-900">{source.provider} · {source.format}</p><p className="text-xs text-slate-600">{source.last_sync_summary ?? "Aún no sincronizada"}</p></div><button type="button" disabled={working} onClick={() => void runAction(() => learningApi.syncSource(source.id), `Sincronización completada: ${source.provider}.`)} className="rounded-lg border border-blue-300 px-3 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">Sincronizar</button></div>)}</div></section>}
 
       {error && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
@@ -315,7 +348,7 @@ function RadarAdmin() {
                 <form onSubmit={saveOpportunity} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
                   <div>
                     <h3 className="font-bold text-slate-900">Oportunidad para estudiantes</h3>
-                    <p className="mt-1 text-sm text-slate-600">Declara a quién está dirigida y por qué es relevante. No se filtra el acceso al catálogo por audiencia.</p>
+                    <p className="mt-1 text-sm text-slate-600">Define a quién está dirigida y por qué es relevante. Solo los estudiantes que cumplan la audiencia podrán verla.</p>
                   </div>
                   <label className="block text-sm font-semibold text-slate-800">
                     Título de la oportunidad
