@@ -40,6 +40,10 @@ async function mockRadarApi(page: Page, initialStatus = "DETECTED") {
   let courseExists = initialStatus !== "EMPTY";
   let currentOffer: Record<string, unknown> | null = null;
 
+  await page.route("**/api/v1/learning/admin/sources", (route) =>
+    route.fulfill({ json: [] }),
+  );
+
   await page.route("**/api/v1/learning/courses", async (route) => {
     if (route.request().method() === "GET") {
       await route.fulfill({ json: courseExists ? [currentCourse] : [] });
@@ -122,7 +126,7 @@ test("admin revisa un curso y publica una oportunidad persistida", async ({ page
   await page.goto("/admin/radar");
   await expect(page.getByRole("heading", { name: "Radar de cursos" })).toBeVisible();
   await expect(page.getByRole("article").getByText("Por revisar", { exact: true })).toBeVisible();
-  await expect(page.getByText("Las fuentes se registran manualmente.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Agrega un feed público autorizado", { exact: false })).toBeVisible();
 
   await page.getByRole("button", { name: "Iniciar revisión" }).click();
   await expect(page.getByText("Revisión de contenido", { exact: true })).toBeVisible();
@@ -156,13 +160,14 @@ test("el radar muestra carga vacía real y registra una fuente manual", async ({
   await auth(page);
   await mockRadarApi(page, "EMPTY");
   await page.goto("/admin/radar");
-  await expect(page.getByText("Aún no hay cursos registrados.")).toBeVisible();
+  await expect(page.getByText("Aún no hay cursos registrados.", { exact: false })).toBeVisible();
   await page.getByText("Registrar fuente de curso").click();
-  await page.getByLabel("Nombre del curso").fill("Fundamentos de datos");
-  await page.getByLabel("Proveedor").fill("Instituto EPIS");
-  await page.getByLabel("Fuente HTTPS").fill("https://example.org/datos");
-  await page.getByLabel("Habilidades (separadas por coma)").fill("SQL, análisis");
-  await page.getByRole("button", { name: "Registrar para revisión" }).click();
+  const manualSourceForm = page.getByLabel("Nombre del curso").locator("xpath=ancestor::form");
+  await manualSourceForm.getByLabel("Nombre del curso").fill("Fundamentos de datos");
+  await manualSourceForm.getByLabel("Proveedor").fill("Instituto EPIS");
+  await manualSourceForm.getByLabel("Fuente HTTPS").fill("https://example.org/datos");
+  await manualSourceForm.getByLabel("Habilidades (separadas por coma)").fill("SQL, análisis");
+  await manualSourceForm.getByRole("button", { name: "Registrar para revisión" }).click();
   await expect(page.getByRole("status")).toContainText("Fuente registrada.");
   await expect(page.getByRole("article").getByText("Fundamentos de datos")).toBeVisible();
 });

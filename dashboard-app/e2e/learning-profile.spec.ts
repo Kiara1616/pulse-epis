@@ -55,7 +55,7 @@ test("mi ruta carga el catálogo real y persiste las preferencias del estudiante
   await expect(page.getByRole("heading", { name: "Mi ruta" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Oportunidades publicadas" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Oportunidad de analítica" })).toBeVisible();
-  await expect(page.getByText("no una recomendación personalizada", { exact: false })).toBeVisible();
+  await expect(page.getByText("La inscripción se realiza fuera de Pulse.", { exact: false })).toBeVisible();
 
   await page.locator("fieldset").first().getByText("Inteligencia artificial", { exact: true }).click();
   await page.getByLabel("Ruta de formación").selectOption(routeId);
