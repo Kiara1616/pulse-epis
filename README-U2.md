@@ -69,15 +69,42 @@ terraform plan
 
 El costo inicia solo al ejecutar `terraform apply`, porque ese comando crea recursos reales. Antes de ello se debe habilitar facturación y aprobar el presupuesto.
 
-| Componente GCP | Demo mensual estimada (USD) | Piloto mensual estimado (USD) |
-|---|---:|---:|
-| Cloud SQL compute | 7.67 | 83.27 |
-| Cloud SQL SSD | 3.40 | 8.50 |
-| Cloud Storage | 0.14 | 1.20 |
-| Cloud Run ETL | 0.11 | 0.32 |
-| Cloud Run reservado | 0.00 | 62.34 |
-| Artifact Registry | 0.05 | 0.05 |
-| **Total bruto estimado** | **11.36** | **155.69** |
+### Cómo leer esta estimación
+
+- **USD:** moneda en la que se estiman los servicios de GCP.
+- **S/:** conversión referencial para exponer el presupuesto en Perú.
+- **Mensual:** costo estimado de un mes de operación.
+- **Anual:** mensual × 12. Sirve para presupuestar, no es una factura adelantada.
+- **Bruto:** no descuenta créditos gratuitos, descuentos, impuestos ni tráfico de salida.
+
+Para la presentación se usa un tipo de cambio redondeado de **S/ 3.50 por USD**, únicamente como supuesto reproducible. Antes de una compra se debe actualizar con la [serie de tipo de cambio del BCRP](https://estadisticas.bcrp.gob.pe/estadisticas/series/diarias/tipo-de-cambio-nominal) y cotizaciones vigentes de GCP.
+
+| Escenario | USD mensual | S/ mensual | USD anual | S/ anual | Uso previsto |
+|---|---:|---:|---:|---:|---|
+| **Demo** | **USD 11.36** | **S/ 39.76** | **USD 136.32** | **S/ 477.12** | Presentación, pocas corridas ETL y servicios Cloud Run con escala a cero. |
+| **Piloto** | **USD 155.69** | **S/ 544.92** | **USD 1,868.28** | **S/ 6,548.98** | Uso continuo, mayor disponibilidad y capacidad reservada. |
+
+```mermaid
+xychart-beta
+    title "Costo bruto estimado de Pulse EPIS (USD)"
+    x-axis ["Demo mensual", "Piloto mensual", "Demo anual", "Piloto anual"]
+    y-axis "USD" 0 --> 2000
+    bar [11.36, 155.69, 136.32, 1868.28]
+```
+
+La principal decisión de costo es **Cloud SQL**: mantiene la base de datos encendida. Cloud Run puede bajar a cero cuando no hay visitas; por eso su costo de demo es reducido.
+
+| Componente GCP | Demo mensual USD | Demo mensual S/ | Piloto mensual USD | Piloto mensual S/ | Qué cubre |
+|---|---:|---:|---:|---:|---|
+| Cloud SQL: cómputo | 7.67 | 26.85 | 83.27 | 291.45 | Base de datos PostgreSQL operativa y analítica. |
+| Cloud SQL: SSD | 3.40 | 11.90 | 8.50 | 29.75 | Almacenamiento persistente de la base de datos. |
+| Cloud Storage | 0.14 | 0.49 | 1.20 | 4.20 | Data Lake y evidencias privadas. |
+| Cloud Run Job: ETL | 0.11 | 0.39 | 0.32 | 1.12 | Ejecución programada del proceso ETL. |
+| Cloud Run reservado | 0.00 | 0.00 | 62.34 | 218.19 | Disponibilidad continua del portal y API. |
+| Artifact Registry | 0.05 | 0.18 | 0.05 | 0.18 | Imágenes de contenedores. |
+| **Total bruto estimado** | **11.36** | **39.76** | **155.69** | **544.92** | **Total mensual antes de impuestos.** |
+
+> Ejemplo para explicarlo: “El escenario Demo costaría aproximadamente S/ 39.76 al mes, o S/ 477.12 al año, si se mantuvieran los mismos recursos, consumo y tipo de cambio. No se ejecutará `terraform apply` sin aprobar este presupuesto.”
 
 Precios de referencia al 2026-11-07, antes de impuestos, tráfico de salida y descuentos. Para reproducirlos:
 
