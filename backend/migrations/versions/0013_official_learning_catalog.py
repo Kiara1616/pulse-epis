@@ -242,8 +242,10 @@ def upgrade():
     connection.execute(
         sa.text(
             "INSERT INTO learning_workshops (id, offer_id, title, capacity, requirements, status) "
-            "SELECT :id, :offer_id, :title, 30, :requirements, 'OPEN' "
-            "WHERE NOT EXISTS (SELECT 1 FROM learning_workshops WHERE title = :title)"
+            "SELECT :id, :offer_id, CAST(:title AS VARCHAR), 30, :requirements, 'OPEN' "
+            "WHERE NOT EXISTS ("
+            "SELECT 1 FROM learning_workshops WHERE title = CAST(:title AS VARCHAR)"
+            ")"
         ).bindparams(sa.bindparam("requirements", type_=sa.JSON())),
         {
             "id": str(uuid4()),
