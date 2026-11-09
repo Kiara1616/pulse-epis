@@ -3,6 +3,7 @@ export type AppRole = "ADMIN" | "VALIDATOR" | "STUDENT";
 export type AuthenticatedUser = {
   id: string;
   email: string;
+  display_name?: string | null;
   role: AppRole;
   student_id: string | null;
   permissions: string[];
