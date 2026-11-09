@@ -55,7 +55,7 @@ function AdminContent() {
         <p className="text-sm font-bold uppercase tracking-wider text-blue-600">
           Control institucional
         </p>
-        <h1 className="mt-1 text-3xl font-black text-gray-900">
+        <h1 className="mt-1 text-3xl font-semibold text-gray-900">
           Centro de administración
         </h1>
         <p className="mt-2 text-gray-500">

@@ -119,7 +119,7 @@ function RosterPageContent() {
   const latest = history[0];
   const selectedRows = groups.find((group) => group.code === periodCode)?.rows ?? 0;
   return <div className="space-y-6">
-    <div><p className="text-sm font-bold uppercase tracking-wider text-blue-600">Fuente maestra</p><h1 className="mt-1 text-3xl font-black text-gray-900">Padrón de estudiantes EPIS</h1><p className="mt-2 text-gray-500">Importa el CSV oficial por periodo y consulta el resultado de conciliación sin mostrar datos nominales.</p></div>
+    <div><p className="text-sm font-medium uppercase tracking-wider text-blue-600">Fuente maestra</p><h1 className="mt-1 text-3xl font-semibold text-gray-900">Padrón de estudiantes EPIS</h1><p className="mt-2 text-gray-500">Importa el CSV oficial por periodo y consulta el resultado de conciliación sin mostrar datos nominales.</p></div>
     {error && <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800"><AlertCircle size={18} className="mt-0.5 shrink-0"/><p className="text-sm">{error}</p><button onClick={() => { void loadPeriods(); void loadHistory(); }} className="ml-auto inline-flex items-center gap-1 text-sm font-bold"><RefreshCw size={15}/>Reintentar</button></div>}
     <section className="rounded-xl border border-slate-200 bg-white p-6">
       <div className="flex items-center justify-between gap-3"><h2 className="font-semibold text-slate-900">Importar padrón</h2><button type="button" disabled={uploading} onClick={() => setShowPeriodForm((value) => !value)} className="text-sm font-semibold text-blue-600">{showPeriodForm ? "Cancelar nuevo periodo" : "Registrar periodo"}</button></div>
@@ -137,7 +137,7 @@ function RosterPageContent() {
 }
 
 function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Clock3 }) {
-  return <div className="rounded-2xl border border-gray-100 bg-white p-5"><Icon className="text-blue-500"/><p className="mt-4 text-sm text-gray-500">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>;
+  return <div className="rounded-2xl border border-gray-100 bg-white p-5"><Icon className="text-blue-500"/><p className="mt-4 text-sm text-gray-500">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>;
 }
 
 export default function StudentsAdminPage() {

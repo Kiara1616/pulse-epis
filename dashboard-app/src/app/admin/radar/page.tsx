@@ -185,7 +185,7 @@ function RadarAdmin() {
         <p className="text-sm font-bold uppercase tracking-wider text-blue-600">
           Gestión administrativa
         </p>
-        <h1 className="mt-1 text-3xl font-black text-slate-900">Radar de cursos</h1>
+        <h1 className="mt-1 text-3xl font-semibold text-slate-900">Radar de cursos</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
           Registra fuentes, revisa su contenido y publica oportunidades en el catálogo de estudiantes.
         </p>
