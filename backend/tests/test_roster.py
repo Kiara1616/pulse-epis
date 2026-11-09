@@ -262,3 +262,12 @@ def test_preview_validates_headers_and_missing_periods_without_echoing_student_d
         with pytest.raises(ValueError) as error:
             preview_periods(content, make_settings())
         assert "private-personal-value" not in str(error.value)
+
+
+def test_preview_accepts_the_optional_confirmed_student_name_column():
+    content = (
+        b"code,email,school,plan,cycle,status,period,name\n"
+        b"2023077087,kz2023077087@virtual.upt.pe,EPIS,2026 II,VIII,ACTIVE,2026-II,Cuenta KZ\n"
+    )
+
+    assert preview_periods(content, make_settings()) == [{"code": "2026-II", "rows": 1}]

@@ -41,6 +41,8 @@ services:
         sync: false
       - key: PULSE_BOOTSTRAP_ADMIN_EMAIL
         sync: false
+      - key: PULSE_BOOTSTRAP_VALIDATOR_EMAILS
+        sync: false
       - key: PULSE_ETL_SCHEDULER_SECRET
         sync: false
 databases:

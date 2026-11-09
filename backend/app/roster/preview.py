@@ -4,7 +4,7 @@ import io
 import re
 
 from ..core.config import Settings
-from .parser import ROSTER_COLUMNS, normalize_label, normalize_text
+from .parser import OPTIONAL_COLUMNS, ROSTER_COLUMNS, normalize_label, normalize_text
 
 
 def preview_periods(content: bytes, settings: Settings) -> list[dict]:
@@ -17,8 +17,17 @@ def preview_periods(content: bytes, settings: Settings) -> list[dict]:
     reader = csv.DictReader(io.StringIO(text, newline=""), strict=True)
     headers = reader.fieldnames or []
     normalized = [normalize_label(h).lower() for h in headers]
-    if len(normalized) != len(set(normalized)) or set(normalized) != set(ROSTER_COLUMNS):
-        raise ValueError("El CSV debe tener las columnas: code, email, school, plan, cycle, status, period.")
+    expected = set(ROSTER_COLUMNS)
+    allowed = expected | set(OPTIONAL_COLUMNS)
+    if (
+        len(normalized) != len(set(normalized))
+        or not expected.issubset(normalized)
+        or not set(normalized).issubset(allowed)
+    ):
+        raise ValueError(
+            "El CSV debe incluir: code, email, school, plan, cycle, status y period. "
+            "La columna name es opcional."
+        )
     period_header = headers[normalized.index("period")]
     counts: dict[str, int] = {}
     total = 0

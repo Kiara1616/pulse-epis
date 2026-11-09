@@ -315,7 +315,7 @@ function ValidationsContent() {
     <div className="space-y-6">
       <div>
         <p className="text-sm font-bold uppercase tracking-wider text-blue-600">Control de evidencia</p>
-        <h2 className="mt-1 text-3xl font-black text-gray-900">Bandeja de validaciones</h2>
+        <h2 className="mt-1 text-3xl font-semibold text-gray-900">Bandeja de validaciones</h2>
         <p className="mt-2 max-w-3xl text-gray-500">
           Prioriza los casos, revisa la evidencia y registra una decisión trazable para cada certificación.
         </p>
@@ -346,7 +346,7 @@ function ValidationsContent() {
         ].map(([label, count]) => (
           <article key={label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <p className="text-sm text-gray-500">{label}</p>
-            <p className="mt-1 text-3xl font-black text-gray-900">{count}</p>
+            <p className="mt-1 text-3xl font-semibold text-gray-900">{count}</p>
           </article>
         ))}
       </section>

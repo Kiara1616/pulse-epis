@@ -178,7 +178,7 @@ function StudentWorkshopView() {
                           {workshopStatusPresentation[workshop.status].label}
                         </span>
                       </div>
-                      <h2 className="mt-4 text-2xl font-black leading-tight">{workshop.title}</h2>
+                      <h2 className="mt-4 text-2xl font-semibold leading-tight">{workshop.title}</h2>
                       <p className="mt-2 text-sm text-blue-100">Oportunidad: {offerNames.get(workshop.offer_id) ?? "Formación publicada"}</p>
                     </div>
                     <div className="space-y-5 p-5 sm:p-6">
@@ -191,7 +191,7 @@ function StudentWorkshopView() {
                               <p className="mt-1 text-sm text-slate-600">{workshop.occupied_places} de {workshop.capacity} ocupados</p>
                             </div>
                           </div>
-                          <span className="rounded-xl bg-white px-3 py-2 text-lg font-black text-blue-800 shadow-sm">{workshop.available_places}</span>
+                          <span className="rounded-xl bg-white px-3 py-2 text-lg font-semibold text-blue-800 shadow-sm">{workshop.available_places}</span>
                         </div>
                       </div>
                       <div>
@@ -404,10 +404,6 @@ function AdminWorkshopView() {
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Publica talleres vinculados a oportunidades vigentes y revisa las solicitudes persistidas.</p>
       </header>
 
-      <aside role="note" className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-        <Info size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
-        <p>Las solicitudes pertenecen a cada estudiante. La aceptación consume cupo; el backend controla los límites y registra cada decisión.</p>
-      </aside>
       {error && <ErrorPanel message={error} retry={retryAdminLoad} />}
       {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
 

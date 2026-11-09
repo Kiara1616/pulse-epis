@@ -45,6 +45,8 @@ services:
         sync: false
       - key: PULSE_BOOTSTRAP_ADMIN_EMAIL
         sync: false
+      - key: PULSE_BOOTSTRAP_VALIDATOR_EMAILS
+        sync: false
 databases:
   - name: pulse-epis-db
     plan: basic-256mb
