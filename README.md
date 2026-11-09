@@ -3,7 +3,7 @@
   <h1>Pulse EPIS</h1>
   <p><strong>De las credenciales verificadas a nuevas oportunidades de formación.</strong></p>
   <p>Gestión de certificaciones, seguimiento de competencias e información para la toma de decisiones.</p>
-  <p><a href="https://pulse-epis.onrender.com/"><strong>Acceder a Pulse EPIS</strong></a></p>
+  <p><a href="https://pulse-epis-rirr.onrender.com/"><strong>Acceder a Pulse EPIS</strong></a></p>
 </div>
 
 ---
@@ -121,6 +121,8 @@ Las suites de migraciones y concurrencia requieren una base PostgreSQL de prueba
 
 ## Documentación
 
+- [README de exposición · Segunda Unidad BI](README-U2.md): arquitectura, ETL, costos, Terraform, capas Bronze/Silver/Gold y guion de demostración.
+
 - [Manual de usuario](docs/proyecto/10-Manual-de-usuario.md): recorridos y acciones de cada rol.
 - [API y contratos](docs/proyecto/15-API-y-contratos.md): interfaces y reglas de integración.
 - [Autenticación y seguridad](docs/proyecto/13-Autenticacion-y-seguridad.md): identidad, permisos y protección de evidencias.
@@ -130,7 +132,7 @@ Las suites de migraciones y concurrencia requieren una base PostgreSQL de prueba
 
 ## Alcance y despliegue
 
-**Proyecto desplegado:** [pulse-epis.onrender.com](https://pulse-epis.onrender.com/).
+**Proyecto desplegado:** [pulse-epis-rirr.onrender.com](https://pulse-epis-rirr.onrender.com/).
 
 Las funcionalidades descritas están implementadas y cuentan con pruebas automatizadas. La demostración utiliza datos sintéticos; la puesta en operación institucional requiere datos autorizados, configuración de identidad, responsables y validación de recuperación.
 
