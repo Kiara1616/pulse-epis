@@ -2,8 +2,10 @@
 
 Este README es el guion técnico de demostración de la segunda unidad. Distingue lo que funciona hoy en Render de la arquitectura GCP que está versionada en Terraform, pero que no se ha creado para evitar costos sin una aprobación previa.
 
-**Aplicación desplegada:** [pulse-epis-rirr.onrender.com](https://pulse-epis-rirr.onrender.com/)  
-**Repositorio:** [Kiara1616/pulse-epis](https://github.com/Kiara1616/pulse-epis)  
+**Aplicación desplegada:** [pulse-epis-rirr.onrender.com](https://pulse-epis-rirr.onrender.com/)
+
+**Repositorio:** [Kiara1616/pulse-epis](https://github.com/Kiara1616/pulse-epis)
+
 **Regla de presentación:** los datos de referencia se identifican como demostrativos; los datos publicados proceden del padrón y de certificaciones validadas.
 
 ## 1. Cumplimiento de requisitos
