@@ -55,6 +55,7 @@ test('evidencia, validación, perfil, oportunidad y participación con API real'
   await manualSourceForm.getByLabel('Fuente HTTPS', { exact: true }).fill('https://example.invalid/course');
   await manualSourceForm.getByLabel('Habilidades (separadas por coma)').fill('Python');
   await manualSourceForm.getByRole('button', { name: 'Registrar para revisión' }).click();
+  await admin.getByRole('button', { name: /Proveedor sintético.*1 curso/ }).click();
   await admin.getByRole('button', { name: 'Iniciar revisión' }).click();
   await admin.getByLabel('Título de la oportunidad').fill('Oportunidad sintética');
   await admin.getByLabel('IA sintética', { exact: true }).check();
@@ -69,6 +70,7 @@ test('evidencia, validación, perfil, oportunidad y participación con API real'
   await admin.getByLabel('Nombre del taller').fill('Taller sintético');
   await admin.getByLabel('Capacidad', { exact: true }).fill('1');
   await admin.getByRole('button', { name: 'Crear y abrir taller' }).click();
+  await expect(admin.getByRole('status').filter({ hasText: 'Taller publicado y visible para estudiantes.' })).toBeVisible();
   await student.goto('/talleres');
   await student.getByRole('checkbox').check();
   await student.getByRole('button', { name: 'Enviar solicitud' }).click();

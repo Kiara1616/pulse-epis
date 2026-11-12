@@ -1,6 +1,7 @@
 """Explicit role-scoped learning API with atomic publication and capacity decisions."""
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
+from hmac import compare_digest
 import ipaddress
 import json
 import socket
@@ -8,7 +9,7 @@ from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 import requests
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select, delete, func
 from sqlalchemy.exc import IntegrityError
@@ -19,6 +20,7 @@ from ...learning.models import LearningInterest as Interest, LearningRoute as Ro
 from ...learning.schemas import InterestOutput, RouteOutput, CourseOutput, CatalogSourceOutput, SyncOutput, OfferOutput, WorkshopOutput, ApplicationOutput, AuditOutput
 from ...learning.schemas import InterestInput, RouteInput, CourseInput, CatalogSourceInput, OfferInput, WorkshopInput, PreferenceInput, Decision, ApplyInput
 router = APIRouter(prefix='/learning', tags=['learning'])
+scheduler_router = APIRouter(prefix='/learning', tags=['learning-scheduler'])
 admin = require_roles(Role.ADMIN)
 student = require_roles(Role.STUDENT)
 reader = require_roles(Role.ADMIN, Role.STUDENT)
@@ -72,7 +74,7 @@ def get(session, model, identifier, lock=False):
 def audit(session, actor, item, action, reason, before=None):
     session.flush()
     sequence = (session.scalar(select(func.max(Audit.sequence)).where(Audit.entity_type == item.__tablename__, Audit.entity_id == item.id)) or 0) + 1
-    session.add(Audit(sequence=sequence, actor_id=actor.id, entity_type=item.__tablename__, entity_id=item.id, action=action, before=before, after=serialize(session, item), reason=reason))
+    session.add(Audit(sequence=sequence, actor_id=actor.id if actor else None, entity_type=item.__tablename__, entity_id=item.id, action=action, before=before, after=serialize(session, item), reason=reason))
 
 def own_student(session, actor, lock=False):
     if actor.student_id is None:
@@ -189,7 +191,7 @@ def source_rows(source):
         }
 
 def sync_source(session, actor, source):
-    created = skipped = 0
+    created = updated = skipped = 0
     for position, row in enumerate(source_rows(source), start=1):
         if position > MAX_CATALOG_ITEMS:
             skipped += 1
@@ -198,9 +200,6 @@ def sync_source(session, actor, source):
         url = str(row.get('url') or row.get('source_url') or row.get('link') or '').strip()
         parsed = urlparse(url)
         if not title or parsed.scheme != 'https' or parsed.username or parsed.password or len(url) > 2048:
-            skipped += 1
-            continue
-        if session.scalar(select(Course.id).where(Course.source_url == url)):
             skipped += 1
             continue
         skills = row.get('skills') or source.default_skills
@@ -212,14 +211,39 @@ def sync_source(session, actor, source):
         if not skills:
             skipped += 1
             continue
+        existing = session.scalar(select(Course).where(Course.source_url == url).with_for_update())
+        if existing is not None:
+            # Refresh metadata only while the candidate is still unreviewed. Once
+            # an admin acts on it, preserve that decision and its published copy.
+            if existing.status == 'DETECTED':
+                next_values = {
+                    'title': title[:200],
+                    'provider': source.provider,
+                    'requirements': requirements,
+                    'skills': skills,
+                }
+                changed = any(getattr(existing, key) != value for key, value in next_values.items())
+                if changed:
+                    before = serialize(session, existing)
+                    for key, value in next_values.items():
+                        setattr(existing, key, value)
+                    existing.checked_on = date.today()
+                    audit(session, actor, existing, 'REFRESH', f'Actualización de catálogo desde feed {source.provider}', before)
+                    updated += 1
+                else:
+                    existing.checked_on = date.today()
+                    skipped += 1
+            else:
+                skipped += 1
+            continue
         course = Course(title=title[:200], provider=source.provider, source_url=url, checked_on=date.today(), requirements=requirements, skills=skills, status='DETECTED')
         session.add(course)
         audit(session, actor, course, 'DETECTED', f'Curso detectado desde feed {source.provider}')
         created += 1
     source.last_synced_at = datetime.now(timezone.utc)
-    source.last_sync_summary = f'{created} candidatos detectados; {skipped} omitidos.'
+    source.last_sync_summary = f'{created} candidatos nuevos; {updated} candidatos actualizados; {skipped} omitidos.'
     audit(session, actor, source, 'SYNC', source.last_sync_summary)
-    return {'created': created, 'skipped': skipped, 'summary': source.last_sync_summary}
+    return {'created': created, 'updated': updated, 'skipped': skipped, 'summary': source.last_sync_summary}
 
 def route_steps(session, item, steps):
     session.execute(delete(Step).where(Step.route_id == item.id))
@@ -304,6 +328,60 @@ def synchronize_catalog_source(identifier: UUID, request: Request, actor: Authen
 def synchronize_catalog_sources(request: Request, actor: AuthenticatedUser=Depends(admin)):
     with transaction(request) as s:
         return [sync_source(s, actor, item) for item in s.scalars(select(CatalogSource).where(CatalogSource.active.is_(True)))]
+
+
+@scheduler_router.post('/scheduled/sources')
+def synchronize_catalog_sources_scheduled(
+    request: Request,
+    x_pulse_etl_secret: str | None = Header(default=None),
+):
+    """Weekly source check; detected courses remain drafts for admin review."""
+    configured = request.app.state.settings.etl_scheduler_secret
+    if configured is None or not configured.get_secret_value():
+        fail('SCHEDULER_UNAVAILABLE', 503, 'La sincronización programada no está configurada')
+    if not x_pulse_etl_secret or not compare_digest(x_pulse_etl_secret, configured.get_secret_value()):
+        fail('SCHEDULER_UNAUTHORIZED', 401, 'Credencial de ejecución no válida')
+    factory = request.app.state.session_factory
+    if factory is None:
+        fail('LEARNING_UNAVAILABLE', 503, 'Base de datos no disponible')
+    with transaction(request) as session:
+        source_ids = list(session.scalars(
+            select(CatalogSource.id).where(CatalogSource.active.is_(True)).order_by(CatalogSource.provider, CatalogSource.id)
+        ))
+    if not source_ids:
+        return {'status': 'SKIPPED', 'reason': 'NO_ACTIVE_SOURCES', 'sources_checked': 0, 'created': 0, 'skipped': 0}
+
+    results = []
+    for source_id in source_ids:
+        try:
+            with transaction(request) as session:
+                source = get(session, CatalogSource, source_id, True)
+                if not source.active:
+                    results.append({'source_id': str(source_id), 'status': 'SKIPPED', 'reason': 'SOURCE_INACTIVE'})
+                    continue
+                result = sync_source(session, None, source)
+                results.append({'source_id': str(source_id), 'status': 'APPLIED', **result})
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, dict) else {}
+            safe_message = str(detail.get('message') or 'No se pudo consultar el feed autorizado')[:300]
+            with transaction(request) as session:
+                source = session.get(CatalogSource, source_id)
+                if source is not None:
+                    source.last_synced_at = datetime.now(timezone.utc)
+                    source.last_sync_summary = f'Error de sincronización: {safe_message}'
+                    audit(session, None, source, 'SYNC_FAILED', source.last_sync_summary)
+            results.append({'source_id': str(source_id), 'status': 'FAILED', 'reason': safe_message})
+        except Exception:
+            # Avoid logging remote URLs, feed payloads, or student information.
+            results.append({'source_id': str(source_id), 'status': 'FAILED', 'reason': 'Error interno al sincronizar la fuente'})
+    return {
+        'status': 'APPLIED' if any(item['status'] == 'APPLIED' for item in results) else 'FAILED',
+        'sources_checked': len(results),
+        'created': sum(item.get('created', 0) for item in results),
+        'updated': sum(item.get('updated', 0) for item in results),
+        'skipped': sum(item.get('skipped', 0) for item in results),
+        'results': results,
+    }
 
 @router.get('/offers/{identifier}/external-link')
 def open_external_course(identifier: UUID, request: Request, actor: AuthenticatedUser=Depends(student)):

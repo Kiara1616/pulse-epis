@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from io import BytesIO
 from datetime import date
 from uuid import UUID, uuid4
 
+from openpyxl import Workbook
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -12,9 +14,9 @@ from backend.app.auth.models import AuthenticatedUser, Role
 from backend.app.auth.store import InMemoryUserDirectory
 from backend.app.core.config import Settings
 from backend.app.db.base import Base
-from backend.app.db.models import AcademicPeriod, Enrollment, RosterImport, Student, User
+from backend.app.db.models import AcademicPeriod, Enrollment, RosterCandidate, RosterImport, Student, User
 from backend.app.main import create_app
-from backend.app.roster.parser import parse_roster_csv
+from backend.app.roster.parser import parse_roster_candidate_upload, parse_roster_csv
 from backend.app.roster.service import RosterImportService, pseudonymize_student_code
 from backend.app.roster.preview import preview_periods
 
@@ -71,6 +73,29 @@ def make_service() -> tuple[RosterImportService, sessionmaker[Session], Academic
         session.add_all([period, actor])
         session.commit()
     return RosterImportService(session_factory, make_settings()), session_factory, period, actor_id, engine
+
+
+def make_roster_workbook(*, duplicate_roster_sheet: bool = False) -> bytes:
+    workbook = Workbook()
+    workbook.active.title = "Resumen"
+    workbook.active.append(["Resumen de carga"])
+    roster = workbook.create_sheet("Padron Pulse 2026-II")
+    roster.append(["Padrón autorizado"])
+    roster.append(["Notas de carga"])
+    roster.append(["code", "email", "school", "plan", "cycle", "status", "period", "name"])
+    roster.append(["2023077087", "kz2023077087@virtual.upt.pe", "EPIS", "2026-II", "VIII", "ACTIVE", "2026-II", "Estudiante de prueba"])
+    roster.append(["2023077088", "kz2023077088@virtual.upt.pe", "EPIS", "2026-II", "VII", "ACTIVE", "2026-II", "Otro estudiante"])
+    pending = workbook.create_sheet("Pendientes conciliacion")
+    pending.append(["Pendientes de conciliación"])
+    pending.append(["source_row", "name", "period", "cycle", "email", "proposed_code", "issue_code"])
+    pending.append([10, "Pendiente de prueba", "2026-II", "V", None, None, "MISSING_EMAIL"])
+    if duplicate_roster_sheet:
+        second = workbook.create_sheet("Otra lista")
+        second.append(["code", "email", "school", "plan", "cycle", "status", "period"])
+        second.append(["2023077099", "kz2023077099@virtual.upt.pe", "EPIS", "2026-II", "I", "ACTIVE", "2026-II"])
+    content = BytesIO()
+    workbook.save(content)
+    return content.getvalue()
 
 
 def test_parser_reports_school_status_period_and_never_echoes_invalid_values():
@@ -271,3 +296,110 @@ def test_preview_accepts_the_optional_confirmed_student_name_column():
     )
 
     assert preview_periods(content, make_settings()) == [{"code": "2026-II", "rows": 1}]
+
+
+def test_xlsx_preview_reads_only_the_roster_sheet_and_does_not_expose_names():
+    content = make_roster_workbook()
+
+    preview = preview_periods(content, make_settings(), "estudiantes_pulse.xlsx")
+
+    assert preview == [{"code": "2026-II", "rows": 2}]
+    assert "Estudiante de prueba" not in str(preview)
+
+
+def test_xlsx_import_is_idempotent_and_keeps_excel_source_row_numbers():
+    service, session_factory, _, actor_id, engine = make_service()
+    content = make_roster_workbook()
+
+    report = service.import_csv(
+        content,
+        period_code="2026-II",
+        actor_user_id=actor_id,
+        filename="estudiantes_pulse.xlsx",
+    )
+    repeated = service.import_csv(
+        content,
+        period_code="2026-II",
+        actor_user_id=actor_id,
+        filename="estudiantes_pulse.xlsx",
+    )
+
+    assert report.status == "APPLIED"
+    assert report.total_rows == report.accepted_rows == 2
+    assert repeated.idempotent and repeated.id == report.id
+    with session_factory() as session:
+        assert session.scalar(select(func.count()).select_from(Student)) == 2
+        assert session.scalar(select(func.count()).select_from(Enrollment)) == 2
+    engine.dispose()
+
+
+def test_xlsx_preview_rejects_multiple_roster_sheets():
+    import pytest
+
+    with pytest.raises(ValueError, match="una sola hoja"):
+        preview_periods(make_roster_workbook(duplicate_roster_sheet=True), make_settings(), "padron.xlsx")
+
+
+def test_candidate_parser_reads_only_pending_sheet_and_targets_requested_period():
+    candidates = parse_roster_candidate_upload(
+        make_roster_workbook(),
+        filename="estudiantes_pulse.xlsx",
+        period_code="2026-II",
+        settings=make_settings(),
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].source_row == 10
+    assert candidates[0].cycle == "V"
+    assert candidates[0].issue_code == "MISSING_EMAIL"
+    assert candidates[0].email == candidates[0].code == ""
+
+
+def test_admin_can_reconcile_pending_candidate_into_period_roster():
+    from backend.app.auth.dependencies import get_current_user
+
+    service, session_factory, _, actor_id, engine = make_service()
+    actor = AuthenticatedUser(id=actor_id, email="admin@virtual.upt.pe", role=Role.ADMIN)
+    app = create_app(
+        settings=make_settings(),
+        user_directory=InMemoryUserDirectory([actor]),
+        roster_import_service=service,
+    )
+    app.state.session_factory = session_factory
+
+    def current_user():
+        return actor
+
+    app.dependency_overrides[get_current_user] = current_user
+    with TestClient(app) as client:
+        imported = client.post(
+            "/api/v1/padron/candidates/import?period_code=2026-II",
+            files={"file": ("estudiantes_pulse.xlsx", make_roster_workbook(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+        )
+        assert imported.status_code == 200, imported.text
+        assert imported.json()["added"] == 1
+
+        listing = client.get("/api/v1/padron/candidates?period_code=2026-II&state=ALL")
+        assert listing.status_code == 200, listing.text
+        candidate = listing.json()["items"][0]
+        candidate["name"] = "Pendiente de prueba confirmado"
+        candidate["email"] = "zz2023077099@virtual.upt.pe"
+        candidate["student_code"] = "2023077099"
+        candidate["cycle"] = "V"
+        candidate["school"] = "EPIS"
+        candidate["study_plan"] = "2026-II"
+        candidate["student_status"] = "ACTIVE"
+        saved = client.put(f"/api/v1/padron/candidates/{candidate['id']}", json=candidate)
+        assert saved.status_code == 200, saved.text
+
+        resolved = client.post(f"/api/v1/padron/candidates/{candidate['id']}/reconcile")
+        assert resolved.status_code == 200, resolved.text
+        assert resolved.json()["state"] == "RESOLVED"
+
+    with session_factory() as session:
+        student = session.scalar(select(Student).where(Student.student_code == "2023077099"))
+        assert student is not None
+        assert student.full_name == "Pendiente de prueba confirmado"
+        assert session.scalar(select(func.count()).select_from(Enrollment)) == 1
+        assert session.scalar(select(RosterCandidate.state)) == "RESOLVED"
+    engine.dispose()

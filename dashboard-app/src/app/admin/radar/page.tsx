@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { ExternalLink, Info, Plus, RefreshCw, X } from "lucide-react";
+import { Building2, ChevronDown, ExternalLink, Info, Plus, RefreshCw, X } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
 import {
   getLearningErrorMessage,
@@ -46,6 +46,7 @@ function RadarAdmin() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState("");
+  const [expandedProvider, setExpandedProvider] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [working, setWorking] = useState(false);
 
@@ -94,6 +95,14 @@ function RadarAdmin() {
     () => data?.courses.filter((course) => !filter || course.status === filter) ?? [],
     [data, filter],
   );
+  const providerGroups = useMemo(() => {
+    const groups = new Map<string, LearningCourse[]>();
+    for (const course of visibleCourses) {
+      const provider = course.provider.trim() || "Proveedor sin identificar";
+      groups.set(provider, [...(groups.get(provider) ?? []), course]);
+    }
+    return [...groups.entries()].sort(([left], [right]) => left.localeCompare(right, "es"));
+  }, [visibleCourses]);
 
   async function runAction(action: () => Promise<unknown>, success: string): Promise<boolean> {
     setWorking(true);
@@ -212,7 +221,7 @@ function RadarAdmin() {
 
       <div role="note" className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
         <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
-        <p>Agrega un feed público autorizado o registra una fuente manual. Pulse detecta candidatos, pero cada oportunidad se revisa antes de mostrarse a los estudiantes.</p>
+        <p>Registra feeds JSON o RSS públicos autorizados. Pulse los consulta semanalmente y también permite sincronizarlos ahora; los candidatos detectados esperan revisión y aprobación antes de mostrarse a los estudiantes.</p>
       </div>
 
       <details className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -227,7 +236,7 @@ function RadarAdmin() {
         </form>
       </details>
 
-      {data && data.sources.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-slate-950">Fuentes conectadas</h2><div className="mt-4 space-y-3">{data.sources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><div><p className="font-semibold text-slate-900">{source.provider} · {source.format}</p><p className="text-xs text-slate-600">{source.last_sync_summary ?? "Aún no sincronizada"}</p></div><button type="button" disabled={working} onClick={() => void runAction(() => learningApi.syncSource(source.id), `Sincronización completada: ${source.provider}.`)} className="rounded-lg border border-blue-300 px-3 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">Sincronizar</button></div>)}</div></section>}
+      {data && data.sources.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-slate-950">Fuentes conectadas</h2><p className="mt-1 text-sm text-slate-600">Revisión automática semanal; también puedes solicitar una consulta inmediata.</p><div className="mt-4 space-y-3">{data.sources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><div><p className="font-semibold text-slate-900">{source.provider} · {source.format}</p><p className="text-xs text-slate-600">{source.last_sync_summary ?? "Aún no sincronizada"}</p></div><button type="button" disabled={working} onClick={() => void runAction(async () => { const result = await learningApi.syncSource(source.id); return result; }, `Sincronización registrada para ${source.provider}.`)} className="rounded-lg border border-blue-300 px-3 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">Sincronizar</button></div>)}</div></section>}
 
       {error && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
@@ -397,11 +406,48 @@ function RadarAdmin() {
             </section>
           )}
 
-          <section aria-label="Cursos registrados" className="grid gap-4 lg:grid-cols-2">
-            {visibleCourses.map((course) => {
-              const offer = data.offers.find((item) => item.course_id === course.id);
-              return (
-                <article key={course.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section aria-label="Cursos por proveedor" className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Proveedores de formación</h2>
+              <p className="mt-1 text-sm text-slate-600">Selecciona una entidad para consultar y gestionar sus cursos detectados.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {providerGroups.map(([provider, courses]) => {
+                const isExpanded = expandedProvider === provider;
+                const published = courses.filter((course) => course.status === "PUBLISHED").length;
+                return (
+                  <button
+                    key={provider}
+                    type="button"
+                    aria-expanded={isExpanded}
+                    aria-controls={`provider-${provider.replace(/[^a-zA-Z0-9]/g, "-")}`}
+                    onClick={() => setExpandedProvider(isExpanded ? "" : provider)}
+                    className={`flex items-center gap-4 rounded-2xl border p-5 text-left shadow-sm transition ${isExpanded ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"}`}
+                  >
+                    <span className="rounded-xl bg-blue-100 p-3 text-blue-700"><Building2 size={22} aria-hidden="true" /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold text-slate-950">{provider}</span>
+                      <span className="mt-1 block text-sm text-slate-600">{courses.length} {courses.length === 1 ? "curso" : "cursos"} · {published} publicados</span>
+                    </span>
+                    <ChevronDown size={19} aria-hidden="true" className={`shrink-0 text-slate-500 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                  </button>
+                );
+              })}
+            </div>
+            {providerGroups.map(([provider, courses]) => expandedProvider === provider && (
+              <div key={provider} id={`provider-${provider.replace(/[^a-zA-Z0-9]/g, "-")}`} className="rounded-2xl border border-blue-200 bg-blue-50/30 p-4 sm:p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Cursos de {provider}</p>
+                    <h3 className="mt-1 text-lg font-semibold text-slate-950">{courses.length} oportunidades encontradas</h3>
+                  </div>
+                  <button type="button" onClick={() => setExpandedProvider("")} className="rounded-lg p-2 text-slate-500 hover:bg-white" aria-label={`Ocultar cursos de ${provider}`}><X size={18} aria-hidden="true" /></button>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {courses.map((course) => {
+                    const offer = data.offers.find((item) => item.course_id === course.id);
+                    return (
+                      <article key={course.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <h2 className="font-bold text-slate-950">{course.title}</h2>
                     <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800">{courseLabels[course.status]}</span>
@@ -450,8 +496,11 @@ function RadarAdmin() {
                     )}
                   </div>
                 </article>
-              );
-            })}
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </section>
           {visibleCourses.length === 0 && (
             <p role="status" className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-600">

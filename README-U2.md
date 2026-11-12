@@ -12,8 +12,8 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 
 | Requisito de la unidad | Evidencia disponible | Estado real |
 |---|---|---|
-| Arquitectura Data Warehouse / Data Lake | [Diseño DW](docs/proyecto/26-Arquitectura-Data-Warehouse.md), [diagrama](docs/recursos/diagramas/data-warehouse.svg) | Warehouse lógico y ETL funcionan sobre PostgreSQL privado en Render. Data Lake GCP está definido, no desplegado. |
-| ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | Funciona mediante GitHub Actions + Render diariamente a las 03:00 Lima; también puede ejecutarse manualmente por administrador. |
+| Arquitectura Data Warehouse / Data Lake | [Diseño DW](docs/proyecto/26-Arquitectura-Data-Warehouse.md), [diagrama](docs/recursos/diagramas/data-warehouse.svg) | Warehouse lógico y ETL funcionan sobre PostgreSQL privado en Render. El Data Lake GCP está definido en Terraform, no desplegado. |
+| ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [workflow semanal Radar](.github/workflows/course-radar-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | El workflow diario solicita el ETL en Render a las 03:00 Lima; el Radar revisa semanalmente feeds autorizados. La primera corrida institucional requiere un padrón aplicado. |
 | IaC y costos | [Terraform](infra/environments/demo), [estimación](infra/costs/estimate.md), [workflow](.github/workflows/infrastructure.yml) | Terraform valida; `apply`, Cloud Billing e Infracost oficial siguen pendientes para evitar gasto no autorizado. |
 | Diagramas de procesos e infraestructura | [ETL](docs/recursos/diagramas/etl-periodico.svg), [GCP](docs/recursos/diagramas/infraestructura-gcp.svg) | Listos en Mermaid y SVG para exposición. |
 | Seis reportes y filtros temporales | [Rutas de reportes](dashboard-app/src/app/reportes) | Implementados con periodo académico, fecha de corte, cohorte, ciclo y proveedor. |
@@ -46,12 +46,15 @@ En el despliegue actual, Bronze y Silver viven en el modelo operacional protegid
 
 El flujo de operación es:
 
-1. Administrador importa el padrón autorizado por periodo.
-2. Estudiante declara una certificación y adjunta evidencia.
-3. Validador aprueba, observa o rechaza.
-4. El ETL valida, calcula el hash de fuente y publica un snapshot atómico.
-5. Los seis reportes leen únicamente el snapshot Gold publicado.
-6. Si la fuente no cambia, la corrida es idempotente; si falla calidad, se conserva el último corte válido.
+1. Administrador importa el padrón autorizado en Excel o CSV por periodo. Pulse procesa la hoja visible cuyos encabezados coinciden con el contrato; no carga las hojas resumen.
+2. Filas completas pasan validación atómica. Filas incompletas quedan en conciliación: el administrador completa datos con la fuente oficial, confirma una por una o excluye con motivo. No se crean cuentas automáticamente desde un nombre público.
+3. Estudiante declara una certificación y adjunta evidencia.
+4. Validador aprueba, observa o rechaza.
+5. El ETL valida, calcula el hash de fuente y publica un snapshot atómico.
+6. Los seis reportes leen únicamente el snapshot Gold publicado.
+7. Si la fuente no cambia, la corrida es idempotente; si falla calidad, se conserva el último corte válido.
+
+El libro 2026-II revisado contiene **309 filas completas** y **19 pendientes de conciliación**. Esos datos no están versionados en Git y el hecho de que el archivo exista localmente no significa que ya esté cargado en Render. La importación productiva se confirma desde la sesión de administración de Pulse.
 
 ![Proceso ETL](docs/recursos/diagramas/etl-periodico.svg)
 
@@ -116,7 +119,13 @@ python infra/costs/estimate.py
 
 Infracost complementa la estimación después de tener un `terraform plan` válido y su API key; no se debe presentar como costo real antes de desplegar.
 
-## 5. Los seis reportes
+## 5. Radar de cursos y automatización
+
+El administrador registra un feed **JSON o RSS público autorizado** desde Radar. GitHub Actions ejecuta la consulta semanal los lunes a las 04:00 de Lima y también se puede sincronizar manualmente. Pulse limita la lectura al feed registrado, registra fecha y resumen, deduplica por URL y deja los hallazgos en `DETECTED`. El administrador revisa, edita, selecciona ciclos y publica cada oportunidad.
+
+El código de sincronización está listo; aún no hay feeds reales de proveedores configurados por defecto. El catálogo semilla incluye enlaces oficiales revisados. Si un proveedor no ofrece API/feed o permiso de extracción, se carga su catálogo manualmente. Radar nunca marca un curso detectado como oportunidad publicada ni crea certificaciones de estudiantes.
+
+## 6. Los seis reportes
 
 | Reporte | Pregunta que responde |
 |---|---|
@@ -129,7 +138,7 @@ Infracost complementa la estimación después de tener un `terraform plan` váli
 
 Durante la demostración, cambia **Periodo** y **Fecha de corte**. La fecha permite analizar un día; al presentar mes o año se toma el último snapshot publicado de ese mes o año, sin sumar porcentajes de distintos cortes.
 
-## 6. Guion de presentación (5 minutos)
+## 7. Guion de presentación (5 minutos)
 
 1. Abrir Pulse EPIS y mostrar el rol Administrador.
 2. Explicar Bronze → Silver → Gold con la tabla de la sección 2.
@@ -139,11 +148,12 @@ Durante la demostración, cambia **Periodo** y **Fecha de corte**. La fecha perm
 6. Mostrar la tabla de costos y aclarar: `plan` no cobra; `apply` sí crea recursos.
 7. Cerrar indicando que Render ejecuta el MVP actual y GCP está listo para activarse cuando haya presupuesto institucional.
 
-## 7. Próximos pasos verificables
+## 8. Próximos pasos verificables
 
-- Importar el padrón 2026-II y publicar su primer corte institucional.
-- Configurar los filtros explícitos de año y mes en los reportes.
-- Conectar fuentes de cursos autorizadas y filtrar oportunidades por ciclo real del estudiante.
-- Habilitar facturación GCP, ejecutar Terraform, generar Infracost y conservar dos ejecuciones Cloud Run Job como evidencia.
+- Integrar la rama revisada en `main`, desplegarla a Render y confirmar la migración 0014.
+- Importar el padrón 2026-II desde la interfaz, conciliar sus pendientes con la fuente institucional y publicar un primer corte.
+- Registrar feeds autorizados para Radar o mantener la carga manual revisada; comprobar que cada oportunidad publicada se limita a sus ciclos.
+- Hacer el recorrido Admin → estudiante → validador y comprobar los seis reportes con un corte real.
+- Tratar GCP/AWS e Infracost con una aprobación de presupuesto aparte. La estimación de costos es un escenario referencial archivado, no una cotización vigente ni un gasto ya realizado.
 
-Para detalles completos, consulta la [guía de presentación U2](docs/proyecto/28-Guia-presentacion-U2.md) y el [cierre de segunda unidad](docs/proyecto/29-Cierre-segunda-unidad.md).
+Para detalles completos, consulta la [guía de presentación U2](docs/proyecto/28-Guia-presentacion-U2.md), las [siete fases de cierre del MVP](docs/proyecto/31-Fases-MVP-Pulse-EPIS.md) y el [cierre de segunda unidad](docs/proyecto/29-Cierre-segunda-unidad.md).

@@ -125,8 +125,9 @@ test("admin revisa un curso y publica una oportunidad persistida", async ({ page
 
   await page.goto("/admin/radar");
   await expect(page.getByRole("heading", { name: "Radar de cursos" })).toBeVisible();
+  await page.getByRole("button", { name: /Universidad de ejemplo/ }).click();
   await expect(page.getByRole("article").getByText("Por revisar", { exact: true })).toBeVisible();
-  await expect(page.getByText("Agrega un feed público autorizado", { exact: false })).toBeVisible();
+  await expect(page.getByText("Registra feeds JSON o RSS públicos autorizados", { exact: false })).toBeVisible();
 
   await page.getByRole("button", { name: "Iniciar revisión" }).click();
   await expect(page.getByText("Revisión de contenido", { exact: true })).toBeVisible();
@@ -153,6 +154,7 @@ test("admin revisa un curso y publica una oportunidad persistida", async ({ page
   await page.getByRole("button", { name: "Retirar oportunidad" }).click();
   await expect(page.getByRole("article").getByText("Retirado", { exact: true })).toBeVisible();
   await page.reload();
+  await page.getByRole("button", { name: /Universidad de ejemplo/ }).click();
   await expect(page.getByRole("article").getByText("Retirado", { exact: true })).toBeVisible();
 });
 
@@ -169,6 +171,7 @@ test("el radar muestra carga vacía real y registra una fuente manual", async ({
   await manualSourceForm.getByLabel("Habilidades (separadas por coma)").fill("SQL, análisis");
   await manualSourceForm.getByRole("button", { name: "Registrar para revisión" }).click();
   await expect(page.getByRole("status")).toContainText("Fuente registrada.");
+  await page.getByRole("button", { name: /Instituto EPIS/ }).click();
   await expect(page.getByRole("article").getByText("Fundamentos de datos")).toBeVisible();
 });
 
@@ -179,6 +182,7 @@ test("los cambios de estado tienen respuesta vacía y error recuperable", async 
     route.fulfill({ status: 503, json: { detail: { code: "LEARNING_UNAVAILABLE", message: "Servicio temporalmente no disponible." } } }),
   );
   await page.goto("/admin/radar");
+  await page.getByRole("button", { name: /Universidad de ejemplo/ }).click();
   await page.getByRole("button", { name: "Iniciar revisión" }).click();
   await expect(page.getByText("Servicio temporalmente no disponible.", { exact: true })).toBeVisible();
   await expect(page.getByRole("article").getByText("Por revisar", { exact: true })).toBeVisible();
