@@ -32,7 +32,7 @@ flowchart LR
 
 - Backend: 108 pruebas aprobadas y 1 omitida por dependencia externa de PostgreSQL.
 - Frontend: lint y compilación de producción correctos.
-- Navegador: 60 pruebas E2E aprobadas, incluidos los recorridos de padrón, Radar y roles.
+- Navegador: 60 pruebas E2E aprobadas y 1 recorrido integral con API/sesiones reales aprobado.
 - Terraform: configuración válida con Google Provider 7.46.2.
 - Migración: Render ejecuta `alembic upgrade head` antes de iniciar la aplicación; la migración `0014_roster_candidates` se aplicará al desplegar el commit que la contiene.
 - Repositorio: los cambios funcionales están en la rama `codex/group-course-providers` y en el PR #114; Render sigue configurado para desplegar `main`, por lo que todavía no es evidencia de producción.
