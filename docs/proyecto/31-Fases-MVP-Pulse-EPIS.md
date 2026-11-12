@@ -1,20 +1,30 @@
 # Cierre del MVP de Pulse EPIS: siete fases
 
 **Revisión:** 12/11/2026
-**Alcance:** completar el producto en la rama de desarrollo, probarlo y dejarlo preparado para una revisión final antes de activar infraestructura adicional.
+**Alcance:** completar las siete fases funcionales, integrarlas en `main`, desplegarlas en Render gratuito y cerrar la aceptación de datos antes de activar infraestructura adicional.
 **Criterio de costos:** no ejecutar `terraform apply`, crear servicios AWS/GCP ni habilitar facturación como parte de este cierre.
 
 ## Estado de las fases
 
 | Fase | Resultado que debe poder demostrarse | Estado en el código | Cierre operativo pendiente |
 |---|---|---|---|
-| 1. Contrato de datos y padrón | Importar el Excel o CSV del periodo, detectar encabezados y previsualizar filas sin cargar hojas de resumen. | Implementado: importación XLSX/CSV, lote atómico, idempotencia y validación de dominio, estado y periodo. | Cargar el padrón autorizado en producción y comprobar el resultado desde Pulse. El Excel contiene 309 filas completas y 19 pendientes; no se cargan estos últimos como alumnos hasta conciliarlos. |
-| 2. Conciliación y acceso | Administrar personas incompletas sin crear cuentas prematuramente; actualizar ciclo por periodo y conservar historiales anteriores. | Implementado: bandeja de pendientes, edición de campos, confirmación individual, exclusión con motivo y auditoría sin duplicar datos personales. | La administración debe verificar los correos/códigos oficiales de cada pendiente antes de confirmarlo. Probar login con una cuenta del padrón importado. |
+| 1. Contrato de datos y padrón | Importar el Excel o CSV del periodo, detectar encabezados y previsualizar filas sin cargar hojas de resumen. | Implementado: importación XLSX/CSV, lote atómico, idempotencia y validación de dominio, estado y periodo. | El ETL productivo encontró una importación aplicada en 2026-II, pero su reporte no expone el total de matrículas. Confirmar en Padrón que coincida con las 309 filas completas del Excel. Las 19 filas sin correo siguen pendientes y no deben habilitar cuentas. |
+| 2. Conciliación y acceso | Administrar personas incompletas sin crear cuentas prematuramente; actualizar ciclo por periodo y conservar historiales anteriores. | Implementado: bandeja de pendientes, edición de campos, confirmación individual, exclusión con motivo y auditoría sin duplicar datos personales. | La administración debe completar y verificar los 19 correos/códigos faltantes antes de confirmar esas filas. Probar login con una cuenta activa del padrón. |
 | 3. Certificaciones y validación | El estudiante declara su propia certificación y evidencia; el validador o administrador decide y deja trazabilidad. | Implementado en los flujos de certificaciones, evidencias y decisiones. Las cifras BI incluyen solo registros elegibles y aprobados. | Completar una demostración con cuentas institucionales permitidas y evidencia de prueba. |
-| 4. Radar de cursos | Consultar fuentes autorizadas, agrupar el resultado por proveedor y permitir al admin revisar, editar, asignar ciclos y publicar. | Implementado: tarjetas agrupadas por proveedor, catálogo oficial semilla y sincronización manual; el workflow semanal consulta feeds JSON/RSS permitidos. Los hallazgos siguen como `DETECTED` hasta su revisión. | Registrar al menos un feed real que el proveedor autorice. No hay feeds de proveedores configurados por defecto; no se extrae HTML de DataCamp, Cisco u otros sin autorización/feed/API. |
+| 4. Radar de cursos | Consultar fuentes autorizadas, agrupar el resultado por proveedor y permitir al admin revisar, editar, asignar ciclos y publicar. | Implementado: tarjetas agrupadas por proveedor y workflow semanal que consulta feeds JSON/RSS permitidos. Los hallazgos siguen como `DETECTED` hasta su revisión. El workflow se probó en producción y respondió `SKIPPED` porque no hay feeds activos. | Registrar al menos un feed real que el proveedor autorice. No se extrae HTML de DataCamp, Cisco u otros sin autorización/feed/API. |
 | 5. Oportunidades y talleres | Publicar oportunidades para ciclos seleccionados, recibir solicitudes y gestionar cupos desde backend. | Implementado: oferta y taller tienen estados separados; el backend aplica audiencia y cupos; el estudiante ve las tarjetas con el estilo azul de Pulse. | Ejecutar el recorrido Admin → estudiante → solicitud → decisión con registros de demostración. |
-| 6. ETL, almacén y BI | Publicar hechos por periodo y fecha de corte, validar calidad y mostrar seis reportes con filtros temporales. | Implementado: hechos Gold, publicación idempotente, ETL diario en workflow y seis reportes con filtros de año, mes y día. | Importar el padrón, publicar un corte institucional y verificar sus cifras en producción. Sin eso, el dashboard no debe etiquetar datos demostrativos como institucionales. |
-| 7. Arquitectura, costos y revisión de entrega | Explicar Bronze/Silver/Gold, el diagrama de proceso e infraestructura, Terraform y costos; cerrar con revisión reproducible. | Arquitectura, diagramas, configuración Terraform y estimación de costos están versionados; se agregó este checklist y el radar semanal. | Validar/migrar, ejecutar suites locales y revisar el PR. La infraestructura GCP/AWS no se despliega ni se cobra hasta aprobar alcance y presupuesto. |
+| 6. ETL, almacén y BI | Publicar hechos por periodo y fecha de corte, validar calidad y mostrar seis reportes con filtros temporales. | Implementado: hechos Gold, publicación idempotente, ETL diario en workflow y seis reportes con filtros de año, mes y día. El 12/11/2026 el workflow productivo respondió `APPLIED` para 2026-II con corte 2026-11-11; el manifiesto reportó cero filas de certificación. | Verificar en la aplicación el conteo de matrículas y contrastar los seis reportes con el corte. Cero certificaciones no demuestra que el padrón esté vacío; son fuentes distintas del ETL. |
+| 7. Arquitectura, costos y revisión de entrega | Explicar Bronze/Silver/Gold, el diagrama de proceso e infraestructura, Terraform y costos; cerrar con revisión reproducible. | Arquitectura, diagramas, Terraform y estimación de costos están versionados. PR #114 está integrado; CI pasó y Render está en el commit `9f48691`. | Mantener GCP/AWS sin desplegar hasta aprobar alcance y presupuesto. Completar la aceptación de padrón, reportes y feed autorizado en la aplicación. |
+
+## Estado productivo comprobado
+
+- El PR #114 se integró en `main` como `9f486911ce15d6e6aafe0b1069e1435095117849`; frontend, backend, documentación y contenedor pasaron CI.
+- Render sirve `https://pulse-epis-rirr.onrender.com/`; el despliegue `dep-dbqntrmc6qcc73ftvevg` está `live` y `/ready` respondió HTTP 200.
+- La API publicada expone las rutas nuevas de padrón/conciliación y sincronización programada del Radar. El proceso de arranque ejecuta `alembic upgrade head` antes de levantar la API.
+- El workflow semanal del Radar terminó correctamente con `SKIPPED` y cero fuentes activas.
+- El workflow diario ETL terminó `APPLIED` para 2026-II, corte 2026-11-11, con cero filas de certificación. Su manifiesto no informa el total de matrículas; verificar ese valor desde Pulse antes de presentar cobertura estudiantil.
+- La conexión directa de lectura a PostgreSQL desde esta sesión está bloqueada por la lista de IP vacía de Render. No se modificó esa configuración.
+- No se aprovisionaron recursos AWS ni GCP ni se habilitó facturación.
 
 ## Flujo que se presenta
 
@@ -48,4 +58,4 @@ flowchart TD
 
 El cierre funcional local se acepta cuando las pruebas backend y frontend pasan, la migración nueva puede aplicarse en una base limpia y el recorrido de los tres roles funciona en un entorno conectado. El cierre **institucional** requiere además importar el padrón completo autorizado, conciliar los pendientes, publicar un corte ETL y comparar las seis salidas con ese corte. El cierre **cloud de Data Lake** es una etapa distinta: requiere aprobación de costos y un `apply` explícito.
 
-Mientras la rama no esté integrada en `main` y Render no despliegue ese commit, las mejoras de este documento describen el código preparado, no la versión de producción.
+El código funcional ya está desplegado en Render. El cierre institucional sigue pendiente hasta verificar el total del padrón en la interfaz, conciliar los 19 correos faltantes, confirmar los seis reportes con datos reales y registrar una fuente de cursos autorizada. El despliegue de AWS/GCP queda fuera de este cierre y requiere un presupuesto aprobado.

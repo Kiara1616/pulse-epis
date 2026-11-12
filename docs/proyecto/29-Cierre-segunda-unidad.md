@@ -6,7 +6,7 @@
 
 El proyecto separado [BigQuery Sandbox](../../infra/bigquery/README.md) demuestra sin facturación dos tablas de hechos con datos sintéticos y una consulta por fecha de corte. No está conectado a la base de Render y no sustituye Cloud SQL, Cloud Storage ni el ETL programado de esta arquitectura objetivo.
 
-El workflow diario a las 03:00 de Lima (08:00 UTC; GitHub Actions puede iniciar con retraso) `.github/workflows/etl-scheduled.yml` llama por HTTPS a un endpoint ETL de Render. GitHub conserva la credencial del programador y Pulse accede a PostgreSQL por la red privada de Render. La corrida se marca `SKIPPED` cuando no existe un periodo abierto único o un padrón aplicado. El workflow semanal `.github/workflows/course-radar-scheduled.yml` consulta feeds JSON/RSS públicos que el administrador haya autorizado. Si no hay fuentes activas, termina como `SKIPPED`; no extrae HTML ni publica cursos automáticamente. La primera ejecución ETL con datos institucionales requiere cargar y confirmar el padrón en Pulse.
+El workflow diario a las 03:00 de Lima (08:00 UTC; GitHub Actions puede iniciar con retraso) `.github/workflows/etl-scheduled.yml` llama por HTTPS a un endpoint ETL de Render. GitHub conserva la credencial del programador y Pulse accede a PostgreSQL por la red privada de Render. El 12/11/2026 se ejecutó manualmente y respondió `APPLIED` para `2026-II`, corte `2026-11-11`; el manifiesto registró cero filas de certificación y no informa el total de matrículas. Debe confirmarse ese total en Pulse antes de presentar los seis dashboards como conciliados con el Excel. El workflow semanal `.github/workflows/course-radar-scheduled.yml` consulta feeds JSON/RSS públicos que el administrador haya autorizado. La prueba productiva terminó `SKIPPED` porque no hay fuentes activas; no extrae HTML ni publica cursos automáticamente.
 
 ```mermaid
 flowchart LR
@@ -23,7 +23,7 @@ flowchart LR
 | Requisito | Implementación disponible | Evidencia local | Brecha para cierre total | Estado |
 |---|---|---|---|---|
 | Arquitectura Data Warehouse o Data Lake | PostgreSQL de Render como warehouse operacional/analítico lógico; GCP Cloud SQL y Cloud Storage como diseño futuro de DW/Data Lake | Mermaid, SVG, modelo de hechos y exportación JSONL probada | Captura de buckets, Cloud SQL y una partición creada en GCP | Diseño local listo; GCP no desplegado |
-| ETL automatizado en nube | ETL diario por GitHub Actions dentro de Render; futuro Cloud Run Job/Cloud Scheduler en Terraform; Radar con workflow semanal para feeds autorizados | API, workflows versionados y suites locales | Importación oficial en Render, corte institucional y evidencia de corridas programadas; feed real autorizado para probar Radar | Implementación local lista; ejecución con datos reales pendiente |
+| ETL automatizado en nube | ETL diario por GitHub Actions dentro de Render; futuro Cloud Run Job/Cloud Scheduler en Terraform; Radar con workflow semanal para feeds autorizados | API, workflows versionados, suites locales y dos corridas manuales verificadas en producción | Confirmar conteo de matrículas y reportes con datos del padrón; registrar un feed autorizado para Radar | Workflows productivos conectados; aceptación de datos y feed pendiente |
 | Infraestructura como código y costos | Terraform para Cloud Run, Cloud SQL, Storage, IAM, secretos, monitoreo, presupuesto y Scheduler | `terraform validate` correcto; USD 11.36 demo y USD 155.69 piloto | `terraform plan`, `apply`, Infracost ligado al plan y factura/Billing Export del piloto | Completo local; cloud pendiente |
 | Diagramas de proceso e infraestructura | Data Warehouse/Data Lake, ETL periódico e infraestructura GCP | Tres fuentes Mermaid y tres SVG renderizados | Comparación visual contra recursos desplegados | Completo local |
 | Seis reportes con tiempo | Panorama, Evolución, Certificaciones, Habilidades, Cohortes y Calidad | Rutas, API día/mes/año y filtros temporales | Importación oficial, publicación de Gold y prueba contra esos datos en Render | Implementado local; corte institucional pendiente |
@@ -34,8 +34,10 @@ flowchart LR
 - Frontend: lint y compilación de producción correctos.
 - Navegador: 60 pruebas E2E aprobadas y 1 recorrido integral con API/sesiones reales aprobado.
 - Terraform: configuración válida con Google Provider 7.46.2.
-- Migración: Render ejecuta `alembic upgrade head` antes de iniciar la aplicación; la migración `0014_roster_candidates` se aplicará al desplegar el commit que la contiene.
-- Repositorio: los cambios funcionales están en la rama `codex/group-course-providers` y en el PR #114; Render sigue configurado para desplegar `main`, por lo que todavía no es evidencia de producción.
+- Migración: Render ejecuta `alembic upgrade head` antes de iniciar la aplicación. El despliegue `9f48691` está `live`, `/ready` respondió HTTP 200 y las rutas nuevas de padrón/conciliación están en OpenAPI.
+- Repositorio: PR #114 integrado en `main` como `9f486911ce15d6e6aafe0b1069e1435095117849`; los checks de frontend, backend, documentación y contenedor terminaron correctamente.
+- Ejecución productiva: Radar semanal `SKIPPED` con cero feeds activos. ETL diario de prueba `APPLIED` para `2026-II` y corte `2026-11-11`, con cero filas de certificación. El total de matrículas debe comprobarse desde la pantalla de Padrón.
+- PostgreSQL: la consulta directa de esta sesión fue rechazada porque Render tiene vacía la lista de IPs permitidas; no se alteró la regla de red.
 - Costos: escenario demo USD 11.36/mes y piloto USD 155.69/mes, antes de impuestos y egreso no previsto.
 - Aplicación local: frontend en `http://127.0.0.1:3000` y API en `http://127.0.0.1:8000`.
 

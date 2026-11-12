@@ -8,12 +8,14 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 
 **Regla de presentación:** los datos de referencia se identifican como demostrativos; los datos publicados proceden del padrón y de certificaciones validadas.
 
+**Estado verificado el 12/11/2026:** el commit `9f48691` está desplegado en Render y `/ready` responde HTTP 200. La prueba semanal del Radar terminó `SKIPPED` porque no hay feeds activos. La prueba diaria del ETL terminó `APPLIED` para `2026-II` (corte `2026-11-11`) y reportó cero filas de certificación; el conteo de matrículas aún debe contrastarse en la pantalla de Padrón.
+
 ## 1. Cumplimiento de requisitos
 
 | Requisito de la unidad | Evidencia disponible | Estado real |
 |---|---|---|
 | Arquitectura Data Warehouse / Data Lake | [Diseño DW](docs/proyecto/26-Arquitectura-Data-Warehouse.md), [diagrama](docs/recursos/diagramas/data-warehouse.svg) | Warehouse lógico y ETL funcionan sobre PostgreSQL privado en Render. El Data Lake GCP está definido en Terraform, no desplegado. |
-| ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [workflow semanal Radar](.github/workflows/course-radar-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | El workflow diario solicita el ETL en Render a las 03:00 Lima; el Radar revisa semanalmente feeds autorizados. La primera corrida institucional requiere un padrón aplicado. |
+| ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [workflow semanal Radar](.github/workflows/course-radar-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | Workflows conectados y probados en Render; ETL aplicado en `2026-II`. Falta contrastar matrícula y reportes; Radar necesita al menos un feed autorizado activo. |
 | IaC y costos | [Terraform](infra/environments/demo), [estimación](infra/costs/estimate.md), [workflow](.github/workflows/infrastructure.yml) | Terraform valida; `apply`, Cloud Billing e Infracost oficial siguen pendientes para evitar gasto no autorizado. |
 | Diagramas de procesos e infraestructura | [ETL](docs/recursos/diagramas/etl-periodico.svg), [GCP](docs/recursos/diagramas/infraestructura-gcp.svg) | Listos en Mermaid y SVG para exposición. |
 | Seis reportes y filtros temporales | [Rutas de reportes](dashboard-app/src/app/reportes) | Implementados con periodo académico, fecha de corte, cohorte, ciclo y proveedor. |
