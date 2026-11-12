@@ -156,9 +156,15 @@ def test_etl_is_idempotent_and_publishes_normalized_facts(tmp_path):
 
     assert first.status == "APPLIED"
     assert first.accepted_rows == 1
+    assert first.enrollment_rows == 1
+    assert first.active_enrollment_rows == 1
+    assert first.to_dict()["enrollment_rows"] == 1
+    assert first.to_dict()["active_enrollment_rows"] == 1
     assert second.id == first.id
     assert second.idempotent is True
     assert second.source_sha256 == first.source_sha256
+    assert second.enrollment_rows == 1
+    assert second.active_enrollment_rows == 1
 
     with create_session_factory(database_url)() as session:
         fact = session.scalar(
@@ -176,6 +182,29 @@ def test_etl_is_idempotent_and_publishes_normalized_facts(tmp_path):
         assert session.scalar(select(EtlRun).where(EtlRun.id == first.id)) is not None
 
 
+def test_etl_history_backfills_enrollment_counts_for_legacy_applied_runs(tmp_path):
+    database_url = f"sqlite+pysqlite:///{(tmp_path / 'etl-legacy-counts.db').as_posix()}"
+    period_code, cutoff_date, _ = _seed_database(database_url)
+    factory = create_session_factory(database_url)
+    service = EtlService(factory)
+    report = service.run(period_code, cutoff_date)
+
+    with factory.begin() as session:
+        run = session.get(EtlRun, report.id)
+        assert run is not None
+        run.quality_report = {
+            key: value
+            for key, value in (run.quality_report or {}).items()
+            if key not in {"enrollment_rows", "active_enrollment_rows"}
+        }
+
+    legacy_report = service.history(period_code)[0]
+
+    assert legacy_report.id == report.id
+    assert legacy_report.enrollment_rows == 1
+    assert legacy_report.active_enrollment_rows == 1
+
+
 def test_etl_records_rejection_cause_and_does_not_publish_invalid_source(tmp_path):
     database_url = f"sqlite+pysqlite:///{(tmp_path / 'etl-rejected.db').as_posix()}"
     period_code, cutoff_date, _ = _seed_database(database_url, missing_skill=True)
@@ -185,6 +214,8 @@ def test_etl_records_rejection_cause_and_does_not_publish_invalid_source(tmp_pat
 
     assert report.status == "REJECTED"
     assert report.accepted_rows == 0
+    assert report.enrollment_rows == 1
+    assert report.active_enrollment_rows == 1
     assert report.rejections[0].reason_code == "MISSING_SKILL"
     with create_session_factory(database_url)() as session:
         assert session.scalars(select(FactCertification)).all() == []
