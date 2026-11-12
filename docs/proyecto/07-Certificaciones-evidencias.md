@@ -9,7 +9,7 @@ Este documento describe la implementación de [#13 — Implementar registro de c
 - Se validan emisor, nombre, fechas, URLs, habilidades y duplicados en el backend.
 - Las fechas cumplen `expires_on >= issued_on` cuando existe expiración.
 - Las evidencias pueden ser una URL `http/https` o un archivo PDF, PNG o JPEG.
-- Los archivos se guardan fuera de las rutas públicas con una clave aleatoria y hash SHA-256.
+- Los archivos nuevos se guardan como bytes en PostgreSQL, fuera de rutas públicas, con clave aleatoria y hash SHA-256. Las filas históricas pueden seguir usando `object_key` local mientras el archivo exista.
 - El acceso a una evidencia se entrega mediante un enlace firmado con expiración corta; no se expone `object_key`.
 - Una certificación `OBSERVED` puede corregirse y pasa a `RESUBMITTED`; las decisiones anteriores permanecen en `validations` y todos los cambios quedan en `certification_status_history`.
 - Las acciones de registro, corrección y adjunto generan entradas en `audit_logs` sin contenido binario ni credenciales.
@@ -30,7 +30,7 @@ El endpoint de evidencia recibe `multipart/form-data`: se debe enviar exactament
 
 ## Privacidad y retención
 
-El directorio configurado en `PULSE_EVIDENCE_STORAGE_PATH` es privado y no debe publicarse como contenido estático. El MVP usa almacenamiento local detrás de una interfaz reemplazable por S3 compatible como evolución futura; Compose actual conserva un volumen privado local.
+El acceso a los binarios nuevos pasa por PostgreSQL y enlaces firmados con expiración corta; no se publican como archivos estáticos. El adaptador local se conserva para leer evidencias históricas guardadas con `object_key`. En la demo gratuita, el límite de archivo es 2 MB y el contenido ocupa la cuota de PostgreSQL; una operación institucional debe evaluar almacenamiento de objetos privado con política de respaldo y retención.
 
 La retención por defecto es de **1.825 días (5 años)**, registrada en `evidences.retention_until`. El valor se configura con `PULSE_EVIDENCE_RETENTION_DAYS`. La eliminación física y del registro debe ejecutarse mediante un job institucional con backup y aprobación; ese job todavía no está implementado y requiere diseño y validación operativa. Hasta entonces, una evidencia vencida no debe entregarse en nuevas URLs temporales.
 

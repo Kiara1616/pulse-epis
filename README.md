@@ -49,7 +49,7 @@ La solicitud no reserva un cupo: la aceptación se valida en el backend. Las cer
 |---|---|
 | Portal web | Next.js, React y TypeScript: experiencias diferenciadas por rol. |
 | API | FastAPI y Python: contratos, autorización y reglas de negocio. |
-| Persistencia | PostgreSQL y SQLAlchemy: datos operativos y trazabilidad. |
+| Persistencia | PostgreSQL y SQLAlchemy: datos operativos, trazabilidad y binarios de evidencias nuevos con acceso firmado. |
 | Migraciones | Alembic: evolución versionada del esquema. |
 | Calidad y analítica | Procesos ETL: validación y generación de cortes reproducibles. |
 | Verificación | Pytest, Playwright y GitHub Actions: pruebas y controles de integración. |
