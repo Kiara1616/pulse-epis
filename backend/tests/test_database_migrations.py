@@ -1,6 +1,8 @@
+import importlib
 import os
 from datetime import date, datetime
 from pathlib import Path
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
@@ -192,3 +194,27 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
     downgraded_engine = create_engine(database_url)
     assert not EXPECTED_TABLES.intersection(set(inspect(downgraded_engine).get_table_names()))
     downgraded_engine.dispose()
+
+
+def test_evidence_migration_refuses_to_drop_stored_bytes(monkeypatch):
+    migration = importlib.import_module(
+        "backend.migrations.versions.0015_database_evidence_content"
+    )
+    engine = create_engine("sqlite+pysqlite://")
+    migration_operations = Mock()
+
+    with engine.begin() as connection:
+        connection.exec_driver_sql("CREATE TABLE evidences (content_bytes BLOB)")
+        connection.exec_driver_sql(
+            "INSERT INTO evidences (content_bytes) VALUES (?)",
+            (b"synthetic evidence",),
+        )
+        migration_operations.get_bind.return_value = connection
+        monkeypatch.setattr(migration, "op", migration_operations)
+
+        with pytest.raises(RuntimeError, match="stored certification evidence"):
+            migration.downgrade()
+
+        migration_operations.drop_column.assert_not_called()
+
+    engine.dispose()

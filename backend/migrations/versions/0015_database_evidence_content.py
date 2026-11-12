@@ -20,4 +20,16 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    stored_evidence_exists = bind.scalar(
+        sa.text(
+            "SELECT EXISTS "
+            "(SELECT 1 FROM evidences WHERE content_bytes IS NOT NULL)"
+        )
+    )
+    if stored_evidence_exists:
+        raise RuntimeError(
+            "Refusing to remove stored certification evidence. Back up or export "
+            "the evidence bytes before downgrading this migration."
+        )
     op.drop_column("evidences", "content_bytes")
