@@ -160,6 +160,8 @@ def test_etl_is_idempotent_and_publishes_normalized_facts(tmp_path):
     assert first.active_enrollment_rows == 1
     assert first.to_dict()["enrollment_rows"] == 1
     assert first.to_dict()["active_enrollment_rows"] == 1
+    assert first.to_dict()["created_at"] == first.created_at.isoformat()
+    assert first.to_dict()["completed_at"] == first.completed_at.isoformat()
     assert second.id == first.id
     assert second.idempotent is True
     assert second.source_sha256 == first.source_sha256

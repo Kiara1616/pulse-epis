@@ -128,6 +128,8 @@ class EtlReport:
     id: UUID
     period_code: str
     cutoff_date: date
+    created_at: datetime
+    completed_at: datetime | None
     source_sha256: str
     status: str
     total_rows: int
@@ -145,6 +147,8 @@ class EtlReport:
             "id": str(self.id),
             "period_code": self.period_code,
             "cutoff_date": self.cutoff_date.isoformat(),
+            "created_at": self.created_at.isoformat(),
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "source_sha256": self.source_sha256,
             "status": self.status,
             "total_rows": self.total_rows,
@@ -534,6 +538,8 @@ class EtlService:
             id=run.id,
             period_code=session.scalar(select(AcademicPeriod.code).where(AcademicPeriod.id == run.period_id)),
             cutoff_date=run.cutoff_date,
+            created_at=run.created_at,
+            completed_at=run.completed_at,
             source_sha256=run.source_sha256,
             status=run.status,
             total_rows=run.total_rows,
