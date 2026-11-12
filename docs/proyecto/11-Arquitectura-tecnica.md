@@ -11,8 +11,8 @@ Pulse EPIS usa frontend Next.js 16.3.3 y React 19.2.8, API FastAPI y persistenci
 | Analítica frontend | dashboard-app/src/features/analytics | Consulta común y filtros de snapshots |
 | API | backend/app/api/routes | Contratos HTTP, autorización y errores |
 | Servicios | backend/app/auth, roster, certifications, validation, etl, analytics | Reglas de dominio y operaciones transaccionales |
-| Persistencia | backend/app/db y backend/migrations | 18 tablas y ocho migraciones versionadas |
-| Evidencias | backend/app/evidence | Archivos privados con hash y acceso firmado |
+| Persistencia | backend/app/db y backend/migrations | Modelo relacional y migraciones Alembic versionadas |
+| Evidencias | backend/app/evidence y `evidences.content_bytes` | Binarios nuevos en PostgreSQL; acceso firmado privado. El adaptador local conserva lectura de registros históricos. |
 | Operación | compose.yaml, deploy y .github/workflows | Contenedores, HTTPS y tareas operativas |
 
 ```mermaid
@@ -22,7 +22,7 @@ flowchart TD
     API --> A[Permisos del servidor]
     A --> S[Servicios del dominio]
     S --> DB[(PostgreSQL)]
-    S --> E[Volumen privado de evidencias]
+    S --> E[(Binarios privados en PostgreSQL)]
     ETL[Comando ETL o workflow] --> DB
     DB --> SNAP[Hechos por periodo y corte]
     SNAP --> API
@@ -36,4 +36,4 @@ No hay archivos mock-data.json ni etl_data.json en la rama revisada. Los datos d
 
 ## Consistencia y limitaciones
 
-La base y las evidencias se guardan en volúmenes distintos. Se debe respaldar ambos para recuperar un expediente. Crear credencial y adjuntar archivo son dos solicitudes; falla del adjunto puede dejar PENDING sin binario. El backend ofrece corrección, pero la interfaz de edición y captura de habilidades aún no está completa. Consulta [API y contratos](15-API-y-contratos.md), [modelo](05-Modelo-de-datos.md) y [SAD](../academico/FD04-Arquitectura-Software.md).
+Los binarios nuevos se guardan en la misma transacción de base que sus metadatos; así se conserva el adjunto ante reinicios de la aplicación. El límite de demo es 2 MB por archivo para proteger PostgreSQL gratuito, que sigue teniendo capacidad limitada y fecha de expiración. Los registros antiguos que solo tengan `object_key` aún dependen del almacenamiento local hasta que se migren o se vuelvan a adjuntar. Una operación institucional requiere almacenamiento privado y respaldos durables. Consulta [API y contratos](15-API-y-contratos.md), [modelo](05-Modelo-de-datos.md) y [SAD](../academico/FD04-Arquitectura-Software.md).

@@ -160,6 +160,7 @@ class EvidenceDownload:
     path: Path | None
     content_type: str | None
     original_filename: str | None
+    content: bytes | None = None
 
 
 class EvidenceStorage(Protocol):
@@ -941,8 +942,6 @@ class CertificationService:
         )
         source_hash = hashlib.sha256(content).hexdigest()
         object_key = f"{uuid4().hex}{extension}"
-        saved = False
-        committed = False
         session = self._session_factory()
         try:
             with session.begin():
@@ -957,14 +956,13 @@ class CertificationService:
                 )
                 if duplicate is not None:
                     raise EvidenceDuplicate("Evidence already exists")
-                self._storage.save(object_key, content)
-                saved = True
                 now = _utc_now()
                 evidence = Evidence(
                     id=uuid4(),
                     certification_id=certification.id,
                     evidence_type="FILE",
                     object_key=object_key,
+                    content_bytes=content,
                     sha256=source_hash,
                     original_filename=safe_filename,
                     content_type=normalized_type,
@@ -991,7 +989,6 @@ class CertificationService:
                 )
                 session.flush()
                 result = self._evidence_view(evidence)
-            committed = True
             return result
         except (CertificationInvalid, CertificationNotFound, EvidenceDuplicate):
             raise
@@ -1004,11 +1001,6 @@ class CertificationService:
             raise CertificationServiceUnavailable("Evidence service is unavailable") from exc
         finally:
             session.close()
-            if saved and not committed:
-                try:
-                    self._storage.delete(object_key)
-                except EvidenceStorageError:
-                    logger.error("Failed to clean up private evidence after rollback")
 
     def create_evidence_access(
         self,
@@ -1151,6 +1143,16 @@ class CertificationService:
                     path=None,
                     content_type=None,
                     original_filename=None,
+                )
+            if evidence.content_bytes is not None:
+                return EvidenceDownload(
+                    evidence_id=evidence.id,
+                    evidence_type=evidence.evidence_type,
+                    source_url=None,
+                    path=None,
+                    content_type=evidence.content_type,
+                    original_filename=evidence.original_filename,
+                    content=bytes(evidence.content_bytes),
                 )
             if not evidence.object_key:
                 raise CertificationServiceUnavailable("Evidence metadata is incomplete")

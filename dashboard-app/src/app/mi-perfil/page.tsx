@@ -479,7 +479,7 @@ function StudentProfileContent() {
                 />
               </div>
               <label className="mt-4 block text-sm font-semibold text-gray-700">
-                Evidencia privada (PDF, PNG o JPEG; máximo 10 MB)
+                Evidencia privada (PDF, PNG o JPEG; máximo 2 MB)
                 <input
                   type="file"
                   accept=".pdf,image/png,image/jpeg"

@@ -13,18 +13,22 @@ demuestra autorización institucional, login real ni disponibilidad pública.
 ## Publicación en Render sin comprar un dominio
 
 El archivo [`render.yaml`](../render.yaml) crea un servicio Docker que aloja
-Next.js, FastAPI y Nginx en un mismo origen HTTPS, PostgreSQL administrado y un
-almacenamiento temporal para evidencias. Ambos servicios usan `plan: free`.
+Next.js, FastAPI y Nginx en un mismo origen HTTPS, además de PostgreSQL
+administrado. Ambos servicios usan `plan: free`. Las cargas nuevas guardan el
+binario de la evidencia en PostgreSQL; la demo limita cada archivo a 2 MB para
+proteger la capacidad gratuita de 1 GB. Los archivos antiguos que solo existan
+en el disco temporal siguen sin ser durables.
 Render asigna el subdominio `onrender.com`;
 se debe copiar la URL realmente asignada, sin asumir un nombre disponible.
 
 1. En Render, conectar GitHub y seleccionar **New → Blueprint** con este
    repositorio, rama `main` y archivo `render.yaml`, después del merge del PR.
 2. Comprobar que el servicio web y PostgreSQL muestran **Free**, sin disco
-   persistente. Esta es una demo temporal: los archivos subidos desaparecen
-   al reiniciar, redesplegar o suspenderse el servicio y PostgreSQL expira
-   a los 30 días. Usar solo datos sintéticos; no satisface la operación durable
-   requerida por la issue #21. El servicio se suspende tras 15 minutos inactivo
+   persistente. Las evidencias nuevas sobreviven reinicios del servicio porque
+   están en PostgreSQL, pero la base gratuita tiene 1 GB, expira a los 30 días
+   y no incluye backups. Los archivos anteriores guardados solo en el disco
+   temporal podrían no estar disponibles después de un reinicio. Usar la demo
+   para pruebas, no como repositorio institucional durable. El servicio se suspende tras 15 minutos inactivo
    y la siguiente visita puede tardar aproximadamente un minuto en cargar.
    La configuración de pago se conserva en
    [`deploy/render/render.production.yaml`](../deploy/render/render.production.yaml)
@@ -43,7 +47,8 @@ se debe copiar la URL realmente asignada, sin asumir un nombre disponible.
 6. Provisionar el periodo y las cuentas autorizadas ADMIN y VALIDATOR; importar
    el padrón autorizado para provisionar STUDENT. La autenticación Google por
    sí sola no concede pertenencia a EPIS. No habilitar el seed local en producción.
-7. Verificar `/`, `/ready`, login de los tres roles, evidencias y exportaciones.
+7. Verificar `/`, `/ready`, login de los tres roles, carga y descarga de una
+   evidencia nueva tras reiniciar el servicio, y exportaciones.
    Conservar enlaces de ejecución y resultados agregados del piloto.
 
 Guías oficiales: [web services](https://render.com/docs/web-services),
@@ -127,16 +132,16 @@ URL en la variable del repositorio `PRODUCTION_PUBLIC_URL` y habilitar
 `PRODUCTION_MONITOR_ENABLED=true` para el monitor externo de GitHub Actions.
 No activar los workflows SSH si se utiliza Render.
 
-Los siguientes simulacros requieren la alternativa de producción con disco
-persistente y PostgreSQL de pago; no están disponibles en la demo gratuita.
+Los siguientes simulacros de recuperación operativa requieren una estrategia
+de backup externa y no están disponibles en la demo gratuita.
 No registrar la demo como evidencia de respaldo o durabilidad.
 
 PostgreSQL de pago incluye recuperación a un punto en el tiempo. Para el
 simulacro, crear una instancia recuperada, contrastar las cantidades y el
 snapshot de KPIs y registrar la fecha y el resultado antes de cambiar la
 conexión. Render permite validar la instancia recuperada en aislamiento.
-Restaurar también un snapshot del disco en un entorno de prueba y comprobar
-los hashes de los archivos; restaurar solo PostgreSQL no recupera evidencias.
+Las nuevas evidencias están en PostgreSQL y quedan incluidas en su dump; la
+evidencia que aún dependa del disco requiere respaldar ese volumen por separado.
 Los backups deben almacenarse fuera del servicio activo y permanecer privados.
 [Recuperación PostgreSQL](https://render.com/docs/postgresql-backups).
 

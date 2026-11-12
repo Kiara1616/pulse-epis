@@ -454,7 +454,7 @@ La relación entre usuario y estudiante es opcional y única: una cuenta puede s
 
 #### 3.2.6. Diagrama de Base de datos
 
-PostgreSQL conserva dieciocho tablas que relacionan identidad, matrícula, credenciales, revisión, cargas, auditoría y hechos. La evidencia binaria reside fuera de la base; `evidences` conserva su ubicación, tamaño, tipo y hash. Una recuperación correcta debe restablecer tanto metadatos como archivos.
+PostgreSQL conserva las tablas que relacionan identidad, matrícula, credenciales, revisión, cargas, auditoría y hechos. Las evidencias nuevas se guardan en `evidences.content_bytes` con metadatos y hash; registros históricos sin bytes pueden usar `object_key` mientras el archivo local exista. En Render gratuito cada archivo se limita a 2 MB y consume la cuota de 1 GB de la base; es una solución para la demo, no para operación institucional durable. Una recuperación correcta incluye los bytes, metadatos y decisiones.
 
 El esquema operacional y el analítico comparten instancia. Se separan por responsabilidad y granularidad, no por un data warehouse externo. Las respuestas analíticas son agregadas y omiten códigos, correos y `student_key` aunque la vinculación interna utilice esta clave.
 
@@ -750,7 +750,7 @@ La publicación es atómica para hechos del corte, no para todo el expediente di
 
 En Compose se ejecutan frontend, backend y PostgreSQL, con volúmenes distintos para base y evidencia. PostgreSQL permanece en una red interna sin puerto publicado al host. Frontend y API se enlazan a loopback; el perfil de publicación incorpora Caddy como entrada HTTPS. Los secretos son configuración externa y no forman parte de imágenes o documentos.
 
-Render constituye otra topología: portal y API se empaquetan en un servicio y PostgreSQL se aloja como recurso administrado. La demo usa evidencia temporal; la alternativa persistente incorpora disco. Ambas necesitan configuración y verificación externas, y no se presumen desplegadas por existir un archivo YAML.
+Render constituye otra topología: portal y API se empaquetan en un servicio y PostgreSQL se aloja como recurso administrado. La demo gratuita guarda las nuevas evidencias en PostgreSQL para que sobrevivan reinicios del servicio, pero está sujeta al límite y expiración de la base; las filas antiguas que dependan del disco temporal pueden perder su archivo. Una futura topología institucional debe evaluar un almacén de objetos privado, cifrado y respaldado. La configuración debe verificarse en Render y no se presume desplegada por existir un archivo YAML.
 
 #### 3.5.1. Diagrama de despliegue
 
@@ -911,6 +911,6 @@ La portabilidad permite trasladar la solución entre ambientes conservando compo
 | Portabilidad — Topología | Se cambia Compose por otra infraestructura. | Ajusta rutas persistentes, conexión, proxy y recuperación. | Prueba conjunta del nuevo ambiente; no reutilizar supuestos de rutas sin revisión. |
 | Portabilidad — Navegador | Se accede desde navegadores de escritorio y móviles admitidos. | Mantiene formularios, sesión y visualizaciones operables. | Matriz de navegadores y tareas principales verificada para la entrega. |
 
-Una configuración de Render y una de Compose no son intercambiables sin adaptación. El script de respaldo de Compose utiliza rutas concretas del contenedor; la topología con disco persistente debe contar con una recuperación equivalente. La migración debe conservar las claves necesarias para sesiones e identidad analítica mediante un procedimiento seguro y comprobar los permisos sobre archivos antes de habilitar el servicio.
+Una configuración de Render y una de Compose no son intercambiables sin adaptación. La migración a evidencia en base incluye los nuevos binarios en el dump PostgreSQL; los archivos históricos que sigan en disco necesitan respaldo por separado. La migración debe conservar las claves necesarias para sesiones e identidad analítica mediante un procedimiento seguro.
 
 La aceptación del traslado exige una prueba funcional y de recuperación en el destino. Una demo que guarda evidencias en almacenamiento temporal sirve para demostrar el flujo, pero no satisface la persistencia necesaria para una operación institucional.

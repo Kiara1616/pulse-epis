@@ -31,7 +31,7 @@ Una corrida inválida conserva el último snapshot; una publicación válida ree
 
 ## Interpretación y seguimiento
 
-Consultar etl_runs y etl_rejections por el procedimiento de base autorizado; no existen una pantalla ni API administrativa de corridas completas. Guardar identificador, hash, periodo, corte, conteos y responsable fuera de registros nominales. Conciliar una muestra manual contra padrón, evidencias y decisiones antes de dar un cierre por oficial.
+El administrador publica y consulta las corridas desde **Administrar → Publicar indicadores**. La API administrativa es `POST /api/v1/etl/runs` y `GET /api/v1/etl/runs?period_code=...`; la ejecución programada usa `POST /api/v1/etl/scheduled`. El reporte separa matrículas leídas y activas de certificaciones aceptadas y rechazadas, para que una corrida válida con padrón y cero certificaciones no parezca vacía. Corridas históricas anteriores a esos conteos los recuperan del snapshot publicado únicamente cuando siguen siendo la última corrida aplicada para el mismo periodo y corte; si no hay base segura para inferirlos, se muestran como no disponibles. Guardar identificador, hash, periodo, corte, conteos y responsable sin exportar datos nominales. Conciliar una muestra manual contra padrón, evidencias y decisiones antes de dar un cierre por oficial.
 
 Las métricas de completitud y duplicados provienen de la corrida; no todos esos campos se incluyen en AnalyticsOverview. La ventana expiring_soon es de 90 días. La brecha skill_gaps es población activa menos estudiantes certificados por habilidad; no se interpreta como demanda externa. Ver [Diccionario](09-Diccionario-indicadores.md) y [Objetivos](01-Objetivos-medibles.md).
 
