@@ -150,12 +150,18 @@ Durante la demostración, cambia **Periodo** y **Fecha de corte**. La fecha perm
 6. Mostrar la tabla de costos y aclarar: `plan` no cobra; `apply` sí crea recursos.
 7. Cerrar indicando que Render ejecuta el MVP actual y GCP está listo para activarse cuando haya presupuesto institucional.
 
-## 8. Próximos pasos verificables
+## 8. Cierre operativo pendiente
 
-- Integrar la rama revisada en `main`, desplegarla a Render y confirmar la migración 0014.
-- Importar el padrón 2026-II desde la interfaz, conciliar sus pendientes con la fuente institucional y publicar un primer corte.
-- Registrar feeds autorizados para Radar o mantener la carga manual revisada; comprobar que cada oportunidad publicada se limita a sus ciclos.
-- Hacer el recorrido Admin → estudiante → validador y comprobar los seis reportes con un corte real.
-- Tratar GCP/AWS e Infracost con una aprobación de presupuesto aparte. La estimación de costos es un escenario referencial archivado, no una cotización vigente ni un gasto ya realizado.
+El código funcional de las siete fases está integrado en `main` mediante los PR #114 y #115. Render ejecuta el commit funcional `9f48691`, `/ready` responde HTTP 200 y la migración se aplica al iniciar el servicio. No se han aprovisionado recursos AWS/GCP ni habilitado facturación.
+
+Para completar la aceptación institucional, todavía se requiere:
+
+1. En Pulse → **Administrar → Padrón**, importar el Excel oficial autorizado para `2026-II`. El análisis local del archivo disponible encontró 309 filas completas y 19 pendientes de conciliación; confirmar esos conteos en la pantalla después de importar. Las filas pendientes no deben crear acceso de estudiante hasta verificar correo y código institucionales.
+2. Revisar los candidatos pendientes con la fuente oficial de EPIS, completar lo que corresponda y dejar fuera, con motivo, cualquier registro que no se pueda validar.
+3. Publicar un nuevo corte ETL después de la importación y contrastar los seis reportes con los conteos aceptados del padrón. El último ETL productivo fue `APPLIED` para `2026-II`, corte `2026-11-11`, pero reportó cero filas de certificación; eso no confirma por sí solo el total de matrículas.
+4. Para probar la actualización semanal de Radar, registrar una fuente JSON/RSS autorizada. Hoy no hay feeds activos y el workflow termina `SKIPPED`; los cursos semilla existentes se pueden revisar y publicar manualmente mientras tanto.
+5. Completar el recorrido Admin → estudiante → validador con las cuentas de prueba aprobadas y una certificación de demostración; verificar audiencia por ciclo, cupos y trazabilidad.
+
+La infraestructura Terraform y sus estimaciones son material de exposición y revisión. Desplegar AWS/GCP o habilitar Infracost con un plan real queda pendiente de presupuesto y aprobación; un `terraform plan` no crea recursos, pero `apply` sí puede generar cargos.
 
 Para detalles completos, consulta la [guía de presentación U2](docs/proyecto/28-Guia-presentacion-U2.md), las [siete fases de cierre del MVP](docs/proyecto/31-Fases-MVP-Pulse-EPIS.md) y el [cierre de segunda unidad](docs/proyecto/29-Cierre-segunda-unidad.md).
