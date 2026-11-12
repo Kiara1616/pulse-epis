@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
 from uuid import uuid4
 
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
@@ -75,7 +78,7 @@ def test_weekly_radar_detects_courses_but_does_not_publish_them(monkeypatch):
             )
         )
     feed_row = {"title": "Curso de prueba", "url": "https://catalog.example/python", "skills": ["Python"]}
-    monkeypatch.setattr(learning_routes, "source_rows", lambda _: iter([dict(feed_row)]))
+    monkeypatch.setattr(learning_routes, "source_rows", lambda *_: iter([dict(feed_row)]))
     with TestClient(app) as client:
         headers = {"X-Pulse-ETL-Secret": "catalog-scheduler-secret"}
         response = client.post("/api/v1/learning/scheduled/sources", headers=headers)
@@ -105,4 +108,131 @@ def test_weekly_radar_detects_courses_but_does_not_publish_them(monkeypatch):
         assert refresh_audit.before["title"] == "Curso de prueba"
         assert refresh_audit.after["title"] == "Título actualizado antes de revisión"
         assert session.scalar(select(func.count()).select_from(LearningAudit)) == 5
+    engine.dispose()
+
+
+def test_datacamp_catalog_sends_server_secret_only_to_official_catalog(monkeypatch):
+    _, _, engine = _app_context()
+    settings = Settings(
+        environment="test",
+        auth_session_secret="datacamp-catalog-test-secret",
+        datacamp_catalog_api_token="datacamp-private-token",
+        log_level="WARNING",
+    )
+    source = LearningCatalogSource(
+        provider="DataCamp",
+        feed_url="https://lms-catalog-api.datacamp.com/v1/catalog/live-courses",
+        format="JSON",
+        default_skills=["Python"],
+        default_requirements=[],
+        active=True,
+    )
+    payload = json.dumps([
+        {"title": "Introduction to Python", "url": "https://www.datacamp.com/courses/intro-to-python"}
+    ]).encode("utf-8")
+    captured = {}
+
+    class Response:
+        headers = {"Content-Length": str(len(payload))}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, chunk_size):
+            assert chunk_size == 65_536
+            yield payload
+
+    def get(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+        return Response()
+
+    monkeypatch.setattr(learning_routes, "_ensure_public_feed_host", lambda _url: None)
+    monkeypatch.setattr(learning_routes.requests, "get", get)
+    rows = list(learning_routes.source_rows(source, settings))
+
+    assert captured["url"] == source.feed_url
+    assert captured["headers"]["Authorization"] == "Bearer datacamp-private-token"
+    assert rows[0]["title"] == "Introduction to Python"
+
+    captured.clear()
+    public_source = LearningCatalogSource(
+        provider="Fuente pública",
+        feed_url="https://catalog.example/courses.json",
+        format="JSON",
+        default_skills=["Python"],
+        default_requirements=[],
+        active=True,
+    )
+    list(learning_routes.source_rows(public_source, settings))
+    assert "Authorization" not in captured["headers"]
+    engine.dispose()
+
+
+def test_datacamp_catalog_requires_server_secret_without_network_call(monkeypatch):
+    source = LearningCatalogSource(
+        provider="DataCamp",
+        feed_url="https://lms-catalog-api.datacamp.com/v1/catalog/live-courses",
+        format="JSON",
+        default_skills=["Python"],
+        default_requirements=[],
+        active=True,
+    )
+    settings = Settings(environment="test", auth_session_secret="datacamp-catalog-test-secret")
+    monkeypatch.setattr(learning_routes, "_ensure_public_feed_host", lambda _url: None)
+    monkeypatch.setattr(
+        learning_routes.requests,
+        "get",
+        lambda *_args, **_kwargs: pytest.fail("unexpected network request"),
+    )
+
+    with pytest.raises(HTTPException) as error:
+        list(learning_routes.source_rows(source, settings))
+
+    assert error.value.status_code == 422
+    assert error.value.detail["code"] == "CATALOG_CREDENTIAL_MISSING"
+
+
+def test_weekly_radar_maps_datacamp_catalog_field_aliases(monkeypatch):
+    app, factory, engine = _app_context()
+    source_id = uuid4()
+    with factory.begin() as session:
+        session.add(
+            LearningCatalogSource(
+                id=source_id,
+                provider="DataCamp",
+                feed_url="https://lms-catalog-api.datacamp.com/v1/catalog/live-courses",
+                format="JSON",
+                default_skills=[],
+                default_requirements=["Programación básica"],
+                active=True,
+            )
+        )
+    monkeypatch.setattr(learning_routes, "source_rows", lambda *_: iter([{
+        "name": "Python for Data Analysis",
+        "launchUrl": "https://www.datacamp.com/courses/python-data-analysis",
+        "topics": [{"name": "Python"}, {"name": "Análisis de datos"}],
+    }]))
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/learning/scheduled/sources",
+            headers={"X-Pulse-ETL-Secret": "catalog-scheduler-secret"},
+        )
+    assert response.status_code == 200, response.text
+    assert response.json()["created"] == 1
+    with factory() as session:
+        course = session.scalar(select(LearningCourse))
+        assert course is not None
+        assert course.title == "Python for Data Analysis"
+        assert course.source_url == "https://www.datacamp.com/courses/python-data-analysis"
+        assert course.skills == ["Python", "Análisis de datos"]
+        assert course.requirements == ["Programación básica"]
+        assert course.status == "DETECTED"
     engine.dispose()

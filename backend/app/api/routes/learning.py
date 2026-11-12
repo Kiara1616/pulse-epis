@@ -27,6 +27,8 @@ reader = require_roles(Role.ADMIN, Role.STUDENT)
 MODELS = {'routes': Route, 'courses': Course, 'offers': Offer, 'workshops': Workshop}
 MAX_CATALOG_BYTES = 2_000_000
 MAX_CATALOG_ITEMS = 500
+DATACAMP_CATALOG_HOST = 'lms-catalog-api.datacamp.com'
+DATACAMP_CATALOG_PATH = '/v1/catalog/live-courses'
 
 def fail(code, status, message):
     raise HTTPException(status, detail={'code': code, 'message': message})
@@ -140,14 +142,35 @@ def _ensure_public_feed_host(url: str) -> None:
         fail('CATALOG_SYNC_FAILED', 422, 'El feed debe pertenecer a un host público')
 
 
-def source_rows(source):
+def source_rows(source, settings):
     """Parse an administrator-approved JSON or RSS catalog feed into candidate rows."""
     _ensure_public_feed_host(source.feed_url)
+    headers = {
+        'User-Agent': 'Pulse-EPIS-Catalog/1.0',
+        'Accept': 'application/json,application/rss+xml,application/xml,text/xml',
+    }
+    feed = urlparse(str(source.feed_url))
+    if (
+        feed.hostname
+        and feed.hostname.casefold() == DATACAMP_CATALOG_HOST
+        and feed.path.rstrip('/') == DATACAMP_CATALOG_PATH
+        and feed.port in (None, 443)
+        and not feed.query
+        and not feed.fragment
+    ):
+        token = settings.datacamp_catalog_api_token
+        if token is None or not token.get_secret_value().strip():
+            fail(
+                'CATALOG_CREDENTIAL_MISSING',
+                422,
+                'Configura PULSE_DATACAMP_CATALOG_API_TOKEN como secreto del servicio para sincronizar DataCamp',
+            )
+        headers['Authorization'] = f'Bearer {token.get_secret_value().strip()}'
     try:
         with requests.get(
             source.feed_url,
             timeout=15,
-            headers={'User-Agent': 'Pulse-EPIS-Catalog/1.0', 'Accept': 'application/json,application/rss+xml,application/xml,text/xml'},
+            headers=headers,
             allow_redirects=False,
             stream=True,
         ) as response:
@@ -190,22 +213,26 @@ def source_rows(source):
             'requirements': [],
         }
 
-def sync_source(session, actor, source):
+def sync_source(session, actor, source, settings):
     created = updated = skipped = 0
-    for position, row in enumerate(source_rows(source), start=1):
+    for position, row in enumerate(source_rows(source, settings), start=1):
         if position > MAX_CATALOG_ITEMS:
             skipped += 1
             break
-        title = str(row.get('title') or '').strip()
-        url = str(row.get('url') or row.get('source_url') or row.get('link') or '').strip()
+        title = str(row.get('title') or row.get('name') or '').strip()
+        url = str(row.get('url') or row.get('source_url') or row.get('launchUrl') or row.get('link') or '').strip()
         parsed = urlparse(url)
         if not title or parsed.scheme != 'https' or parsed.username or parsed.password or len(url) > 2048:
             skipped += 1
             continue
-        skills = row.get('skills') or source.default_skills
-        requirements = row.get('requirements') or source.default_requirements
+        skills = row.get('skills') or row.get('technologies') or row.get('topics') or source.default_skills
+        requirements = row.get('requirements') or row.get('prerequisites') or source.default_requirements
         if isinstance(skills, str): skills = [v.strip() for v in skills.split(',') if v.strip()]
         if isinstance(requirements, str): requirements = [v.strip() for v in requirements.split(',') if v.strip()]
+        if isinstance(skills, list):
+            skills = [v.get('name') or v.get('title') or v.get('label') or '' if isinstance(v, dict) else v for v in skills]
+        if isinstance(requirements, list):
+            requirements = [v.get('name') or v.get('title') or v.get('label') or '' if isinstance(v, dict) else v for v in requirements]
         skills = [str(v).strip() for v in skills if str(v).strip()][:20]
         requirements = [str(v).strip() for v in requirements if str(v).strip()][:20]
         if not skills:
@@ -322,12 +349,12 @@ def synchronize_catalog_source(identifier: UUID, request: Request, actor: Authen
         item = get(s, CatalogSource, identifier, True)
         if not item.active:
             fail('SOURCE_INACTIVE', 409, 'La fuente está inactiva')
-        return sync_source(s, actor, item)
+        return sync_source(s, actor, item, request.app.state.settings)
 
 @router.post('/admin/sources/sync', response_model=list[SyncOutput])
 def synchronize_catalog_sources(request: Request, actor: AuthenticatedUser=Depends(admin)):
     with transaction(request) as s:
-        return [sync_source(s, actor, item) for item in s.scalars(select(CatalogSource).where(CatalogSource.active.is_(True)))]
+        return [sync_source(s, actor, item, request.app.state.settings) for item in s.scalars(select(CatalogSource).where(CatalogSource.active.is_(True)))]
 
 
 @scheduler_router.post('/scheduled/sources')
@@ -359,7 +386,7 @@ def synchronize_catalog_sources_scheduled(
                 if not source.active:
                     results.append({'source_id': str(source_id), 'status': 'SKIPPED', 'reason': 'SOURCE_INACTIVE'})
                     continue
-                result = sync_source(session, None, source)
+                result = sync_source(session, None, source, request.app.state.settings)
                 results.append({'source_id': str(source_id), 'status': 'APPLIED', **result})
         except HTTPException as exc:
             detail = exc.detail if isinstance(exc.detail, dict) else {}

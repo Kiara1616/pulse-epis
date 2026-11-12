@@ -16,7 +16,7 @@ _DEVELOPMENT_EVIDENCE_SECRET = "development-only-evidence-secret"
 
 
 class Settings(BaseSettings):
-    """Non-secret settings needed to boot the API."""
+    """Environment-based settings; sensitive values use SecretStr."""
 
     app_name: str = "Pulse EPIS API"
     app_version: str = "0.1.0"
@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     google_allowed_domains: str = "virtual.upt.pe,upt.edu.pe"
     google_allowed_staff_emails: str = ""
     etl_scheduler_secret: SecretStr | None = None
+    datacamp_catalog_api_token: SecretStr | None = None
     local_auth_seed: bool = False
     local_auth_password: SecretStr = SecretStr("pulse-local-demo")
     demo_data_seed: bool = False

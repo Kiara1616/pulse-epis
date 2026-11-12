@@ -145,7 +145,7 @@ def test_catalog_sync_and_external_handoff(context, monkeypatch):
         'provider': 'Proveedor de prueba', 'feed_url': 'https://example.invalid/catalog.json',
         'format': 'JSON', 'default_skills': ['Python'], 'default_requirements': []
     })
-    monkeypatch.setattr(learning_routes, 'source_rows', lambda _: iter([{
+    monkeypatch.setattr(learning_routes, 'source_rows', lambda *_: iter([{
         'title': 'Curso detectado', 'url': 'https://example.invalid/detected', 'skills': ['Python']
     }]))
     synced = post(admin, f"/admin/sources/{source['id']}/sync", {}, 200)
