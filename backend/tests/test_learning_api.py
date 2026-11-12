@@ -145,15 +145,16 @@ def test_catalog_sync_and_external_handoff(context, monkeypatch):
         'provider': 'Proveedor de prueba', 'feed_url': 'https://example.invalid/catalog.json',
         'format': 'JSON', 'default_skills': ['Python'], 'default_requirements': []
     })
-    monkeypatch.setattr(learning_routes, 'source_rows', lambda _: iter([{
+    monkeypatch.setattr(learning_routes, 'source_rows', lambda *_: iter([{
         'title': 'Curso detectado', 'url': 'https://example.invalid/detected', 'skills': ['Python']
     }]))
     synced = post(admin, f"/admin/sources/{source['id']}/sync", {}, 200)
     assert synced == {
         'created': 1,
         'updated': 0,
+        'retired': 0,
         'skipped': 0,
-        'summary': '1 candidatos nuevos; 0 candidatos actualizados; 0 omitidos.',
+        'summary': '1 candidatos nuevos; 0 candidatos actualizados; 0 cursos archivados; 0 omitidos.',
     }
     course = admin.get('/api/v1/learning/courses').json()[0]
     publish(admin, 'courses', course, 'IN_REVIEW')
