@@ -15,12 +15,13 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     SmallInteger,
     String,
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, deferred, mapped_column
 from sqlalchemy.types import Uuid
 
 from .base import Base
@@ -472,6 +473,9 @@ class Evidence(Base):
     evidence_type: Mapped[str] = mapped_column(String(20), nullable=False)
     source_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    content_bytes: Mapped[bytes | None] = deferred(
+        mapped_column(LargeBinary, nullable=True)
+    )
     sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)

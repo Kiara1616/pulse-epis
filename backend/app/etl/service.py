@@ -10,7 +10,7 @@ from datetime import date, datetime, timezone
 from typing import Any, Iterable
 from uuid import UUID
 
-from sqlalchemy import and_, delete, select
+from sqlalchemy import and_, case, delete, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from ..db.models import (
@@ -131,6 +131,8 @@ class EtlReport:
     source_sha256: str
     status: str
     total_rows: int
+    enrollment_rows: int | None
+    active_enrollment_rows: int | None
     accepted_rows: int
     rejected_rows: int
     duplicate_rows: int
@@ -146,6 +148,8 @@ class EtlReport:
             "source_sha256": self.source_sha256,
             "status": self.status,
             "total_rows": self.total_rows,
+            "enrollment_rows": self.enrollment_rows,
+            "active_enrollment_rows": self.active_enrollment_rows,
             "accepted_rows": self.accepted_rows,
             "rejected_rows": self.rejected_rows,
             "duplicate_rows": self.duplicate_rows,
@@ -370,6 +374,10 @@ class EtlService:
         accepted_rows = 0 if stage.rejections else len(stage.records)
         quality_report = {
             "total_rows": len(extraction.records),
+            "enrollment_rows": len(extraction.enrollments),
+            "active_enrollment_rows": sum(
+                enrollment.status == "ACTIVE" for enrollment in extraction.enrollments
+            ),
             "accepted_rows": accepted_rows,
             "rejected_rows": rejected_rows,
             "duplicate_rows": stage.duplicate_rows,
@@ -477,6 +485,51 @@ class EtlService:
                 .order_by(EtlRejection.row_number, EtlRejection.id)
             ).all()
         )
+        quality_report = run.quality_report or {}
+        enrollment_rows = quality_report.get("enrollment_rows")
+        active_enrollment_rows = quality_report.get("active_enrollment_rows")
+        if (
+            run.status == "APPLIED"
+            and (enrollment_rows is None or active_enrollment_rows is None)
+        ):
+            latest_applied_id = session.scalar(
+                select(EtlRun.id)
+                .where(
+                    EtlRun.period_id == run.period_id,
+                    EtlRun.cutoff_date == run.cutoff_date,
+                    EtlRun.status == "APPLIED",
+                )
+                .order_by(EtlRun.completed_at.desc(), EtlRun.created_at.desc())
+                .limit(1)
+            )
+            if latest_applied_id == run.id:
+                enrollment_rows, active_enrollment_rows = session.execute(
+                    select(
+                        func.count(FactStudentPeriod.student_key),
+                        func.coalesce(
+                            func.sum(
+                                case(
+                                    (FactStudentPeriod.enrollment_status == "ACTIVE", 1),
+                                    else_=0,
+                                )
+                            ),
+                            0,
+                        ),
+                    ).where(
+                        FactStudentPeriod.period_id == run.period_id,
+                        FactStudentPeriod.cutoff_date == run.cutoff_date,
+                    )
+                ).one()
+        counts = {
+            "enrollment_rows": enrollment_rows,
+            "active_enrollment_rows": active_enrollment_rows,
+        }
+        counts = {
+            name: value
+            if isinstance(value, int) and not isinstance(value, bool) and value >= 0
+            else None
+            for name, value in counts.items()
+        }
         return EtlReport(
             id=run.id,
             period_code=session.scalar(select(AcademicPeriod.code).where(AcademicPeriod.id == run.period_id)),
@@ -484,6 +537,8 @@ class EtlService:
             source_sha256=run.source_sha256,
             status=run.status,
             total_rows=run.total_rows,
+            enrollment_rows=counts["enrollment_rows"],
+            active_enrollment_rows=counts["active_enrollment_rows"],
             accepted_rows=run.accepted_rows,
             rejected_rows=run.rejected_rows,
             duplicate_rows=run.duplicate_rows,
