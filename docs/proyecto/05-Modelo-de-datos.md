@@ -68,7 +68,7 @@ erDiagram
 - Una certificación es única por estudiante, emisor, nombre y fecha de emisión.
 - El identificador externo de una certificación es único dentro de su emisor cuando existe.
 - Una evidencia exige una URL o una clave de objeto y evita repetir el mismo hash para una certificación.
-- Los archivos de evidencia se guardan con una clave aleatoria, metadatos de tipo/tamaño y `retention_until`; el acceso se entrega mediante tokens firmados de corta duración.
+- Los archivos de evidencia se guardan como bytes en `evidences.content_bytes` con hash, metadatos de tipo/tamaño y `retention_until`; las filas históricas sin bytes continúan resolviéndose con su `object_key` mientras exista el archivo local. El acceso se entrega mediante tokens firmados de corta duración. En Render gratuito, cada archivo admite hasta 2 MB y comparte el límite de 1 GB y la expiración de PostgreSQL; no es almacenamiento institucional permanente.
 - La corrección de una certificación observada pasa a `RESUBMITTED` y no elimina las decisiones anteriores.
 - Cada transición explícita agrega una fila en `certification_status_history`; la aplicación no ofrece actualización ni borrado de ese historial.
 - `EXPIRED` es un estado derivado al evaluar una certificación `APPROVED` cuyo `expires_on` es anterior a la fecha de corte; el registro aprobado original se conserva.
@@ -82,7 +82,7 @@ Las migraciones se prueban con datos sintéticos contra PostgreSQL en CI y se re
 
 ## Diccionario físico de tablas
 
-Extraído de backend/app/db/models.py para el corte documentado. Las ocho migraciones versionadas complementan los tipos y restricciones. No se afirma cifrado por campo donde el modelo declara String.
+Extraído de `backend/app/db/models.py` para el corte documentado. Las migraciones versionadas complementan los tipos y restricciones. No se afirma cifrado por campo donde el modelo declara String.
 
 ### Tabla academic_periods
 

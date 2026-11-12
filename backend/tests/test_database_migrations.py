@@ -78,6 +78,7 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
         "content_type",
         "byte_size",
         "retention_until",
+        "content_bytes",
     }.issubset(set(evidences.c.keys()))
     assert {
         "actor_user_id",

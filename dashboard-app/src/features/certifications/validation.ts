@@ -1,4 +1,4 @@
-export const EVIDENCE_MAX_BYTES = 10_000_000;
+export const EVIDENCE_MAX_BYTES = 2_000_000;
 export const EVIDENCE_MIME_TYPES = [
   "application/pdf",
   "image/png",
@@ -49,7 +49,7 @@ function validateFile(file: File | null | undefined) {
   if (!file) return null;
   if (file.size === 0) return "El archivo no puede estar vacío.";
   if (file.size > EVIDENCE_MAX_BYTES) {
-    return "El archivo no puede superar los 10 MB.";
+    return "El archivo no puede superar los 2 MB.";
   }
   if (!EVIDENCE_MIME_TYPES.includes(file.type as (typeof EVIDENCE_MIME_TYPES)[number])) {
     return "Formato no admitido. Usa un archivo PDF, PNG o JPEG.";

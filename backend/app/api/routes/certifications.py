@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import (
@@ -413,6 +414,25 @@ def download_evidence(
                 url=item.source_url or "/",
                 status_code=status.HTTP_307_TEMPORARY_REDIRECT,
                 headers={"Cache-Control": "private, no-store"},
+            )
+        if item.content is not None:
+            disposition = (
+                "inline"
+                if item.content_type == "application/pdf"
+                or (item.content_type or "").startswith("image/")
+                else "attachment"
+            )
+            encoded_filename = quote(item.original_filename or "evidence", safe="")
+            return Response(
+                content=item.content,
+                media_type=item.content_type or "application/octet-stream",
+                headers={
+                    "Cache-Control": "private, no-store",
+                    "Content-Disposition": (
+                        f"{disposition}; filename*=UTF-8''{encoded_filename}"
+                    ),
+                    "X-Content-Type-Options": "nosniff",
+                },
             )
         if item.path is None:
             raise _http_error(

@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     evidence_storage_path: str = ".data/evidence"
     evidence_access_secret: SecretStr = SecretStr(_DEVELOPMENT_EVIDENCE_SECRET)
     evidence_access_ttl_seconds: int = 600
-    evidence_max_bytes: int = 10_000_000
+    evidence_max_bytes: int = 2_000_000
     evidence_retention_days: int = 1_825
     evidence_allowed_mime_types: str = "application/pdf,image/png,image/jpeg"
 
