@@ -29,6 +29,24 @@ MAX_CATALOG_BYTES = 2_000_000
 MAX_CATALOG_ITEMS = 500
 DATACAMP_CATALOG_HOST = 'lms-catalog-api.datacamp.com'
 DATACAMP_CATALOG_PATH = '/v1/catalog/live-courses'
+DATACAMP_ARCHIVED_CATALOG_PATH = '/v1/catalog/archived-courses'
+
+def datacamp_archived_feed_url(feed_url: str) -> str | None:
+    """Return the official archive endpoint for an exact live-catalog URL."""
+    feed = urlparse(str(feed_url))
+    if (
+        feed.scheme == 'https'
+        and feed.hostname
+        and feed.hostname.casefold() == DATACAMP_CATALOG_HOST
+        and feed.path.rstrip('/') == DATACAMP_CATALOG_PATH
+        and feed.port in (None, 443)
+        and not feed.query
+        and not feed.fragment
+        and not feed.username
+        and not feed.password
+    ):
+        return f'https://{DATACAMP_CATALOG_HOST}{DATACAMP_ARCHIVED_CATALOG_PATH}'
+    return None
 
 def fail(code, status, message):
     raise HTTPException(status, detail={'code': code, 'message': message})
@@ -142,21 +160,24 @@ def _ensure_public_feed_host(url: str) -> None:
         fail('CATALOG_SYNC_FAILED', 422, 'El feed debe pertenecer a un host público')
 
 
-def source_rows(source, settings):
+def source_rows(source, settings, feed_url: str | None = None):
     """Parse an administrator-approved JSON or RSS catalog feed into candidate rows."""
-    _ensure_public_feed_host(source.feed_url)
+    catalog_url = str(feed_url or source.feed_url)
+    _ensure_public_feed_host(catalog_url)
     headers = {
         'User-Agent': 'Pulse-EPIS-Catalog/1.0',
         'Accept': 'application/json,application/rss+xml,application/xml,text/xml',
     }
-    feed = urlparse(str(source.feed_url))
+    feed = urlparse(catalog_url)
     if (
         feed.hostname
         and feed.hostname.casefold() == DATACAMP_CATALOG_HOST
-        and feed.path.rstrip('/') == DATACAMP_CATALOG_PATH
+        and feed.path.rstrip('/') in {DATACAMP_CATALOG_PATH, DATACAMP_ARCHIVED_CATALOG_PATH}
         and feed.port in (None, 443)
         and not feed.query
         and not feed.fragment
+        and not feed.username
+        and not feed.password
     ):
         token = settings.datacamp_catalog_api_token
         if token is None or not token.get_secret_value().strip():
@@ -168,7 +189,7 @@ def source_rows(source, settings):
         headers['Authorization'] = f'Bearer {token.get_secret_value().strip()}'
     try:
         with requests.get(
-            source.feed_url,
+            catalog_url,
             timeout=15,
             headers=headers,
             allow_redirects=False,
@@ -214,7 +235,7 @@ def source_rows(source, settings):
         }
 
 def sync_source(session, actor, source, settings):
-    created = updated = skipped = 0
+    created = updated = retired = skipped = 0
     for position, row in enumerate(source_rows(source, settings), start=1):
         if position > MAX_CATALOG_ITEMS:
             skipped += 1
@@ -267,10 +288,40 @@ def sync_source(session, actor, source, settings):
         session.add(course)
         audit(session, actor, course, 'DETECTED', f'Curso detectado desde feed {source.provider}')
         created += 1
+    archived_feed_url = datacamp_archived_feed_url(source.feed_url)
+    if archived_feed_url:
+        archive_reason = 'Curso archivado en el catálogo oficial de DataCamp'
+        for position, row in enumerate(source_rows(source, settings, archived_feed_url), start=1):
+            if position > MAX_CATALOG_ITEMS:
+                skipped += 1
+                break
+            url = str(row.get('url') or row.get('source_url') or row.get('launchUrl') or row.get('link') or '').strip()
+            parsed = urlparse(url)
+            if not url or parsed.scheme != 'https' or parsed.username or parsed.password or len(url) > 2048:
+                skipped += 1
+                continue
+            course = session.scalar(
+                select(Course)
+                .where(Course.source_url == url, Course.provider == source.provider)
+                .with_for_update()
+            )
+            if course is None:
+                continue
+            if course.status not in {'RETIRED', 'DISCARDED'}:
+                before = serialize(session, course)
+                course.status = 'RETIRED'
+                course.checked_on = date.today()
+                audit(session, actor, course, 'ARCHIVED', archive_reason, before)
+                retired += 1
+            offer = session.scalar(select(Offer).where(Offer.course_id == course.id).with_for_update())
+            if offer is not None and offer.status != 'RETIRED':
+                before = serialize(session, offer)
+                offer.status = 'RETIRED'
+                audit(session, actor, offer, 'RETIRED', archive_reason, before)
     source.last_synced_at = datetime.now(timezone.utc)
-    source.last_sync_summary = f'{created} candidatos nuevos; {updated} candidatos actualizados; {skipped} omitidos.'
+    source.last_sync_summary = f'{created} candidatos nuevos; {updated} candidatos actualizados; {retired} cursos archivados; {skipped} omitidos.'
     audit(session, actor, source, 'SYNC', source.last_sync_summary)
-    return {'created': created, 'updated': updated, 'skipped': skipped, 'summary': source.last_sync_summary}
+    return {'created': created, 'updated': updated, 'retired': retired, 'skipped': skipped, 'summary': source.last_sync_summary}
 
 def route_steps(session, item, steps):
     session.execute(delete(Step).where(Step.route_id == item.id))
@@ -376,7 +427,7 @@ def synchronize_catalog_sources_scheduled(
             select(CatalogSource.id).where(CatalogSource.active.is_(True)).order_by(CatalogSource.provider, CatalogSource.id)
         ))
     if not source_ids:
-        return {'status': 'SKIPPED', 'reason': 'NO_ACTIVE_SOURCES', 'sources_checked': 0, 'created': 0, 'skipped': 0}
+        return {'status': 'SKIPPED', 'reason': 'NO_ACTIVE_SOURCES', 'sources_checked': 0, 'created': 0, 'updated': 0, 'retired': 0, 'skipped': 0}
 
     results = []
     for source_id in source_ids:
@@ -406,6 +457,7 @@ def synchronize_catalog_sources_scheduled(
         'sources_checked': len(results),
         'created': sum(item.get('created', 0) for item in results),
         'updated': sum(item.get('updated', 0) for item in results),
+        'retired': sum(item.get('retired', 0) for item in results),
         'skipped': sum(item.get('skipped', 0) for item in results),
         'results': results,
     }

@@ -9,10 +9,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from datetime import date
+from pydantic import SecretStr
 
 from backend.app.core.config import Settings
 from backend.app.db.base import Base
-from backend.app.learning.models import LearningAudit, LearningCatalogSource, LearningCourse
+from backend.app.learning.models import LearningAudit, LearningCatalogSource, LearningCourse, LearningOpportunity
 from backend.app.main import create_app
 from backend.app.api.routes import learning as learning_routes
 
@@ -57,6 +59,8 @@ def test_weekly_radar_skips_when_no_authorized_feeds_are_configured():
         "reason": "NO_ACTIVE_SOURCES",
         "sources_checked": 0,
         "created": 0,
+        "updated": 0,
+        "retired": 0,
         "skipped": 0,
     }
     engine.dispose()
@@ -214,11 +218,16 @@ def test_weekly_radar_maps_datacamp_catalog_field_aliases(monkeypatch):
                 active=True,
             )
         )
-    monkeypatch.setattr(learning_routes, "source_rows", lambda *_: iter([{
-        "name": "Python for Data Analysis",
-        "launchUrl": "https://www.datacamp.com/courses/python-data-analysis",
-        "topics": [{"name": "Python"}, {"name": "Análisis de datos"}],
-    }]))
+    def rows(_source, _settings, feed_url=None):
+        if feed_url and feed_url.endswith("/archived-courses"):
+            return iter([])
+        return iter([{
+            "name": "Python for Data Analysis",
+            "launchUrl": "https://www.datacamp.com/courses/python-data-analysis",
+            "topics": [{"name": "Python"}, {"name": "Análisis de datos"}],
+        }])
+
+    monkeypatch.setattr(learning_routes, "source_rows", rows)
 
     with TestClient(app) as client:
         response = client.post(
@@ -235,4 +244,71 @@ def test_weekly_radar_maps_datacamp_catalog_field_aliases(monkeypatch):
         assert course.skills == ["Python", "Análisis de datos"]
         assert course.requirements == ["Programación básica"]
         assert course.status == "DETECTED"
+    engine.dispose()
+
+
+def test_weekly_datacamp_archive_retires_offer_and_preserves_audit(monkeypatch):
+    app, factory, engine = _app_context()
+    app.state.settings.datacamp_catalog_api_token = SecretStr("datacamp-test-token")
+    source_id = uuid4()
+    course_id = uuid4()
+    offer_id = uuid4()
+    course_url = "https://www.datacamp.com/courses/archived-course"
+    with factory.begin() as session:
+        session.add(LearningCatalogSource(
+            id=source_id,
+            provider="DataCamp",
+            feed_url="https://lms-catalog-api.datacamp.com/v1/catalog/live-courses",
+            format="JSON",
+            default_skills=["Python"],
+            default_requirements=[],
+            active=True,
+        ))
+        session.add(LearningCourse(
+            id=course_id,
+            title="Archived course",
+            provider="DataCamp",
+            source_url=course_url,
+            checked_on=date(2026, 1, 1),
+            requirements=[],
+            skills=["Python"],
+            status="PUBLISHED",
+        ))
+        session.add(LearningOpportunity(
+            id=offer_id,
+            course_id=course_id,
+            title="Archived course for students",
+            cycles=["VIII"],
+            relevance="Official course for advanced students.",
+            status="PUBLISHED",
+        ))
+
+    monkeypatch.setattr(learning_routes, "_ensure_public_feed_host", lambda _url: None)
+    monkeypatch.setattr(learning_routes, "source_rows", lambda _source, _settings, feed_url=None: iter(
+        [{"title": "Archived course", "url": course_url}] if feed_url and feed_url.endswith("/archived-courses") else []
+    ))
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/learning/scheduled/sources",
+            headers={"X-Pulse-ETL-Secret": "catalog-scheduler-secret"},
+        )
+    assert response.status_code == 200, response.text
+    assert response.json()["retired"] == 1
+    with factory() as session:
+        course = session.get(LearningCourse, course_id)
+        offer = session.get(LearningOpportunity, offer_id)
+        assert course.status == "RETIRED"
+        assert offer.status == "RETIRED"
+        course_audit = session.scalar(select(LearningAudit).where(
+            LearningAudit.entity_id == course_id,
+            LearningAudit.action == "ARCHIVED",
+        ))
+        offer_audit = session.scalar(select(LearningAudit).where(
+            LearningAudit.entity_id == offer_id,
+            LearningAudit.action == "RETIRED",
+        ))
+        assert course_audit is not None
+        assert offer_audit is not None
+        assert course_audit.before["status"] == "PUBLISHED"
+        assert offer_audit.before["status"] == "PUBLISHED"
     engine.dispose()

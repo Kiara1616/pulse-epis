@@ -152,8 +152,9 @@ def test_catalog_sync_and_external_handoff(context, monkeypatch):
     assert synced == {
         'created': 1,
         'updated': 0,
+        'retired': 0,
         'skipped': 0,
-        'summary': '1 candidatos nuevos; 0 candidatos actualizados; 0 omitidos.',
+        'summary': '1 candidatos nuevos; 0 candidatos actualizados; 0 cursos archivados; 0 omitidos.',
     }
     course = admin.get('/api/v1/learning/courses').json()[0]
     publish(admin, 'courses', course, 'IN_REVIEW')
