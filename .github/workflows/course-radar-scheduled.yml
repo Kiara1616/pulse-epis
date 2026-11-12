@@ -1,0 +1,53 @@
+name: Weekly course radar
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: course-radar-scheduled
+  cancel-in-progress: false
+
+jobs:
+  sync-approved-feeds:
+    runs-on: ubuntu-latest
+    env:
+      PULSE_ETL_BASE_URL: ${{ vars.PULSE_ETL_BASE_URL }}
+      PULSE_ETL_SCHEDULER_SECRET: ${{ secrets.PULSE_ETL_SCHEDULER_SECRET }}
+    steps:
+      - name: Validate configuration
+        shell: bash
+        run: |
+          test -n "$PULSE_ETL_BASE_URL" || { echo 'Missing PULSE_ETL_BASE_URL variable'; exit 1; }
+          test -n "$PULSE_ETL_SCHEDULER_SECRET" || { echo 'Missing PULSE_ETL_SCHEDULER_SECRET secret'; exit 1; }
+
+      - name: Synchronize administrator-approved public feeds
+        shell: bash
+        run: |
+          curl --silent --show-error --fail-with-body --retry 2 --retry-delay 15 --max-time 180 \
+            --request POST \
+            --header "X-Pulse-ETL-Secret: $PULSE_ETL_SCHEDULER_SECRET" \
+            "${PULSE_ETL_BASE_URL%/}/api/v1/learning/scheduled/sources" \
+            --output radar-result.json
+          python - <<'PY'
+          import json
+          with open("radar-result.json", encoding="utf-8") as result_file:
+              result = json.load(result_file)
+          print("status={status} sources_checked={sources} created={created} updated={updated} skipped={skipped}".format(
+              status=result.get("status"), sources=result.get("sources_checked", 0),
+              created=result.get("created", 0), updated=result.get("updated", 0), skipped=result.get("skipped", 0)))
+          if result.get("status") == "FAILED":
+              raise SystemExit("Every active course feed failed to synchronize")
+          PY
+
+      - name: Preserve synchronization result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: course-radar-weekly-result
+          path: radar-result.json
+          if-no-files-found: warn

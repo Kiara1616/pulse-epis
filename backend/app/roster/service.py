@@ -24,7 +24,14 @@ from ..db.models import (
     Student,
     User,
 )
-from .parser import ParsedRoster, RosterRecord, RosterRejection, normalize_text, parse_roster_csv
+from .parser import (
+    ParsedRoster,
+    RosterRecord,
+    RosterRejection,
+    normalize_text,
+    parse_roster_csv,
+    prepare_roster_upload,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +54,7 @@ class RosterImportServiceProtocol(Protocol):
         period_code: str,
         actor_user_id: UUID | None,
         selected_period_only: bool = False,
+        filename: str = "roster.csv",
     ) -> "ImportReport":
         """Import a period-scoped CSV and return a non-sensitive report."""
 
@@ -334,6 +342,7 @@ class RosterImportService:
         period_code: str,
         actor_user_id: UUID | None,
         selected_period_only: bool = False,
+        filename: str = "roster.csv",
     ) -> ImportReport:
         normalized_period_code = normalize_text(period_code)
         source_sha256 = hashlib.sha256((b"selected-period-v1\0" if selected_period_only else b"") + content).hexdigest()
@@ -347,8 +356,12 @@ class RosterImportService:
                 # Older imports stored only a pseudonym; recover codes from the
                 # same verified source without creating another import or student.
                 if existing.status == "APPLIED":
-                    parsed_source = parse_roster_csv(content, period_code=normalized_period_code,
-                        settings=self._settings, selected_period_only=selected_period_only)
+                    parsed_source = self._parse_upload(
+                        content,
+                        filename=filename,
+                        period_code=normalized_period_code,
+                        selected_period_only=selected_period_only,
+                    )
                     if not parsed_source.rejections:
                         for record in parsed_source.records:
                             key = pseudonymize_student_code(record.code, self._settings.roster_pseudonym_secret)
@@ -363,10 +376,10 @@ class RosterImportService:
                     idempotent=True,
                 )
 
-        parsed: ParsedRoster = parse_roster_csv(
+        parsed: ParsedRoster = self._parse_upload(
             content,
+            filename=filename,
             period_code=normalized_period_code,
-            settings=self._settings,
             selected_period_only=selected_period_only,
         )
 
@@ -451,6 +464,32 @@ class RosterImportService:
         finally:
             session.close()
 
+    def _parse_upload(
+        self,
+        content: bytes,
+        *,
+        filename: str,
+        period_code: str,
+        selected_period_only: bool,
+    ) -> ParsedRoster:
+        try:
+            csv_content, first_data_row = prepare_roster_upload(
+                content, filename=filename, settings=self._settings
+            )
+        except ValueError as exc:
+            return ParsedRoster(
+                records=(),
+                rejections=(RosterRejection(0, "__file__", "INVALID_FILE", str(exc)),),
+                total_rows=0,
+            )
+        return parse_roster_csv(
+            csv_content,
+            period_code=period_code,
+            settings=self._settings,
+            selected_period_only=selected_period_only,
+            first_data_row=first_data_row,
+        )
+
     def list_history(self, *, period_code: str) -> list[ImportHistory]:
         with self._session_factory() as session:
             period = self._period(session, period_code)
@@ -497,6 +536,7 @@ class UnavailableRosterImportService:
         period_code: str,
         actor_user_id: UUID | None,
         selected_period_only: bool = False,
+        filename: str = "roster.csv",
     ) -> ImportReport:
         self._raise()
         raise AssertionError("unreachable")

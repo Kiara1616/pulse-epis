@@ -54,3 +54,17 @@ class RosterImportHistoryResponse(BaseModel):
     rejected_rows: int
     created_at: datetime
     completed_at: datetime | None
+
+
+class RosterCandidateUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    cycle: str = Field(min_length=1, max_length=32)
+    email: str = Field(min_length=3, max_length=320)
+    student_code: str = Field(min_length=3, max_length=64)
+    school: str = Field(min_length=1, max_length=150)
+    study_plan: str = Field(min_length=1, max_length=120)
+    student_status: Literal["ACTIVE", "INACTIVE", "GRADUATED"] = "ACTIVE"
+
+
+class RosterCandidateExclusion(BaseModel):
+    reason: str = Field(min_length=5, max_length=500)

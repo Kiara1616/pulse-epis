@@ -4,14 +4,23 @@ import io
 import re
 
 from ..core.config import Settings
-from .parser import OPTIONAL_COLUMNS, ROSTER_COLUMNS, normalize_label, normalize_text
+from .parser import (
+    OPTIONAL_COLUMNS,
+    ROSTER_COLUMNS,
+    normalize_label,
+    normalize_text,
+    prepare_roster_upload,
+)
 
 
-def preview_periods(content: bytes, settings: Settings) -> list[dict]:
-    if len(content) > settings.roster_max_bytes:
-        raise ValueError("El CSV supera el tamaño permitido.")
+def preview_periods(
+    content: bytes, settings: Settings, filename: str = "roster.csv"
+) -> list[dict]:
     try:
-        text = content.decode("utf-8-sig")
+        prepared, _ = prepare_roster_upload(
+            content, filename=filename, settings=settings
+        )
+        text = prepared.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise ValueError("Guarda el CSV con codificación UTF-8.") from exc
     reader = csv.DictReader(io.StringIO(text, newline=""), strict=True)
@@ -25,8 +34,8 @@ def preview_periods(content: bytes, settings: Settings) -> list[dict]:
         or not set(normalized).issubset(allowed)
     ):
         raise ValueError(
-            "El CSV debe incluir: code, email, school, plan, cycle, status y period. "
-            "La columna name es opcional."
+            "El archivo debe incluir: code, email, school, plan, cycle, status y period. "
+            "La columna name es opcional. En Excel, usa una sola hoja visible con esos encabezados."
         )
     period_header = headers[normalized.index("period")]
     counts: dict[str, int] = {}

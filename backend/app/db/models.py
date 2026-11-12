@@ -190,6 +190,62 @@ class RosterImportRejection(Base):
     message: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
+class RosterCandidate(Base):
+    """Unmatched roster row retained for period-scoped admin reconciliation."""
+
+    __tablename__ = "roster_candidates"
+    __table_args__ = (
+        UniqueConstraint(
+            "period_id",
+            "source_sha256",
+            "source_row",
+            name="uq_roster_candidate_source_row",
+        ),
+        CheckConstraint(
+            "state IN ('PENDING', 'RESOLVED', 'EXCLUDED')",
+            name="ck_roster_candidate_state",
+        ),
+        CheckConstraint(
+            "student_status IN ('ACTIVE', 'INACTIVE', 'GRADUATED')",
+            name="ck_roster_candidate_student_status",
+        ),
+        Index("ix_roster_candidates_period_state", "period_id", "state"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    period_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academic_periods.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    source_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_row: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    source_cycle: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    cycle: Mapped[str] = mapped_column(String(32), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    student_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    school: Mapped[str] = mapped_column(String(150), nullable=False, default="EPIS")
+    study_plan: Mapped[str] = mapped_column(String(120), nullable=False)
+    student_status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
+    issue_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
+    resolution_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_by: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_by: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
 class EtlRun(Base):
     """Traceability record for one deterministic BI publication attempt."""
 

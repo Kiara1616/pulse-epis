@@ -221,7 +221,7 @@ function RadarAdmin() {
 
       <div role="note" className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
         <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-blue-700" />
-        <p>Agrega un feed público autorizado o registra una fuente manual. Pulse detecta candidatos, pero cada oportunidad se revisa antes de mostrarse a los estudiantes.</p>
+        <p>Registra feeds JSON o RSS públicos autorizados. Pulse los consulta semanalmente y también permite sincronizarlos ahora; los candidatos detectados esperan revisión y aprobación antes de mostrarse a los estudiantes.</p>
       </div>
 
       <details className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -236,7 +236,7 @@ function RadarAdmin() {
         </form>
       </details>
 
-      {data && data.sources.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-slate-950">Fuentes conectadas</h2><div className="mt-4 space-y-3">{data.sources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><div><p className="font-semibold text-slate-900">{source.provider} · {source.format}</p><p className="text-xs text-slate-600">{source.last_sync_summary ?? "Aún no sincronizada"}</p></div><button type="button" disabled={working} onClick={() => void runAction(() => learningApi.syncSource(source.id), `Sincronización completada: ${source.provider}.`)} className="rounded-lg border border-blue-300 px-3 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">Sincronizar</button></div>)}</div></section>}
+      {data && data.sources.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-slate-950">Fuentes conectadas</h2><p className="mt-1 text-sm text-slate-600">Revisión automática semanal; también puedes solicitar una consulta inmediata.</p><div className="mt-4 space-y-3">{data.sources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><div><p className="font-semibold text-slate-900">{source.provider} · {source.format}</p><p className="text-xs text-slate-600">{source.last_sync_summary ?? "Aún no sincronizada"}</p></div><button type="button" disabled={working} onClick={() => void runAction(async () => { const result = await learningApi.syncSource(source.id); return result; }, `Sincronización registrada para ${source.provider}.`)} className="rounded-lg border border-blue-300 px-3 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">Sincronizar</button></div>)}</div></section>}
 
       {error && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">

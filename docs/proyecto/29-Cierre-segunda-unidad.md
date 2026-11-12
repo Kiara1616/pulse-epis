@@ -1,12 +1,12 @@
 # Cierre de requisitos de la segunda unidad
 
-**Fecha de revisión:** 07/11/2026
+**Fecha de revisión:** 12/11/2026
 **Plataforma elegida:** Google Cloud Platform
 **Regla de cierre:** una configuración local no equivale a un recurso desplegado. Los estados distinguen implementación, validación local y evidencia cloud.
 
 El proyecto separado [BigQuery Sandbox](../../infra/bigquery/README.md) demuestra sin facturación dos tablas de hechos con datos sintéticos y una consulta por fecha de corte. No está conectado a la base de Render y no sustituye Cloud SQL, Cloud Storage ni el ETL programado de esta arquitectura objetivo.
 
-El workflow diario a las 03:00 de Lima (08:00 UTC; la ejecución puede retrasarse en GitHub Actions) `.github/workflows/etl-scheduled.yml` ahora llama por HTTPS a un endpoint de ETL dentro del servicio Render. GitHub conserva solo la credencial del programador, y el proceso de Pulse accede a PostgreSQL por la red interna de Render. La corrida se marca `SKIPPED` cuando no existe un periodo abierto único o un padrón aplicado. La primera ejecución programada con datos institucionales sigue pendiente hasta importar y confirmar el padrón.
+El workflow diario a las 03:00 de Lima (08:00 UTC; GitHub Actions puede iniciar con retraso) `.github/workflows/etl-scheduled.yml` llama por HTTPS a un endpoint ETL de Render. GitHub conserva la credencial del programador y Pulse accede a PostgreSQL por la red privada de Render. La corrida se marca `SKIPPED` cuando no existe un periodo abierto único o un padrón aplicado. El workflow semanal `.github/workflows/course-radar-scheduled.yml` consulta feeds JSON/RSS públicos que el administrador haya autorizado. Si no hay fuentes activas, termina como `SKIPPED`; no extrae HTML ni publica cursos automáticamente. La primera ejecución ETL con datos institucionales requiere cargar y confirmar el padrón en Pulse.
 
 ```mermaid
 flowchart LR
@@ -22,22 +22,26 @@ flowchart LR
 
 | Requisito | Implementación disponible | Evidencia local | Brecha para cierre total | Estado |
 |---|---|---|---|---|
-| Arquitectura Data Warehouse o Data Lake | Cloud SQL PostgreSQL como DW, Cloud Storage como Data Lake, snapshots y manifiestos particionados | Mermaid, SVG, modelo de hechos y exportación JSONL probada | Captura de buckets, Cloud SQL y una partición creada en GCP | Completo local; cloud pendiente |
-| ETL automatizado en nube | Imagen ETL, Cloud Run Job, Cloud Scheduler, cuenta de servicio, idempotencia, calidad y alerta | Pruebas backend y ejecución ETL local | Dos corridas programadas en GCP y una corrida fallida controlada con logs | Completo local; cloud pendiente |
+| Arquitectura Data Warehouse o Data Lake | PostgreSQL de Render como warehouse operacional/analítico lógico; GCP Cloud SQL y Cloud Storage como diseño futuro de DW/Data Lake | Mermaid, SVG, modelo de hechos y exportación JSONL probada | Captura de buckets, Cloud SQL y una partición creada en GCP | Diseño local listo; GCP no desplegado |
+| ETL automatizado en nube | ETL diario por GitHub Actions dentro de Render; futuro Cloud Run Job/Cloud Scheduler en Terraform; Radar con workflow semanal para feeds autorizados | API, workflows versionados y suites locales | Importación oficial en Render, corte institucional y evidencia de corridas programadas; feed real autorizado para probar Radar | Implementación local lista; ejecución con datos reales pendiente |
 | Infraestructura como código y costos | Terraform para Cloud Run, Cloud SQL, Storage, IAM, secretos, monitoreo, presupuesto y Scheduler | `terraform validate` correcto; USD 11.36 demo y USD 155.69 piloto | `terraform plan`, `apply`, Infracost ligado al plan y factura/Billing Export del piloto | Completo local; cloud pendiente |
 | Diagramas de proceso e infraestructura | Data Warehouse/Data Lake, ETL periódico e infraestructura GCP | Tres fuentes Mermaid y tres SVG renderizados | Comparación visual contra recursos desplegados | Completo local |
-| Seis reportes con tiempo | Panorama, Evolución, Certificaciones, Habilidades, Cohortes y Calidad | Rutas, API día/mes/año, filtros, CSV y prueba E2E aprobada | URL HTTPS cloud y prueba E2E contra el ambiente desplegado | Completo local; cloud pendiente |
+| Seis reportes con tiempo | Panorama, Evolución, Certificaciones, Habilidades, Cohortes y Calidad | Rutas, API día/mes/año y filtros temporales | Importación oficial, publicación de Gold y prueba contra esos datos en Render | Implementado local; corte institucional pendiente |
 
 ## Evidencia técnica vigente
 
-- Backend: 91 pruebas aprobadas y 1 omitida por dependencia externa de PostgreSQL.
+- Backend: 108 pruebas aprobadas y 1 omitida por dependencia externa de PostgreSQL.
 - Frontend: lint y compilación de producción correctos.
-- Navegador: prueba E2E de los seis reportes aprobada.
+- Navegador: 60 pruebas E2E aprobadas, incluidos los recorridos de padrón, Radar y roles.
 - Terraform: configuración válida con Google Provider 7.46.2.
+- Migración: Render ejecuta `alembic upgrade head` antes de iniciar la aplicación; la migración `0014_roster_candidates` se aplicará al desplegar el commit que la contiene.
+- Repositorio: los cambios funcionales están en la rama `codex/group-course-providers` y en el PR #114; Render sigue configurado para desplegar `main`, por lo que todavía no es evidencia de producción.
 - Costos: escenario demo USD 11.36/mes y piloto USD 155.69/mes, antes de impuestos y egreso no previsto.
 - Aplicación local: frontend en `http://127.0.0.1:3000` y API en `http://127.0.0.1:8000`.
 
-## Plan de cierre
+## Plan de cierre de nube
+
+El cierre funcional previo a la infraestructura se detalla en [las siete fases del MVP](31-Fases-MVP-Pulse-EPIS.md). No se debe llamar a `terraform apply` ni habilitar recursos de pago como parte del cierre local.
 
 ### Fase 1. Preparar GCP
 

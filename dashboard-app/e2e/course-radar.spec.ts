@@ -127,7 +127,7 @@ test("admin revisa un curso y publica una oportunidad persistida", async ({ page
   await expect(page.getByRole("heading", { name: "Radar de cursos" })).toBeVisible();
   await page.getByRole("button", { name: /Universidad de ejemplo/ }).click();
   await expect(page.getByRole("article").getByText("Por revisar", { exact: true })).toBeVisible();
-  await expect(page.getByText("Agrega un feed público autorizado", { exact: false })).toBeVisible();
+  await expect(page.getByText("Registra feeds JSON o RSS públicos autorizados", { exact: false })).toBeVisible();
 
   await page.getByRole("button", { name: "Iniciar revisión" }).click();
   await expect(page.getByText("Revisión de contenido", { exact: true })).toBeVisible();

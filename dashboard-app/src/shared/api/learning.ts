@@ -140,7 +140,7 @@ export const learningApi = {
       body: JSON.stringify(course),
     }),
   createSource: (source: CatalogSourceInput) => apiFetch<LearningCatalogSource>("/learning/admin/sources", { method: "POST", body: JSON.stringify(source) }),
-  syncSource: (id: string) => apiFetch<{ created: number; skipped: number; summary: string }>(`/learning/admin/sources/${id}/sync`, { method: "POST" }),
+  syncSource: (id: string) => apiFetch<{ created: number; updated: number; skipped: number; summary: string }>(`/learning/admin/sources/${id}/sync`, { method: "POST" }),
   updateCourse: (id: string, course: CourseInput) =>
     apiFetch<LearningCourse>(`/learning/courses/${id}`, {
       method: "PUT",

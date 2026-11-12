@@ -124,7 +124,7 @@ test.describe("navegación por rol", () => {
     await expect(page.getByRole("cell", { name: "Publicada", exact: true })).toBeVisible();
   });
 
-  test("padrón permite registrar periodos y cargar un CSV de varios periodos por separado", async ({ page }) => {
+  test("padrón permite registrar periodos y cargar un Excel o CSV de varios periodos por separado", async ({ page }) => {
     await mockApi(page, "ADMIN");
     const periods: Array<{code: string; starts_on: string; ends_on: string}> = [];
     await page.route("**/api/v1/padron/periods", async (route) => {
@@ -148,7 +148,7 @@ test.describe("navegación por rol", () => {
     });
     await page.goto("/admin/estudiantes");
     await expect(page.getByText("No hay periodos registrados.", { exact: false })).toBeVisible();
-    await page.getByLabel("CSV del padrón").setInputFiles({ name: "varios.csv", mimeType: "text/csv", buffer: Buffer.from("code,email,school,plan,cycle,status,period\n") });
+    await page.getByLabel("Archivo del padrón").setInputFiles({ name: "varios.csv", mimeType: "text/csv", buffer: Buffer.from("code,email,school,plan,cycle,status,period\n") });
     await page.getByRole("button", { name: "2025-II · 2 filas · Registrar" }).click();
     await page.getByLabel("Inicio del periodo").fill("2025-08-01");
     await page.getByLabel("Fin del periodo").fill("2025-12-31");
@@ -161,6 +161,49 @@ test.describe("navegación por rol", () => {
     await expect(page.getByRole("button", { name: "Importar", exact: true })).toBeEnabled();
     await page.getByRole("button", { name: "2025-I · 1 filas · Registrar" }).click();
     await expect(page.getByLabel("Código del periodo")).toHaveValue("2025-I");
+  });
+
+  test("el administrador completa un pendiente y lo confirma en el padrón del periodo", async ({ page }) => {
+    await mockApi(page, "ADMIN");
+    const period = { code: "2026-II", starts_on: "2026-07-15", ends_on: "2026-12-23" };
+    let candidate: Record<string, unknown> | null = null;
+    await page.route("**/api/v1/padron/periods", (route) => route.fulfill({ json: [period] }));
+    await page.route("**/api/v1/padron/imports?**", (route) => route.fulfill({ json: [] }));
+    await page.route("**/api/v1/padron/candidates?**", (route) => route.fulfill({
+      json: { period_code: "2026-II", total: candidate ? 1 : 0, items: candidate ? [candidate] : [] },
+    }));
+    await page.route("**/api/v1/padron/candidates/import?**", (route) => {
+      candidate = {
+        id: "candidate-1", period_code: "2026-II", source_row: 10,
+        source_name: "Pendiente de prueba", source_cycle: "V", name: "Pendiente de prueba",
+        cycle: "V", email: null, student_code: null, school: "EPIS", study_plan: "2026-II",
+        student_status: "ACTIVE", issue_code: "MISSING_EMAIL", state: "PENDING", resolution_reason: null,
+      };
+      return route.fulfill({ json: { period_code: "2026-II", total_rows: 1, added: 1, already_registered: 0 } });
+    });
+    await page.route("**/api/v1/padron/candidates/candidate-1", async (route) => {
+      if (route.request().method() === "PUT") candidate = { ...(candidate ?? {}), ...route.request().postDataJSON() };
+      await route.fulfill({ json: candidate });
+    });
+    await page.route("**/api/v1/padron/candidates/candidate-1/reconcile", (route) => {
+      candidate = { ...(candidate ?? {}), state: "RESOLVED", resolution_reason: "Confirmado por el administrador." };
+      return route.fulfill({ json: { candidate_id: "candidate-1", period_code: "2026-II", state: "RESOLVED" } });
+    });
+
+    await page.goto("/admin/estudiantes");
+    await page.getByLabel("Excel o CSV de conciliación").setInputFiles({
+      name: "pendientes.csv", mimeType: "text/csv",
+      buffer: Buffer.from("source_row,name,period,cycle,issue_code\n10,Estudiante de prueba,2026-II,V,MISSING_EMAIL\n"),
+    });
+    await page.getByRole("button", { name: "Cargar pendientes" }).click();
+    const card = page.getByRole("article");
+    await expect(card.getByText("Pendiente de prueba", { exact: true })).toBeVisible();
+    await card.getByLabel("Correo institucional").fill("zz2023077099@virtual.upt.pe");
+    await card.getByLabel("Código").fill("2023077099");
+    await card.getByRole("button", { name: "Guardar correcciones" }).click();
+    await expect(page.getByRole("status")).toContainText("Correcciones guardadas");
+    await card.getByRole("button", { name: "Confirmar e incorporar" }).click();
+    await expect(page.getByText("Incorporado", { exact: true })).toBeVisible();
   });
 
   test("el estudiante entra a su espacio, filtra el historial y tiene una sola salida", async ({ page }) => {

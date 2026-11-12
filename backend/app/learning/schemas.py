@@ -122,6 +122,7 @@ class CatalogSourceOutput(Input):
 
 class SyncOutput(Input):
     created: int
+    updated: int = 0
     skipped: int
     summary: str
 

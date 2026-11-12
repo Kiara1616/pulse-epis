@@ -26,7 +26,7 @@ from .api.routes.health import router as health_router
 from .api.routes.meta import router as meta_router
 from .api.routes.roster import router as roster_router
 from .api.routes.etl import router as etl_router, scheduler_router as etl_scheduler_router
-from .api.routes.learning import router as learning_router
+from .api.routes.learning import router as learning_router, scheduler_router as learning_scheduler_router
 from .analytics.service import (
     AnalyticsService,
     AnalyticsServiceProtocol,
@@ -172,6 +172,7 @@ def create_app(
     app.include_router(etl_router, prefix=settings.api_prefix)
     app.include_router(etl_scheduler_router, prefix=settings.api_prefix)
     app.include_router(learning_router, prefix=settings.api_prefix)
+    app.include_router(learning_scheduler_router, prefix=settings.api_prefix)
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(roster_router, prefix=settings.api_prefix)
     app.include_router(certifications_router, prefix=settings.api_prefix)
