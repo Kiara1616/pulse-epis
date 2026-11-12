@@ -150,12 +150,20 @@ Durante la demostración, cambia **Periodo** y **Fecha de corte**. La fecha perm
 6. Mostrar la tabla de costos y aclarar: `plan` no cobra; `apply` sí crea recursos.
 7. Cerrar indicando que Render ejecuta el MVP actual y GCP está listo para activarse cuando haya presupuesto institucional.
 
-## 8. Próximos pasos verificables
+## 8. Cierre operativo pendiente
 
-- Integrar la rama revisada en `main`, desplegarla a Render y confirmar la migración 0014.
-- Importar el padrón 2026-II desde la interfaz, conciliar sus pendientes con la fuente institucional y publicar un primer corte.
-- Registrar feeds autorizados para Radar o mantener la carga manual revisada; comprobar que cada oportunidad publicada se limita a sus ciclos.
-- Hacer el recorrido Admin → estudiante → validador y comprobar los seis reportes con un corte real.
-- Tratar GCP/AWS e Infracost con una aprobación de presupuesto aparte. La estimación de costos es un escenario referencial archivado, no una cotización vigente ni un gasto ya realizado.
+Los PR #114, #115, #117, #118 y #119 están integrados en `main`; sus checks de CI pasaron. Render aún reporta como último despliegue el commit `9f48691`; falta verificar que la integración actualizada (incluidas las migraciones 0015 y el conector DataCamp) se haya desplegado. El servicio seguía respondiendo `/ready` con HTTP 200 durante esta revisión. No se han aprovisionado recursos AWS/GCP ni habilitado facturación.
+
+La carga del padrón **sí se aplicó en producción**: los logs de Render del 12/11/2026 registran dos importaciones para `2026-II` con 309 filas aceptadas y 0 rechazadas. El libro disponible contiene además 19 filas incompletas, que no se incluyen en esas matrículas. Como referencia, el reporte OPLA citado en la guía de fuentes informa 324 matriculados al 28/09/2026. Antes de afirmar cobertura completa, administración debe conciliar la diferencia de 15 personas respecto de las 309 importadas y verificar individualmente si alguna de las 19 filas incompletas pertenece al padrón vigente. No se deben agregar filas por semejanza de nombres ni asumir que las 19 explican la diferencia.
+
+Para completar la aceptación institucional, todavía se requiere:
+
+1. Confirmar el despliegue de la versión actual de `main` en Render y que las migraciones finalicen sin error.
+2. Ejecutar una nueva corrida ETL después de la importación del padrón; la última corrida observada (`APPLIED`, `2026-II`, corte `2026-11-11`) se ejecutó antes de esas dos cargas. Verificar el conteo de matrículas en el historial y contrastar los seis reportes con ese corte. Cero certificaciones describe una fuente distinta del padrón y no prueba que haya cero estudiantes.
+3. Conciliar las 19 filas incompletas con la fuente oficial EPIS y el padrón validado. Completar datos o excluir con motivo; no conceder acceso hasta confirmar correo institucional y código.
+4. Completar el recorrido Admin → estudiante → validador con las cuentas de prueba aprobadas y una certificación de demostración; verificar audiencia por ciclo, cupos y trazabilidad.
+5. Activar Radar con una fuente autorizada. El workflow semanal no tiene feeds activos y termina `SKIPPED`. El conector oficial DataCamp ya está en `main`, pero requiere una clave organizacional y verificar el plan/costo antes de configurarla; Cisco y otros proveedores requieren API/feed autorizado o carga manual. Pulse no extrae HTML sin autorización.
+
+La infraestructura Terraform y sus estimaciones son material de exposición y revisión. Desplegar AWS/GCP o ejecutar Infracost con un plan real queda pendiente de presupuesto y aprobación; un `terraform plan` no crea recursos, pero `apply` sí puede generar cargos.
 
 Para detalles completos, consulta la [guía de presentación U2](docs/proyecto/28-Guia-presentacion-U2.md), las [siete fases de cierre del MVP](docs/proyecto/31-Fases-MVP-Pulse-EPIS.md) y el [cierre de segunda unidad](docs/proyecto/29-Cierre-segunda-unidad.md).
