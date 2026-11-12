@@ -8,14 +8,14 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 
 **Regla de presentación:** los datos de referencia se identifican como demostrativos; los datos publicados proceden del padrón y de certificaciones validadas.
 
-**Estado verificado el 12/11/2026:** el commit `9f48691` está desplegado en Render y `/ready` responde HTTP 200. La prueba semanal del Radar terminó `SKIPPED` porque no hay feeds activos. La prueba diaria del ETL terminó `APPLIED` para `2026-II` (corte `2026-11-11`) y reportó cero filas de certificación; el conteo de matrículas aún debe contrastarse en la pantalla de Padrón.
+**Estado verificado el 12/11/2026:** el commit `bd7de97` está desplegado en Render, la migración `0015` terminó y `/ready` responde HTTP 200. El ETL productivo `43237986208` terminó `APPLIED` para `2026-II` (corte `2026-11-11`): reporta 310 matrículas activas y cero filas de certificación. Los registros de importación reportan 309 filas aceptadas y cero rechazadas; la diferencia de un registro debe conciliarse antes de afirmar que el padrón está completamente reconciliado. El Radar semanal terminó `SKIPPED` porque no hay feeds activos.
 
 ## 1. Cumplimiento de requisitos
 
 | Requisito de la unidad | Evidencia disponible | Estado real |
 |---|---|---|
 | Arquitectura Data Warehouse / Data Lake | [Diseño DW](docs/proyecto/26-Arquitectura-Data-Warehouse.md), [diagrama](docs/recursos/diagramas/data-warehouse.svg) | Warehouse lógico y ETL funcionan sobre PostgreSQL privado en Render. El Data Lake GCP está definido en Terraform, no desplegado. |
-| ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [workflow semanal Radar](.github/workflows/course-radar-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | Workflows conectados y probados en Render; ETL aplicado en `2026-II`. Falta contrastar matrícula y reportes; Radar necesita al menos un feed autorizado activo. |
+| ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [workflow semanal Radar](.github/workflows/course-radar-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | ETL productivo aplicado para `2026-II`: 310 matrículas activas y cero certificaciones al corte. Hay una diferencia por conciliar entre las 309 filas aceptadas en importación y los 310 hechos de matrícula. Radar necesita un feed autorizado activo. |
 | IaC y costos | [Terraform](infra/environments/demo), [estimación](infra/costs/estimate.md), [workflow](.github/workflows/infrastructure.yml) | Terraform valida; `apply`, Cloud Billing e Infracost oficial siguen pendientes para evitar gasto no autorizado. |
 | Diagramas de procesos e infraestructura | [ETL](docs/recursos/diagramas/etl-periodico.svg), [GCP](docs/recursos/diagramas/infraestructura-gcp.svg) | Listos en Mermaid y SVG para exposición. |
 | Seis reportes y filtros temporales | [Rutas de reportes](dashboard-app/src/app/reportes) | Implementados con periodo académico, fecha de corte, cohorte, ciclo y proveedor. |
@@ -56,7 +56,7 @@ El flujo de operación es:
 6. Los seis reportes leen únicamente el snapshot Gold publicado.
 7. Si la fuente no cambia, la corrida es idempotente; si falla calidad, se conserva el último corte válido.
 
-El libro 2026-II revisado contiene **309 filas completas** y **19 pendientes de conciliación**. Esos datos no están versionados en Git y el hecho de que el archivo exista localmente no significa que ya esté cargado en Render. La importación productiva se confirma desde la sesión de administración de Pulse.
+El libro 2026-II revisado contiene **309 filas completas** y **19 pendientes de conciliación**. Render registró la importación con 309 aceptadas y 0 rechazadas. El ETL posterior encontró 310 matrículas activas; esta diferencia de un registro sigue pendiente de conciliación. Los datos nominales no están versionados en Git.
 
 ![Proceso ETL](docs/recursos/diagramas/etl-periodico.svg)
 
@@ -152,17 +152,16 @@ Durante la demostración, cambia **Periodo** y **Fecha de corte**. La fecha perm
 
 ## 8. Cierre operativo pendiente
 
-Los PR #114, #115, #117, #118 y #119 están integrados en `main`; sus checks de CI pasaron. Render aún reporta como último despliegue el commit `9f48691`; falta verificar que la integración actualizada (incluidas las migraciones 0015 y el conector DataCamp) se haya desplegado. El servicio seguía respondiendo `/ready` con HTTP 200 durante esta revisión. No se han aprovisionado recursos AWS/GCP ni habilitado facturación.
+Los PR #114, #115, #116, #117, #118 y #119 están integrados en `main`; sus checks de CI pasaron. Render desplegó `bd7de97` como `dep-dbqsq6tckfvc73dclaq0`; la migración 0015 terminó y `/ready` responde HTTP 200. No se han aprovisionado recursos AWS/GCP ni habilitado facturación.
 
-La carga del padrón **sí se aplicó en producción**: los logs de Render del 12/11/2026 registran dos importaciones para `2026-II` con 309 filas aceptadas y 0 rechazadas. El libro disponible contiene además 19 filas incompletas, que no se incluyen en esas matrículas. Como referencia, el reporte OPLA citado en la guía de fuentes informa 324 matriculados al 28/09/2026. Antes de afirmar cobertura completa, administración debe conciliar la diferencia de 15 personas respecto de las 309 importadas y verificar individualmente si alguna de las 19 filas incompletas pertenece al padrón vigente. No se deben agregar filas por semejanza de nombres ni asumir que las 19 explican la diferencia.
+La carga del padrón **sí se aplicó en producción**: los registros de Render del 12/11/2026 muestran dos importaciones `APPLIED` para `2026-II`, cada una con 309 filas aceptadas y 0 rechazadas. El libro contiene además 19 filas incompletas, que no se incluyen en esas matrículas. El ETL posterior (#43237986208) informa 310 hechos de matrícula activa, una diferencia de un registro respecto del conteo importado que administración debe conciliar. El reporte OPLA citado en la guía informa 324 matriculados al 28/09/2026; es una referencia de otra fecha y no debe compararse como si fuera el mismo corte. Antes de afirmar cobertura completa, verificar la población vigente y las 19 filas incompletas con una fuente institucional. No agregar filas por semejanza de nombres ni asumir que las 19 explican la diferencia.
 
 Para completar la aceptación institucional, todavía se requiere:
 
-1. Confirmar el despliegue de la versión actual de `main` en Render y que las migraciones finalicen sin error.
-2. Ejecutar una nueva corrida ETL después de la importación del padrón; la última corrida observada (`APPLIED`, `2026-II`, corte `2026-11-11`) se ejecutó antes de esas dos cargas. Verificar el conteo de matrículas en el historial y contrastar los seis reportes con ese corte. Cero certificaciones describe una fuente distinta del padrón y no prueba que haya cero estudiantes.
-3. Conciliar las 19 filas incompletas con la fuente oficial EPIS y el padrón validado. Completar datos o excluir con motivo; no conceder acceso hasta confirmar correo institucional y código.
-4. Completar el recorrido Admin → estudiante → validador con las cuentas de prueba aprobadas y una certificación de demostración; verificar audiencia por ciclo, cupos y trazabilidad.
-5. Activar Radar con una fuente autorizada. El workflow semanal no tiene feeds activos y termina `SKIPPED`. El conector oficial DataCamp ya está en `main`, pero requiere una clave organizacional y verificar el plan/costo antes de configurarla; Cisco y otros proveedores requieren API/feed autorizado o carga manual. Pulse no extrae HTML sin autorización.
+1. Conciliar la diferencia entre 309 filas aceptadas y los 310 hechos activos publicados por el ETL; revisar también las 19 filas incompletas contra una fuente institucional. No conceder acceso sin confirmar correo y código.
+2. Iniciar sesión con las tres cuentas autorizadas y recorrer Admin → estudiante → validador con una certificación de prueba; verificar audiencia por ciclo, cupos y trazabilidad.
+3. Abrir los seis reportes en producción y confirmar filtros, datos de fuente institucional, corte `2026-11-11` y totales esperados. El ETL reporta cero certificaciones, por lo que el recorrido de certificación validada debe generar evidencia de prueba antes de esperar indicadores de certificaciones.
+4. Activar Radar con una fuente autorizada. El workflow semanal no tiene feeds activos y termina `SKIPPED`. El conector oficial DataCamp requiere una clave organizacional y verificar el plan/costo; Cisco y otros proveedores requieren API/feed autorizado o carga manual. Pulse no extrae HTML sin autorización.
 
 La infraestructura Terraform y sus estimaciones son material de exposición y revisión. Desplegar AWS/GCP o ejecutar Infracost con un plan real queda pendiente de presupuesto y aprobación; un `terraform plan` no crea recursos, pero `apply` sí puede generar cargos.
 
