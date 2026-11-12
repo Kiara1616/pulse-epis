@@ -143,7 +143,7 @@ def test_student_certification_is_pending_owned_and_deduplicated(tmp_path):
 
 
 def test_dates_and_files_are_validated_and_private_access_expires_by_signature(tmp_path):
-    service, _, _, actor_id, _, engine = make_service(tmp_path)
+    service, session_factory, settings, actor_id, _, engine = make_service(tmp_path)
     created = service.create_certification(actor_id, draft())
 
     with pytest.raises(CertificationInvalid):
@@ -166,10 +166,22 @@ def test_dates_and_files_are_validated_and_private_access_expires_by_signature(t
     assert evidence.evidence_type == "FILE"
     assert evidence.byte_size == len(b"%PDF-1.7\nsynthetic evidence")
     assert evidence.retention_until.year >= 2031
+    assert not Path(settings.evidence_storage_path).exists()
     access = service.create_evidence_access(actor_id, created.id, evidence.id)
     download = service.download_evidence(evidence.id, access.token)
-    assert download.path is not None
-    assert download.path.read_bytes() == b"%PDF-1.7\nsynthetic evidence"
+    assert download.path is None
+    assert download.content == b"%PDF-1.7\nsynthetic evidence"
+    restarted_service = CertificationService(session_factory, settings)
+    restarted_download = restarted_service.download_evidence(evidence.id, access.token)
+    assert restarted_download.content == b"%PDF-1.7\nsynthetic evidence"
+    with pytest.raises(CertificationInvalid):
+        service.add_file_evidence(
+            actor_id,
+            created.id,
+            filename="large.pdf",
+            content_type="application/pdf",
+            content=b"%PDF-" + (b"x" * settings.evidence_max_bytes),
+        )
 
     with pytest.raises(EvidenceAccessDenied):
         service.download_evidence(evidence.id, access.token + "tampered")
@@ -304,6 +316,8 @@ def test_student_certification_and_temporary_download_api(tmp_path):
         assert download.status_code == 200
         assert download.content.startswith(b"%PDF-1.7")
         assert download.headers["content-disposition"].startswith("inline")
+        assert "filename*=UTF-8''certificate.pdf" in download.headers["content-disposition"]
+        assert download.headers["cache-control"] == "private, no-store"
         image_upload = client.post(
             f"/api/v1/certifications/{certification_id}/evidence",
             files={"file": ("certificate.png", b"\x89PNG\r\n\x1a\nsynthetic image", "image/png")},

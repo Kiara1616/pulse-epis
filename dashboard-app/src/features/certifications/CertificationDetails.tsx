@@ -250,7 +250,7 @@ export function CertificationDetails({
             })}
           </div>
           <label htmlFor="certification-detail-evidence" className="block text-sm font-medium">
-            Adjuntar evidencia adicional (PDF, PNG o JPEG; máximo 10 MB)
+            Adjuntar evidencia adicional (PDF, PNG o JPEG; máximo 2 MB)
             <input
               id="certification-detail-evidence"
               disabled={busy}
