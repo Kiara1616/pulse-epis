@@ -6,7 +6,7 @@
 
 | Dato | Cómo ingresa | Responsable | Frecuencia | Comprobación y destino | Estado |
 |---|---|---|---|---|---|
-| Padrón EPIS, periodo, ciclo, código, nombre, correo y estado | El administrador carga Excel `.xlsx` o CSV desde `/admin/estudiantes`; Pulse previsualiza el periodo y lee solo la hoja visible con encabezados válidos | Administración EPIS | Cada padrón oficial confirmado | Formato, duplicados, dominio, estado y periodo; tablas de estudiantes y matrículas | Importación XLSX/CSV y conciliación implementadas en la rama local. El libro 2026-II tiene 309 filas completas y 19 pendientes; no asumir que ya fue importado en Render. |
+| Padrón EPIS, periodo, ciclo, código, nombre, correo y estado | El administrador carga Excel `.xlsx` o CSV desde `/admin/estudiantes`; Pulse previsualiza el periodo y lee solo la hoja visible con encabezados válidos | Administración EPIS | Cada padrón oficial confirmado | Formato, duplicados, dominio, estado y periodo; tablas de estudiantes y matrículas | Render registró el 12/11/2026 dos cargas `APPLIED` de 309 filas aceptadas y 0 rechazadas. Las 19 filas incompletas del libro siguen fuera de esas matrículas y requieren conciliación. |
 | Certificación y evidencia | El estudiante autenticado declara la credencial y adjunta archivo o URL | Estudiante | Al obtener una credencial | Fechas, emisor, duplicados y vínculo con su propia cuenta; tablas operativas de certificaciones y evidencias | Implementado |
 | Decisión de validación | El validador o administrador revisa evidencia y registra aprobación, observación o rechazo | Validador/administrador | Por solicitud | Historial con actor y fecha; solo aprobaciones elegibles entran al KPI | Implementado |
 | Oferta de cursos y talleres | El administrador revisa el curso, asigna audiencia/ciclos y publica; puede crear un taller asociado | Administración EPIS | Al cambiar la oferta | Catálogo, estado, proveedor, URL, audiencia y solicitudes con cupo | Flujo implementado |
@@ -21,9 +21,9 @@ La [página pública de alumnos de Ingeniería de Sistemas](https://eped.upt.edu
 
 Como referencia de cobertura, el PDF oficial de **2026-II** informa **324 matriculados en Ingeniería de Sistemas**, con fuente OPLA al **28/09/2026**. Esa cifra sirve para contrastar el número de alumnos importados, pero no prueba que los 324 tengan correo confirmado, hayan ingresado en Pulse o posean certificaciones. El tablero debe mostrar por separado: población oficial reportada, padrón importado, cuentas con acceso y certificaciones aprobadas. Una diferencia entre esos números es una brecha de datos que se investiga, no se rellena automáticamente.
 
-El flujo para 2026-II es: **(1)** administrador elige el libro y el periodo; **(2)** Pulse identifica una única hoja con las columnas `code,email,school,plan,cycle,status,period` y muestra el conteo; **(3)** importa filas completas y carga la hoja de pendientes en la bandeja; **(4)** verifica correo/código con la fuente institucional, guarda correcciones y confirma o excluye con motivo; **(5)** el ETL publica un corte. El código puede tomarse del bloque numérico del correo institucional, pero una discrepancia se revisa, nunca se adivina. Nunca se combinan dos personas por similitud de nombres.
+El flujo para 2026-II es: **(1)** administrador elige el libro y el periodo; **(2)** Pulse identifica una única hoja con las columnas `code,email,school,plan,cycle,status,period` y muestra el conteo; **(3)** importa de forma atómica las filas completas; **(4)** las filas incompletas quedan pendientes de conciliación y no crean matrículas ni accesos hasta que el administrador verifique y complete los datos; **(5)** el ETL publica un nuevo corte después de la importación. El código puede tomarse del bloque numérico del correo institucional, pero una discrepancia se revisa, nunca se adivina. Nunca se combinan dos personas por similitud de nombres.
 
-El libro actualizado de 2026-II contiene **309 filas completas** y **19 pendientes de conciliación**. Las completas incluyen correo institucional y código; las pendientes conservan su nombre/ciclo de origen, pero no se importan como cuentas hasta que administración verifique sus datos. El plan indicado para estos registros es `2026-II`. Fechas informadas: inicio de matrícula 15/07/2026, inicio de clases 17/08/2026 y entrega final de actas 23/12/2026. Tener el libro local no acredita que ya esté en Render: se requiere cargarlo desde la interfaz y obtener el resultado de importación aplicado.
+El libro actualizado de 2026-II contiene **309 filas completas** y **19 pendientes de conciliación**. Los registros completos incluyen correo institucional y código; las 19 filas incompletas no se sumaron a la importación productiva. Render registró el 12/11/2026 dos lotes con `total_rows=309`, `accepted_rows=309` y `rejected_rows=0`. El plan indicado para estos registros es `2026-II`. Fechas informadas: inicio de matrícula 15/07/2026, inicio de clases 17/08/2026 y entrega final de actas 23/12/2026. La bandeja de conciliación debe confirmarse por separado antes de incorporar cualquier registro incompleto.
 
 ## Del dato operacional al reporte
 
@@ -64,8 +64,8 @@ La [prueba BigQuery Sandbox](../../infra/bigquery/README.md) contiene **solo hec
 
 ## Datos que aún faltan para un corte institucional
 
-1. Padrón oficial importado en la base de Render para el periodo correspondiente, con correo, código, nombre, ciclo y estado conciliados.
+1. El padrón completo autorizado está importado en Render para 2026-II: 309 aceptados, 0 rechazados en los lotes registrados. Conciliar las 19 filas incompletas antes de agregarlas.
 2. Declaraciones de certificaciones y evidencias de los estudiantes, más decisiones de validación.
-3. Una corrida ETL aplicada y un responsable que apruebe publicar el corte como institucional.
+3. Ejecutar una corrida ETL posterior a la carga, comprobar el conteo de matrículas y aprobar el corte antes de presentarlo como institucional.
 
 Hasta entonces, los ejemplos y la prueba BigQuery se etiquetan como demostrativos.
