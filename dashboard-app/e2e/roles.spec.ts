@@ -244,7 +244,7 @@ test.describe("navegación por rol", () => {
     await mockApi(page, "ADMIN");
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: "Panorama de certificaciones" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Resumen ejecutivo" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Administrar" })).toBeVisible();
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Centro de administración" })).toBeVisible();
