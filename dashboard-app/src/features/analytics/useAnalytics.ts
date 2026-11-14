@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/shared/api/client";
-import { useAuth } from "@/features/access/AuthProvider";
 import type {
   AnalyticsFilters,
   AnalyticsOverview,
@@ -19,9 +18,7 @@ const emptyFilters: AnalyticsFilters = {
 };
 
 export function useAnalytics() {
-  const { authProvider } = useAuth();
-  const [dataset, setDataset] = useState<"registered" | "demo">("registered");
-  const [referenceAvailable, setReferenceAvailable] = useState(false);
+  const dataset = "registered" as const;
   const [sourceReady, setSourceReady] = useState(false);
   const initialQueryRead = useRef(false);
   const [periods, setPeriods] = useState<AnalyticsPeriod[]>([]);
@@ -42,48 +39,22 @@ export function useAnalytics() {
 
   useEffect(() => {
     let cancelled = false;
-    void apiFetch<{
-      reference_available: boolean;
-      default_dataset: "registered" | "demo";
-    }>("/indicators/config")
-      .then((configuration) => {
-        if (cancelled) return;
-        setReferenceAvailable(configuration.reference_available);
-        const queryDataset = new URLSearchParams(window.location.search).get(
-          "dataset",
-        );
-        const savedDataset = window.sessionStorage.getItem(
-          "pulse-analytics-source",
-        );
-        const validDataset = (value: string | null): value is "registered" | "demo" =>
-          value === "registered" ||
-          (value === "demo" && configuration.reference_available);
-        const selected = [queryDataset, savedDataset].find(validDataset);
-        setDataset(selected ?? configuration.default_dataset);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          const localReference = authProvider === "local";
-          setReferenceAvailable(localReference);
-          setDataset(localReference ? "demo" : "registered");
-        }
-      })
+    void apiFetch("/indicators/config")
+      .catch(() => undefined)
       .finally(() => {
         if (!cancelled) setSourceReady(true);
       });
     return () => {
       cancelled = true;
     };
-  }, [authProvider]);
+  }, []);
 
   useEffect(() => {
     if (!sourceReady) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       setLoadingPeriods(true);
-      void apiFetch<AnalyticsPeriod[]>(
-        `/indicators/periods${dataset === "demo" ? "?dataset=demo" : ""}`,
-      )
+      void apiFetch<AnalyticsPeriod[]>("/indicators/periods")
         .then((availablePeriods) => {
           if (cancelled) return;
           setPeriods(availablePeriods);
@@ -136,11 +107,10 @@ export function useAnalytics() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [reloadToken, dataset, sourceReady]);
+  }, [reloadToken, sourceReady]);
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
-    if (dataset === "demo") params.set("dataset", "demo");
     if (filters.period_code) params.set("period_code", filters.period_code);
     if (filters.cutoff_date) params.set("cutoff_date", filters.cutoff_date);
     if (filters.cohort) params.set("cohort", filters.cohort);
@@ -148,15 +118,14 @@ export function useAnalytics() {
     if (filters.issuer) params.set("issuer", filters.issuer);
     if (filters.level) params.set("level", filters.level);
     return params.toString();
-  }, [filters, dataset]);
+  }, [filters]);
 
   const optionsQuery = useMemo(() => {
     const params = new URLSearchParams();
-    if (dataset === "demo") params.set("dataset", "demo");
     if (filters.period_code) params.set("period_code", filters.period_code);
     if (filters.cutoff_date) params.set("cutoff_date", filters.cutoff_date);
     return params.toString();
-  }, [dataset, filters.period_code, filters.cutoff_date]);
+  }, [filters.period_code, filters.cutoff_date]);
 
   useEffect(() => {
     if (!filters.period_code) return;
@@ -258,16 +227,7 @@ export function useAnalytics() {
     periods,
     options,
     dataset,
-    local: authProvider === "local",
-    referenceAvailable,
     sourceReady,
-    setDataset: (value: "registered" | "demo") => {
-      if (value === "demo" && !referenceAvailable) return;
-      window.sessionStorage.setItem("pulse-analytics-source", value);
-      setData(null);
-      setFilters(emptyFilters);
-      setDataset(value);
-    },
     filters,
     setFilter,
     data,

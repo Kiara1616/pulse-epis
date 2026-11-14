@@ -734,7 +734,6 @@ export function ReportsDashboard({ initialReport = "panorama" }: { initialReport
     if (analytics.filters.cycle) params.set("cycle", analytics.filters.cycle);
     if (from) params.set("date_from", from);
     if (to) params.set("date_to", to);
-    if (analytics.dataset === "demo") params.set("dataset", "demo");
     void apiFetch<AnalyticsReport>(`/indicators/reports/${reportPaths[report]}?${params}`)
       .then((value) => {
         if (!cancelled) {
@@ -826,17 +825,6 @@ export function ReportsDashboard({ initialReport = "panorama" }: { initialReport
               onChange={(event) => setTo(event.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             />
-          </label>
-          <label className="text-xs font-semibold text-slate-600">
-            Fuente
-            <select
-              value={analytics.dataset}
-              onChange={(event) => analytics.setDataset(event.target.value as "registered" | "demo")}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-            >
-              <option value="registered">Publicados</option>
-              {analytics.referenceAvailable && <option value="demo">Demostración</option>}
-            </select>
           </label>
           <label className="text-xs font-semibold text-slate-600">
             Proveedor

@@ -3,15 +3,9 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, Database, ShieldCheck, Users } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
 import { AnalyticsFilters } from "@/features/analytics/AnalyticsFilters";
-import { AnalyticsSource } from "@/features/analytics/AnalyticsSource";
 import { useAnalytics } from "@/features/analytics/useAnalytics";
 import { AsyncState } from "@/shared/ui/AsyncState";
-import {
-  IndicatorCards,
-  InstitutionalPriorities,
-} from "@/features/admin/InstitutionalPriorities";
-import { DataQuality } from "@/features/admin/DataQuality";
-import { ReferenceStudentDirectory } from "@/features/certifications/ReferenceStudentDirectory";
+import { IndicatorCards } from "@/features/admin/InstitutionalPriorities";
 const modules = [
   {
     title: "Padrón EPIS",
@@ -67,20 +61,15 @@ function AdminContent() {
           Centro de administración
         </h1>
         <p className="mt-2 text-gray-500">
-          Revisa la cobertura, identifica prioridades del corte y consulta la
-          calidad antes de actualizar los indicadores.
+          Administra las fuentes, publicaciones y oportunidades académicas.
         </p>
       </header>
-      <AnalyticsSource
-        dataset={analytics.dataset}
-        available={analytics.referenceAvailable}
-        onChange={analytics.setDataset}
-      />
       <AnalyticsFilters
         periods={analytics.periods}
         filters={analytics.filters}
         options={analytics.options}
         onChange={analytics.setFilter}
+        variant="summary"
       />
       <AsyncState
         loading={analytics.loading}
@@ -88,17 +77,7 @@ function AdminContent() {
         empty={!data && !analytics.loading && !analytics.error}
         onRetry={analytics.retry}
       >
-        {data && (
-          <>
-            <IndicatorCards data={data} />
-            <InstitutionalPriorities data={data} />
-            <DataQuality
-              period={data.filters.period_code}
-              cutoff={data.filters.cutoff_date}
-              dataset={data.dataset}
-            />
-          </>
-        )}
+        {data && <IndicatorCards data={data} />}
       </AsyncState>
       <section
         aria-label="Gestión administrativa"
@@ -127,9 +106,6 @@ function AdminContent() {
           </Link>
         ))}
       </section>
-      {analytics.dataset === "demo" && analytics.referenceAvailable && (
-        <ReferenceStudentDirectory headingLevel="h2" />
-      )}
     </div>
   );
 }

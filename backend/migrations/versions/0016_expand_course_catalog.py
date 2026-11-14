@@ -1,4 +1,4 @@
-"""Expand the official learning catalog with multiple courses per provider and sample data."""
+"""Expand the reviewed learning catalog with multiple official provider links."""
 
 from __future__ import annotations
 
@@ -145,7 +145,7 @@ COURSES_EXPANSION = (
     {
         "title": "Oracle Cloud Infrastructure Architect Associate",
         "provider": "Oracle University",
-        "url": "https://education.oracle.com/oracle-cloud-infrastructure-architect-associate",
+        "url": "https://learn.oracle.com/ols/learning-path/become-an-oci-architect-associate/163512/162234",
         "skills": ["OCI", "Arquitectura cloud", "Redes virtuales", "Seguridad"],
         "requirements": ["OCI Foundations"],
         "cycles": ["VIII", "IX", "X"],
@@ -155,7 +155,7 @@ COURSES_EXPANSION = (
     {
         "title": "Java SE 11 Developer Complete Course",
         "provider": "Oracle University",
-        "url": "https://education.oracle.com/java-se-11-developer",
+        "url": "https://learn.oracle.com/ols/home/big-data-java-and-database-learning-subscription/42305",
         "skills": ["Java", "POO", "Concurrencia", "JVM"],
         "requirements": ["Programación básica"],
         "cycles": ["V", "VI", "VII", "VIII", "IX", "X"],
@@ -163,14 +163,14 @@ COURSES_EXPANSION = (
         "relevance": "Catálogo oficial: formación completa oficial para la credencial Java SE 11 Developer.",
     },
     {
-        "title": "Oracle Autonomous Database Cloud Specialist",
+        "title": "Oracle AI Cloud Database Services Professional",
         "provider": "Oracle University",
-        "url": "https://education.oracle.com/oracle-autonomous-database-specialist",
-        "skills": ["Oracle DB", "Autonomous Database", "SQL", "Administración cloud"],
+        "url": "https://learn.oracle.com/ols/learning-path/become-an-oracle-ai-cloud-database-services-professional-2025/146553/148509",
+        "skills": ["Oracle AI Database", "Servicios cloud", "SQL", "Administración cloud"],
         "requirements": ["Fundamentos de SQL y bases de datos relacionales"],
         "cycles": ["VII", "VIII", "IX", "X"],
         "interests": ["Bases de datos", "Computación en la nube"],
-        "relevance": "Catálogo oficial: provisión, ajuste y administración de bases de datos autónomas en Oracle Cloud.",
+        "relevance": "Catálogo oficial: administración de servicios Oracle AI Database en entornos cloud.",
     },
 
     # Google Cloud Skills Boost
@@ -273,7 +273,7 @@ COURSES_EXPANSION = (
     {
         "title": "Prometheus Fundamentals with Grafana",
         "provider": "Grafana Labs",
-        "url": "https://grafana.com/docs/learning-journeys/prometheus-fundamentals/",
+        "url": "https://grafana.com/docs/learning-paths/prometheus/",
         "skills": ["Grafana", "Prometheus", "PromQL", "Métricas de infraestructura"],
         "requirements": ["Fundamentos de servidores y redes"],
         "cycles": ["VII", "VIII", "IX", "X"],
@@ -281,14 +281,14 @@ COURSES_EXPANSION = (
         "relevance": "Catálogo oficial: monitoreo de infraestructura con Prometheus y visualización avanzada en Grafana.",
     },
     {
-        "title": "Observability Practitioner: Metrics, Logs & Traces",
+        "title": "Core Grafana Concepts",
         "provider": "Grafana Labs",
-        "url": "https://grafana.com/docs/learning-journeys/observability-practitioner/",
-        "skills": ["Grafana", "Loki", "Tempo", "OpenTelemetry"],
+        "url": "https://grafana.com/docs/learning-paths/core-grafana-concepts/",
+        "skills": ["Grafana", "Consultas", "Dashboards", "Alertas"],
         "requirements": ["Fundamentos de observabilidad"],
         "cycles": ["VIII", "IX", "X"],
         "interests": ["Observabilidad"],
-        "relevance": "Catálogo oficial: dominio integral de los tres pilares de la observabilidad moderna.",
+        "relevance": "Ruta oficial: flujo desde fuentes y consultas hasta paneles, dashboards y alertas.",
     },
 
     # Neo4j GraphAcademy
@@ -315,21 +315,21 @@ COURSES_EXPANSION = (
 
     # Snowflake University
     {
-        "title": "Snowflake Fundamentals for Data Applications",
+        "title": "Snowflake Data Fundamentals - Part 1",
         "provider": "Snowflake University",
-        "url": "https://learn.snowflake.com/en/courses/OD-SNOWFUND/",
-        "skills": ["Snowflake", "Virtual Warehouses", "Time Travel", "Zero-Copy Clone"],
+        "url": "https://learn.snowflake.com/en/courses/spn-dfp1/",
+        "skills": ["Snowflake", "OLTP", "OLAP", "Movimiento de datos"],
         "requirements": ["SQL y fundamentos de almacenes de datos"],
         "cycles": ["VII", "VIII", "IX", "X"],
         "interests": ["Ingeniería de datos", "Bases de datos"],
-        "relevance": "Catálogo oficial: conceptos clave de arquitectura de nube y manipulación de datos en Snowflake.",
+        "relevance": "Curso oficial: fundamentos de bases de datos, movimiento de datos y canalizaciones analíticas.",
     },
 
     # GitHub Skills
     {
         "title": "GitHub Actions: Automate Your Workflow",
         "provider": "GitHub Skills",
-        "url": "https://resources.github.com/learn/certifications/actions/",
+        "url": "https://learn.github.com/certification/ACTIONS",
         "skills": ["GitHub Actions", "CI/CD", "Automatización", "Workflows"],
         "requirements": ["Git básico y conceptos de testing"],
         "cycles": ["V", "VI", "VII", "VIII", "IX", "X"],
@@ -426,6 +426,22 @@ def upgrade():
 def downgrade():
     connection = op.get_bind()
     for course in COURSES_EXPANSION:
+        connection.execute(
+            sa.text(
+                "DELETE FROM learning_offer_interests WHERE offer_id IN ("
+                "SELECT learning_offers.id FROM learning_offers "
+                "JOIN learning_courses ON learning_courses.id = learning_offers.course_id "
+                "WHERE learning_courses.source_url = :url)"
+            ),
+            {"url": course["url"]},
+        )
+        connection.execute(
+            sa.text(
+                "DELETE FROM learning_offers WHERE course_id IN ("
+                "SELECT id FROM learning_courses WHERE source_url = :url)"
+            ),
+            {"url": course["url"]},
+        )
         connection.execute(
             sa.text("DELETE FROM learning_courses WHERE source_url = :url"),
             {"url": course["url"]},
