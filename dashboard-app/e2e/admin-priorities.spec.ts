@@ -1,9 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import {
-  indicatorLink,
-  rankedGaps,
-  qualityAtCutoff,
-} from "../src/features/admin/priorities";
+import { indicatorLink, rankedGaps, qualityAtCutoff } from "../src/features/admin/priorities";
+
 const overview = {
   dataset: "registered" as const,
   filters: {
@@ -29,22 +26,13 @@ const overview = {
   by_credential: [],
   evolution: [],
   skill_gaps: [
-    {
-      skill: "Python",
-      certified_students: 3,
-      gap_students: 7,
-      coverage_percent: 30,
-    },
-    {
-      skill: "Datos",
-      certified_students: 1,
-      gap_students: 9,
-      coverage_percent: 10,
-    },
+    { skill: "Python", certified_students: 3, gap_students: 7, coverage_percent: 30 },
+    { skill: "Datos", certified_students: 1, gap_students: 9, coverage_percent: 10 },
   ],
 };
+
 const run = {
-  id: "DEMO-run",
+  id: "run-1",
   period_code: "2026-II",
   cutoff_date: "2026-10-01",
   status: "REJECTED",
@@ -52,23 +40,24 @@ const run = {
   accepted_rows: 0,
   rejected_rows: 2,
 };
-async function mock(page: Page, role = "ADMIN", local = false) {
-  await page.route("**/api/v1/auth/config", (r) =>
-    r.fulfill({ json: { provider: local ? "local" : "google" } }),
+
+async function mock(page: Page, role = "ADMIN") {
+  await page.route("**/api/v1/auth/config", (route) =>
+    route.fulfill({ json: { provider: "google" } }),
   );
-  await page.route("**/api/v1/auth/me", (r) =>
-    r.fulfill({
+  await page.route("**/api/v1/auth/me", (route) =>
+    route.fulfill({
       json: {
-        id: "DEMO-user",
-        email: "demo@example.invalid",
+        id: "user-1",
+        email: "user@example.invalid",
         role,
         permissions: [],
-        student_id: role === "STUDENT" ? "DEMO-student" : null,
+        student_id: null,
       },
     }),
   );
-  await page.route("**/api/v1/indicators/periods**", (r) =>
-    r.fulfill({
+  await page.route("**/api/v1/indicators/periods**", (route) =>
+    route.fulfill({
       json: [
         {
           code: "2026-II",
@@ -79,8 +68,8 @@ async function mock(page: Page, role = "ADMIN", local = false) {
       ],
     }),
   );
-  await page.route("**/api/v1/indicators/overview**", (r) => {
-    const params = new URL(r.request().url()).searchParams;
+  await page.route("**/api/v1/indicators/overview**", (route) => {
+    const params = new URL(route.request().url()).searchParams;
     const filters = {
       ...overview.filters,
       cycle: params.get("cycle"),
@@ -88,52 +77,38 @@ async function mock(page: Page, role = "ADMIN", local = false) {
       cohort: params.get("cohort"),
       cutoff_date: params.get("cutoff_date") ?? "2026-10-01",
     };
-    return r.fulfill({
+    return route.fulfill({
       json: {
         ...overview,
-        dataset: params.get("dataset") === "demo" ? "demo" : "registered",
         filters,
         kpis: { ...overview.kpis, active_students: filters.cycle ? 5 : 10 },
       },
     });
   });
-  await page.route("**/api/v1/etl/runs**", (r) => r.fulfill({ json: [run] }));
 }
-test("admin conecta indicadores, prioridades y calidad del corte", async ({
-  page,
-}) => {
+
+test("admin muestra el resumen publicado y módulos sin secciones demo", async ({ page }) => {
   await mock(page);
   await page.goto("/admin");
+
   await expect(
     page.getByRole("region", { name: "Indicadores institucionales" }),
   ).toContainText("Estudiantes activos");
-  await expect(
-    page.getByRole("region", { name: "Prioridades institucionales" }),
-  ).toContainText("7 de 10");
-  await expect(
-    page.getByRole("region", { name: "Calidad de datos" }),
-  ).toContainText("Proceso rechazado por calidad");
+  await expect(page.getByRole("region", { name: "Prioridades institucionales" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Calidad de datos" })).toHaveCount(0);
+  await expect(page.getByText("Fuente y corte", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/Datos de demostración|Datos de referencia/)).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Periodo", exact: true })).toHaveValue("2026-II");
+  await expect(page.getByLabel("Fecha de los datos", { exact: true })).toHaveValue("2026-10-01");
+
   const modules = page.getByRole("region", { name: "Gestión administrativa" });
-  await expect(modules.getByRole("link", { name: /Certificaciones/ }))
-    .toHaveAttribute("href", "/tecnologias");
+  await expect(modules.getByRole("link", { name: /Certificaciones/ })).toHaveAttribute(
+    "href",
+    "/tecnologias",
+  );
   const radar = modules.getByRole("link", { name: /Radar de cursos/ });
   await expect(radar).toHaveAttribute("href", "/admin/radar");
   await expect(radar).toContainText("Catálogo de cursos");
-  await page.getByText("Fuente y corte", { exact: true }).first().click();
-  await expect(page.getByText("GET /api/v1/indicators/overview").first()).toBeVisible();
-  await page.getByLabel("Ciclo", { exact: true }).selectOption("VI");
-  await expect(
-    page.getByRole("region", { name: "Prioridades institucionales" }),
-  ).toContainText("2 de 5");
-  const link = page.getByRole("link", {
-    name: "Analizar cobertura por habilidad",
-  });
-  await expect(link).toHaveAttribute("href", /cycle=VI/);
-  await link.click();
-  await expect(page.getByLabel("Ciclo", { exact: true })).toHaveValue("VI");
-  await expect(
-    page.getByRole("heading", { name: "Brechas de habilidades" }),
-  ).toBeVisible();
 });
 
 for (const linked of [
@@ -162,21 +137,27 @@ for (const linked of [
       });
     });
     const query = new URLSearchParams({
-      period_code: "2026-II", cutoff_date: "2026-10-01",
-      dataset: "registered", [linked.key]: linked.selected,
+      period_code: "2026-II",
+      cutoff_date: "2026-10-01",
+      dataset: "registered",
+      [linked.key]: linked.selected,
     });
     await page.goto(`/brechas?${query}`);
     const select = page.getByLabel(linked.label, { exact: true });
     await expect(select).toHaveValue(linked.selected);
     await expect(select.locator("option")).toHaveText([
-      "Todos", linked.selected, linked.alternative,
+      "Todos",
+      linked.selected,
+      linked.alternative,
     ]);
-    expect(requests.some((params) =>
-      params.get("period_code") === "2026-II" &&
-      params.get("cutoff_date") === "2026-10-01" &&
-      !params.has("cycle") && !params.has("cohort") && !params.has("issuer") &&
-      !params.has("level") && !params.has("dataset"),
-    )).toBe(true);
+    expect(
+      requests.some(
+        (params) =>
+          params.get("period_code") === "2026-II" &&
+          params.get("cutoff_date") === "2026-10-01" &&
+          !params.has("dataset"),
+      ),
+    ).toBe(true);
     const updated = page.waitForResponse((response) =>
       response.url().includes("/indicators/overview?") &&
       new URL(response.url()).searchParams.get(linked.key) === linked.alternative,
@@ -184,9 +165,6 @@ for (const linked of [
     await select.selectOption(linked.alternative);
     await updated;
     await expect(select).toHaveValue(linked.alternative);
-    await expect(select.locator("option")).toHaveText([
-      "Todos", linked.selected, linked.alternative,
-    ]);
   });
 
 test("fallo al cargar opciones permite reintentar sin perder el ciclo enlazado", async ({ page }) => {
@@ -194,107 +172,46 @@ test("fallo al cargar opciones permite reintentar sin perder el ciclo enlazado",
   let fail = true;
   await page.route("**/api/v1/indicators/overview**", (route) => {
     const params = new URL(route.request().url()).searchParams;
-    return route.fulfill(!params.has("cycle") && fail
-      ? { status: 503, json: { error: { message: "Opciones no disponibles" } } }
-      : { json: { ...overview, by_cycle: [{ name: "VI", value: 4 }, { name: "VII", value: 2 }] } });
+    return route.fulfill(
+      !params.has("cycle") && fail
+        ? { status: 503, json: { error: { message: "Opciones no disponibles" } } }
+        : {
+            json: {
+              ...overview,
+              by_cycle: [
+                { name: "VI", value: 4 },
+                { name: "VII", value: 2 },
+              ],
+            },
+          },
+    );
   });
   await page.goto("/brechas?period_code=2026-II&cycle=VI");
   await expect(page.getByText("Opciones no disponibles")).toBeVisible();
   fail = false;
   await page.getByRole("button", { name: "Reintentar", exact: true }).click();
   await expect(page.getByLabel("Ciclo", { exact: true })).toHaveValue("VI");
-  await expect(page.getByLabel("Ciclo", { exact: true }).locator("option")).toHaveText(["Todos", "VI", "VII"]);
+  await expect(page.getByLabel("Ciclo", { exact: true }).locator("option")).toHaveText([
+    "Todos",
+    "VI",
+    "VII",
+  ]);
 });
-test("calidad sin informe no inventa un resultado aprobado", async ({
-  page,
-}) => {
-  await mock(page);
-  await page.route("**/api/v1/etl/runs**", (r) =>
-    r.fulfill({ json: [{ ...run, cutoff_date: "2026-11-01" }] }),
-  );
-  await page.goto("/admin");
-  await expect(
-    page.getByRole("region", { name: "Calidad de datos" }),
-  ).toContainText("La calidad no está evaluada");
-});
-test("error de calidad permite reintento independiente", async ({ page }) => {
-  await mock(page);
-  let fail = true;
-  await page.route("**/api/v1/etl/runs**", (r) =>
-    r.fulfill(
-      fail
-        ? {
-            status: 503,
-            json: {
-              error: { code: "UNAVAILABLE", message: "Error sintético" },
-            },
-          }
-        : {
-            json: [
-              { ...run, status: "APPLIED", rejected_rows: 0, accepted_rows: 6 },
-            ],
-          },
-    ),
-  );
-  await page.goto("/admin");
-  await expect(page.getByText("Error sintético")).toBeVisible();
-  fail = false;
-  await page.getByRole("button", { name: "Reintentar calidad" }).click();
-  await expect(
-    page.getByRole("region", { name: "Calidad de datos" }),
-  ).toContainText("Proceso aplicado");
-});
-test("demo no consulta ni atribuye calidad institucional", async ({ page }) => {
-  await mock(page, "ADMIN", true);
-  let requests = 0;
-  await page.route("**/api/v1/etl/runs**", (r) => {
-    requests++;
-    return r.fulfill({ json: [run] });
-  });
-  await page.goto("/admin");
-  await expect(
-    page.getByRole("region", { name: "Calidad de datos" }),
-  ).toContainText("indicadores de referencia");
-  expect(requests).toBe(0);
-  await page.setViewportSize({ width: 1440, height: 960 });
-  await page.screenshot({
-    path: "../docs/recursos/imagenes/va72-admin-demo.png",
-    fullPage: true,
-  });
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
-  await page.screenshot({
-    path: "../docs/recursos/imagenes/va72-admin-mobile-demo.png",
-    fullPage: true,
-  });
-});
+
 for (const role of ["STUDENT", "VALIDATOR"])
   test(`${role} no obtiene gestión administrativa`, async ({ page }) => {
     await mock(page, role);
-    let requests = 0;
-    await page.route("**/api/v1/etl/runs**", (r) => {
-      requests++;
-      return r.fulfill({ json: [] });
-    });
     await page.goto("/admin");
-    await expect(
-      page.getByRole("heading", { name: "Acceso restringido" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Acceso restringido" })).toBeVisible();
     await expect(
       page.getByRole("region", { name: "Indicadores institucionales" }),
     ).toHaveCount(0);
-    expect(requests).toBe(0);
   });
-test("error de indicadores no muestra prioridades anteriores ni cifras de cero", async ({
-  page,
-}) => {
+
+test("error de indicadores no muestra contenido anterior", async ({ page }) => {
   await mock(page);
-  await page.route("**/api/v1/indicators/overview**", (r) =>
-    r.fulfill({
+  await page.route("**/api/v1/indicators/overview**", (route) =>
+    route.fulfill({
       status: 503,
       json: { error: { code: "UNAVAILABLE", message: "No disponible" } },
     }),
@@ -303,13 +220,13 @@ test("error de indicadores no muestra prioridades anteriores ni cifras de cero",
   await expect(
     page.getByRole("heading", { name: "No se pudo cargar la información" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("region", { name: "Prioridades institucionales" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Prioridades institucionales" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Calidad de datos" })).toHaveCount(0);
 });
-test("ranking y enlaces conservan alcance y calidad requiere corte exacto", () => {
+
+test("los cálculos de alcance y corte siguen siendo deterministas", () => {
   const original = JSON.stringify(overview);
-  expect(rankedGaps(overview).map((i) => i.skill)).toEqual(["Datos", "Python"]);
+  expect(rankedGaps(overview).map((item) => item.skill)).toEqual(["Datos", "Python"]);
   expect(JSON.stringify(overview)).toBe(original);
   const linked = indicatorLink("/brechas", {
     ...overview,

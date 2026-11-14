@@ -7,7 +7,6 @@ import { AsyncState } from "@/shared/ui/AsyncState";
 import { RoleGate } from "@/features/access/RoleGate";
 import { apiFetch } from "@/shared/api/client";
 import { ValidationHistory } from "@/features/certifications/ValidationHistory";
-import { ReferenceValidationRecords } from "@/features/certifications/ReferenceValidationRecords";
 
 type Status =
   | "PENDING"
@@ -154,7 +153,6 @@ function priorityClass(priority: Priority) {
 }
 
 function ValidationsContent() {
-  const [referenceAvailable, setReferenceAvailable] = useState(false);
   const [records, setRecords] = useState<ValidationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
@@ -171,20 +169,6 @@ function ValidationsContent() {
   const [ageFilter, setAgeFilter] = useState<AgeFilter>("ALL");
   const [caseFilter, setCaseFilter] = useState<CaseFilter>("ALL");
   const [currentTime, setCurrentTime] = useState<number | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void apiFetch<{ reference_available: boolean }>("/indicators/config")
-      .then((configuration) => {
-        if (active) setReferenceAvailable(configuration.reference_available);
-      })
-      .catch(() => {
-        if (active) setReferenceAvailable(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const selected = records.find((record) => record.id === selectedId);
 
@@ -320,8 +304,6 @@ function ValidationsContent() {
           Prioriza los casos, revisa la evidencia y registra una decisión trazable para cada certificación.
         </p>
       </div>
-
-      {referenceAvailable && <ReferenceValidationRecords />}
 
       {error && (
         <div

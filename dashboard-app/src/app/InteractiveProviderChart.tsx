@@ -1,7 +1,120 @@
 "use client";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
+
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { AnalyticsMetric } from "@/shared/api/types";
-const colors = ["#2563eb", "#0d9488", "#7c3aed", "#f59e0b", "#0284c7", "#e11d48", "#475569", "#059669"];
-export function InteractiveProviderChart({byIssuer, bySkill}: {byIssuer: AnalyticsMetric[]; bySkill: AnalyticsMetric[]}) {
- return <div className="grid gap-5 lg:grid-cols-2">{[{title:"Entidades emisoras",description:"Certificaciones aprobadas por entidad",rows:byIssuer},{title:"Habilidades acreditadas",description:"Una certificación puede acreditar varias habilidades",rows:bySkill}].map(({title,description,rows},index) => <section key={title} className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{index ? "Competencias" : "Distribución"}</p><h2 className="mt-1 text-lg font-semibold text-slate-900">{title}</h2><p className="mt-1 text-xs text-slate-500">{description}</p></div><span className="rounded-lg bg-slate-50 px-3 py-2 text-lg font-semibold tabular-nums text-slate-700">{rows.length}</span></div>{rows.length ? <><div className="h-[300px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={rows} layout="vertical" margin={{left:0,right:35,top:5,bottom:0}} barSize={20}><CartesianGrid stroke="#e2e8f0" strokeDasharray="3 4" horizontal={false}/><XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{fontSize:11,fill:"#94a3b8"}}/><YAxis type="category" dataKey="name" width={115} axisLine={false} tickLine={false} tick={{fontSize:11,fill:"#475569"}}/><Tooltip cursor={{fill:"#f8fafc"}} contentStyle={{borderRadius:10,border:"1px solid #e2e8f0"}}/><Bar isAnimationActive={false} dataKey="value" name="Certificaciones aprobadas" radius={[0,5,5,0]} background={{fill:"#f8fafc",radius:5}}>{rows.map((r,i) => <Cell key={r.name} fill={colors[i%colors.length]}/>)}<LabelList dataKey="value" position="right" fill="#334155" fontSize={11}/></Bar></BarChart></ResponsiveContainer></div><div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">Mayor presencia</span><span className="font-medium text-slate-700">{rows[0].name} · {rows[0].value}</span></div></> : <p className="py-12 text-center text-sm text-slate-500">Sin certificaciones aprobadas para estos filtros.</p>}</section>)}</div>;
+
+const colors = [
+  "#2563eb",
+  "#0d9488",
+  "#7c3aed",
+  "#f59e0b",
+  "#0284c7",
+  "#e11d48",
+  "#475569",
+  "#059669",
+];
+
+function DistributionCard({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: AnalyticsMetric[];
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+        <span className="rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-semibold tabular-nums text-blue-700">
+          {rows.length}
+        </span>
+      </div>
+      {rows.length ? (
+        <div className="h-[270px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={rows}
+              layout="vertical"
+              margin={{ left: 0, right: 32, top: 5, bottom: 0 }}
+              barSize={18}
+            >
+              <CartesianGrid
+                stroke="#e2e8f0"
+                strokeDasharray="3 4"
+                horizontal={false}
+              />
+              <XAxis
+                type="number"
+                allowDecimals={false}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#94a3b8" }}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={120}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#475569" }}
+              />
+              <Tooltip
+                cursor={{ fill: "#f8fafc" }}
+                contentStyle={{
+                  borderRadius: 10,
+                  border: "1px solid #e2e8f0",
+                }}
+              />
+              <Bar
+                isAnimationActive={false}
+                dataKey="value"
+                name="Certificaciones aprobadas"
+                radius={[0, 5, 5, 0]}
+                background={{ fill: "#f8fafc", radius: 5 }}
+              >
+                {rows.map((row, index) => (
+                  <Cell key={row.name} fill={colors[index % colors.length]} />
+                ))}
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  fill="#334155"
+                  fontSize={11}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <p className="py-12 text-center text-sm text-slate-500">
+          Sin certificaciones aprobadas para este corte.
+        </p>
+      )}
+    </section>
+  );
+}
+
+export function InteractiveProviderChart({
+  byIssuer,
+  bySkill,
+}: {
+  byIssuer: AnalyticsMetric[];
+  bySkill: AnalyticsMetric[];
+}) {
+  return (
+    <div className="grid gap-5 lg:grid-cols-2">
+      <DistributionCard title="Entidades emisoras" rows={byIssuer} />
+      <DistributionCard title="Habilidades acreditadas" rows={bySkill} />
+    </div>
+  );
 }

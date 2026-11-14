@@ -20,11 +20,7 @@ type AnalyticsFiltersProps = {
     key: K,
     value: AnalyticsFilterValues[K],
   ) => void;
-  source?: {
-    dataset: "registered" | "demo";
-    available: boolean;
-    onChange: (value: "registered" | "demo") => void;
-  };
+  variant?: "full" | "summary";
 };
 
 function optionsFor(items: AnalyticsMetric[]) {
@@ -36,8 +32,9 @@ export function AnalyticsFilters({
   filters,
   options,
   onChange,
-  source,
+  variant = "full",
 }: AnalyticsFiltersProps) {
+  const compact = variant === "summary";
   return (
     <section
       className="surface-card p-4 sm:p-5"
@@ -50,21 +47,8 @@ export function AnalyticsFilters({
             Explorar indicadores
           </h2>
         </div>
-        {source?.available && (
-          <label className="text-xs font-semibold text-slate-600">
-            Fuente de datos
-            <select
-              value={source.dataset}
-              onChange={(event) => source.onChange(event.target.value as "registered" | "demo")}
-              className="mt-1 block min-w-48 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            >
-              <option value="demo">Demostración · no oficial</option>
-              <option value="registered">Datos publicados</option>
-            </select>
-          </label>
-        )}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className={`grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-5"}`}>
         <label className="text-xs font-semibold text-slate-600">
           Periodo
           <select
@@ -95,30 +79,27 @@ export function AnalyticsFilters({
             />
           </div>
         </label>
-        <SelectFilter
-          label="Proveedor"
-          value={filters.issuer}
-          values={optionsFor(options.issuers)}
-          onChange={(value) => onChange("issuer", value)}
-        />
-        <SelectFilter
-          label="Año de ingreso"
-          value={filters.cohort}
-          values={optionsFor(options.cohorts)}
-          onChange={(value) => onChange("cohort", value)}
-        />
-        <SelectFilter
-          label="Ciclo"
-          value={filters.cycle}
-          values={optionsFor(options.cycles)}
-          onChange={(value) => onChange("cycle", value)}
-        />
+        {!compact && <>
+          <SelectFilter
+            label="Proveedor"
+            value={filters.issuer}
+            values={optionsFor(options.issuers)}
+            onChange={(value) => onChange("issuer", value)}
+          />
+          <SelectFilter
+            label="Año de ingreso"
+            value={filters.cohort}
+            values={optionsFor(options.cohorts)}
+            onChange={(value) => onChange("cohort", value)}
+          />
+          <SelectFilter
+            label="Ciclo"
+            value={filters.cycle}
+            values={optionsFor(options.cycles)}
+            onChange={(value) => onChange("cycle", value)}
+          />
+        </>}
       </div>
-      {source?.dataset === "demo" && (
-        <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          Demostración: cifras sintéticas, no registros institucionales publicados.
-        </p>
-      )}
     </section>
   );
 }

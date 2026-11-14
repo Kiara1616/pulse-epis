@@ -6,7 +6,7 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 
 **Repositorio:** [Kiara1616/pulse-epis](https://github.com/Kiara1616/pulse-epis)
 
-**Regla de presentación:** los datos de referencia se identifican como demostrativos; los datos publicados proceden del padrón y de certificaciones validadas.
+**Regla de presentación:** la interfaz desplegada consulta únicamente datos publicados del padrón y certificaciones validadas. No se muestra un selector ni una sección de demostración; los fixtures sintéticos quedan restringidos a pruebas automatizadas y no se presentan como resultados institucionales.
 
 **Estado verificado el 12/11/2026:** el commit `bd7de97` está desplegado en Render, la migración `0015` terminó y `/ready` responde HTTP 200. El ETL productivo `43237986208` terminó `APPLIED` para `2026-II` (corte `2026-11-11`): reporta 310 matrículas activas y cero filas de certificación. Los registros de importación reportan 309 filas aceptadas y cero rechazadas; la diferencia de un registro debe conciliarse antes de afirmar que el padrón está completamente reconciliado. El Radar semanal terminó `SKIPPED` porque no hay feeds activos.
 
