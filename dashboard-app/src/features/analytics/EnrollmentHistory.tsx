@@ -17,7 +17,7 @@ import { apiFetch } from "@/shared/api/client";
 type EnrollmentPoint = {
   period_code: string;
   active_students: number;
-  basis: "history" | "reference";
+  basis: "published";
 };
 
 export function EnrollmentHistory() {
@@ -51,12 +51,10 @@ export function EnrollmentHistory() {
   return (
     <section className="surface-card min-w-0 p-5">
       <h2 className="section-title">
-        Matrícula por periodo · 2020–2026
+        Matrícula por periodo
       </h2>
       <p className="mt-2 text-xs leading-5 text-slate-500">
-        Los valores de 2020–2025 corresponden al historial mostrado. Para
-        2026 se incluyen cifras de referencia hasta registrar el padrón de esos
-        periodos.
+        Periodos con padrón y snapshot ETL publicados.
       </p>
       {loading ? (
         <p role="status" className="mt-6 text-sm text-slate-500">
@@ -89,11 +87,9 @@ export function EnrollmentHistory() {
                   tick={{ fontSize: 11, fill: "#94a3b8" }}
                 />
                 <Tooltip
-                  formatter={(value, _name, item) => [
+                  formatter={(value) => [
                     value,
-                    item.payload.basis === "reference"
-                      ? "Estudiantes · referencia"
-                      : "Estudiantes matriculados",
+                    "Estudiantes matriculados",
                   ]}
                 />
                 <Bar
@@ -112,7 +108,7 @@ export function EnrollmentHistory() {
                   {rows.map((row) => (
                     <Cell
                       key={row.period_code}
-                      fill={row.basis === "reference" ? "#1d4ed8" : row.period_code.startsWith("2023-") || row.period_code.startsWith("2024-") ? "#3b82f6" : "#93c5fd"}
+                      fill="#3b82f6"
                     />
                   ))}
                 </Bar>
@@ -126,7 +122,7 @@ export function EnrollmentHistory() {
         </p>
       )}
       <p className="mt-3 text-xs text-slate-500">
-        Fuente: historial de matrícula y datos de referencia para 2026.
+        Fuente: snapshots ETL de padrón publicados.
       </p>
     </section>
   );
