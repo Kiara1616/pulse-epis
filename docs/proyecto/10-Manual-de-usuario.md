@@ -50,7 +50,7 @@ Abra Publicar indicadores, seleccione un periodo con padrón aplicado y una fech
 
 ADMIN y VALIDATOR consultan vistas habilitadas de indicadores. Seleccione periodo, corte, año de ingreso, ciclo y emisor. Próximas a vencer comprende 90 días desde el corte. Brecha por habilidad indica estudiantes activos sin certificación en esa habilidad.
 
-En local, la demostración carga automáticamente ejemplos sintéticos de certificaciones para los 14 semestres desde 2020-I hasta 2026-II. Use Fuente de datos para cambiar a Datos registrados; la selección se conserva al navegar. La demostración está en una base independiente y no modifica el padrón importado. Los informes exportados identifican esta fuente.
+En el despliegue publicado no existe un selector de fuente demostrativa: los indicadores, reportes y exportaciones consultan únicamente snapshots publicados del padrón y certificaciones validadas. Los fixtures sintéticos se conservan solo para pruebas automatizadas y no se muestran en la interfaz ni se mezclan con datos institucionales.
 
 La exportación CSV descarga las filas y los filtros de la vista. El botón PDF genera un informe agregado del periodo y corte seleccionados. Verifique los filtros antes de compartir. Los informes no contienen correos ni códigos de estudiantes y requieren revisión institucional para su uso oficial.
 
@@ -69,21 +69,21 @@ La exportación CSV descarga las filas y los filtros de la vista. El botón PDF 
 
 No publique CSV reales, correos, códigos, evidencias ni URLs privadas en capturas, issues o repositorios. Comparta solo agregados autorizados. En soporte comunique página, hora, acción y request_id sin datos personales. Las decisiones institucionales y atención de solicitudes se realizan por el canal definido por EPIS.
 
-## VA-06: centro administrativo y prioridades del corte
+## VA-06: centro administrativo y resumen ejecutivo
 
-La issue #72 reorganiza `/admin` para ADMIN y añade prioridades en el resumen institucional del mismo rol. Reutiliza `/indicators/overview`, filtros y selección de fuente existentes. No añade tablas, fuentes externas, un radar ni permisos de validación al administrador. Los contratos de VA-02 (#68) siguen pendientes de revisión: esta pantalla utiliza los tipos vigentes de AnalyticsOverview, sin duplicar ni consolidar entidades provisionales.
+La issue #72 reorganiza `/admin` para ADMIN. El resumen ejecutivo reutiliza `/indicators/overview` y conserva solo los filtros de periodo y fecha de corte necesarios para interpretar el snapshot publicado. No añade tablas de texto extensas, selector de fuente, un radar ni permisos de validación al administrador.
 
-Cada KPI muestra definición y un detalle desplegable de fuente, dataset, periodo y corte. Los próximos vencimientos usan la ventana de 90 días de la API. Estudiantes y credenciales son conteos diferentes. La ausencia de activos se explica antes de interpretar cobertura cero. Las prioridades de habilidades se ordenan por cobertura ascendente, luego cantidad sin evidencia y nombre; se muestran hasta tres, sin umbrales o rankings laborales inventados. La ausencia de brechas registradas no acredita dominio.
+Cada KPI presenta únicamente el valor y una etiqueta breve. Los próximos vencimientos usan la ventana de 90 días de la API. Estudiantes y credenciales son conteos diferentes. La ausencia de activos se explica antes de interpretar cobertura cero.
 
-Los enlaces a tecnologías y brechas conservan periodo, corte y filtros mediante parámetros URL. useAnalytics reconoce ese alcance al cargar los periodos disponibles. Dataset demo solo se admite bajo autenticación local; un enlace nunca cambia rol ni permisos. Cambiar fuente o periodo reinicia el alcance según el comportamiento existente. Las fichas de estudiantes mantienen su acceso nominal autorizado y no ofrecen un filtro de vencimientos inexistente.
+Los enlaces a tecnologías y brechas conservan periodo, corte y filtros mediante parámetros URL. `useAnalytics` reconoce ese alcance al cargar los periodos disponibles. Un enlace nunca cambia rol ni permisos. Las fichas de estudiantes mantienen su acceso nominal autorizado y no ofrecen un filtro de vencimientos inexistente.
 
-Las opciones de proveedor, año de ingreso y ciclo se consultan para el periodo, corte y fuente seleccionados, sin aplicar los filtros de segmento. Abrir una prioridad con ciclo VI conserva VI y permite elegir otro ciclo disponible sin limpiar la selección. Los indicadores mantienen todos los filtros elegidos. Si falla la carga de opciones, se muestra el error y Reintentar vuelve a consultarlas conservando la selección.
+Las opciones de proveedor, año de ingreso y ciclo se consultan para el periodo y corte seleccionados, sin aplicar los filtros de segmento. Los indicadores mantienen todos los filtros elegidos. Si falla la carga de opciones, se muestra el error y Reintentar vuelve a consultarlas conservando la selección.
 
-Calidad de datos consulta `/etl/runs?period_code=...` únicamente para ADMIN y datos registrados. Muestra el último intento de publicación del corte exacto según el orden del historial de la API. Si no hay informe, no inventa porcentajes de calidad ni aprobación. El resultado pertenece al periodo completo: filtros de proveedor/cohorte/ciclo no alteran las filas del proceso. Estas filas son registros del ETL, no personas ni credenciales distintas. En demo no se consulta este historial ni se atribuye calidad institucional a datos sintéticos. Error y reintento de calidad son independientes de la carga de indicadores.
+La calidad del lote se revisa desde Padrón y Publicar indicadores, no desde una tarjeta extensa en el resumen. La ausencia de un informe no inventa porcentajes de calidad ni aprobación. Los indicadores del resumen pertenecen al snapshot publicado seleccionado.
 
 Validadores conservan el resumen permitido, pero no reciben gestión, prioridades administrativas ni consultas a calidad. Estudiantes siguen entrando a su espacio. Las tarjetas administrativas llevan a padrón, tecnologías y publicaciones; no hay una tarjeta sin acción que sugiera permiso para validar evidencias.
 
-Pruebas: `npx playwright test e2e/admin-priorities.spec.ts` verifica filtros, navegación con alcance, calidad sin informe/error/reintento, demostración, restricciones de rol, errores de indicadores y selección del corte. Capturas sintéticas: [escritorio](../recursos/imagenes/va72-admin-demo.png) y [móvil](../recursos/imagenes/va72-admin-mobile-demo.png). No hay migraciones; rollback mediante reversión del commit y reconstrucción del frontend.
+Pruebas: `npx playwright test e2e/admin-priorities.spec.ts` verifica filtros, navegación con alcance, restricciones de rol, errores de indicadores y selección del corte. No hay migraciones; rollback mediante reversión del commit y reconstrucción del frontend.
 
 ## VA-07: estados y navegación por rol
 
