@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, Database, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Database, ShieldCheck, Users } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
 import { AnalyticsFilters } from "@/features/analytics/AnalyticsFilters";
 import { AnalyticsSource } from "@/features/analytics/AnalyticsSource";
@@ -44,6 +44,14 @@ const modules = [
     href: "/admin/radar",
     icon: ShieldCheck,
     status: "Catálogo de cursos",
+  },
+  {
+    title: "Talleres y eventos",
+    description:
+      "Convierte oportunidades y cursos en talleres académicos por ciclo.",
+    href: "/talleres",
+    icon: CalendarDays,
+    status: "Actividades académicas",
   },
 ];
 function AdminContent() {

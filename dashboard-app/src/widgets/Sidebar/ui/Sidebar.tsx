@@ -20,7 +20,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
   const { role } = useRole();
   const { logout } = useAuth();
   const adminRouteActive = role === "ADMIN" && (pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/talleres");
-  const [adminOpen, setAdminOpen] = useState(adminRouteActive);
+  const [adminOpen, setAdminOpen] = useState(true);
   const links: Array<{ href: string; label: string; icon: typeof LayoutDashboard; roles: AppRole[] }> = [
     { href: "/", label: "Resumen", icon: LayoutDashboard, roles: ["ADMIN", "VALIDATOR"] },
     { href: "/tecnologias", label: "Tecnologías", icon: Cpu, roles: ["ADMIN", "VALIDATOR"] },
