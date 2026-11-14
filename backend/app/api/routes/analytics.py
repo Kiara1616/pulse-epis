@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import Response
 from ...analytics.pdf_report import generate_pdf
 from ...analytics.excel_report import generate_excel
+from sqlalchemy import func, select
 
 from ...analytics.schemas import AnalyticsOverview, AnalyticsPeriod, AnalyticsReport, MetricDefinition
 from ...analytics.reports import Granularity, assemble_report, quality_points
@@ -18,6 +19,7 @@ from ...analytics.service import (
 )
 from ...auth.dependencies import require_permissions
 from ...auth.models import Permission
+from ...db.models import AcademicPeriod, FactStudentPeriod
 
 
 router = APIRouter(prefix="/indicators", tags=["indicators"])
@@ -52,11 +54,36 @@ def analytics_config(request: Request) -> dict[str, object]:
 
 @router.get("/enrollment-history", dependencies=[Depends(_ANALYTICS_READ)])
 def enrollment_history(request: Request) -> list[dict[str, int | str]]:
-    if not _reference_enabled(request):
-        raise _error(403, "REFERENCE_DISABLED", "Los datos de referencia no están habilitados.")
-    from ...analytics.demo import reference_enrollment_history
+    """Return active enrollment counts from the latest published snapshot per period."""
 
-    return reference_enrollment_history()
+    latest_cutoffs = (
+        select(
+            FactStudentPeriod.period_id.label("period_id"),
+            func.max(FactStudentPeriod.cutoff_date).label("cutoff_date"),
+        )
+        .group_by(FactStudentPeriod.period_id)
+        .subquery()
+    )
+    with request.app.state.session_factory() as session:
+        rows = session.execute(
+            select(
+                AcademicPeriod.code,
+                func.count(func.distinct(FactStudentPeriod.student_key)),
+            )
+            .join(FactStudentPeriod, FactStudentPeriod.period_id == AcademicPeriod.id)
+            .join(
+                latest_cutoffs,
+                (latest_cutoffs.c.period_id == FactStudentPeriod.period_id)
+                & (latest_cutoffs.c.cutoff_date == FactStudentPeriod.cutoff_date),
+            )
+            .where(FactStudentPeriod.enrollment_status == "ACTIVE")
+            .group_by(AcademicPeriod.code, AcademicPeriod.starts_on)
+            .order_by(AcademicPeriod.starts_on.asc(), AcademicPeriod.code.asc())
+        ).all()
+    return [
+        {"period_code": code, "active_students": int(active_students), "basis": "published"}
+        for code, active_students in rows
+    ]
 
 
 @router.get("/reference/students", dependencies=[Depends(_ANALYTICS_READ)])
