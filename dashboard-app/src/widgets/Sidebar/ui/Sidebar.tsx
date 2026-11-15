@@ -27,7 +27,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
     { href: "/estudiantes", label: "Estudiantes", icon: GraduationCap, roles: ["ADMIN", "VALIDATOR"] },
     { href: "/brechas", label: "Brechas", icon: ScanSearch, roles: ["ADMIN"] },
     { href: "/reportes", label: "Reportes BI", icon: ChartNoAxesCombined, roles: ["ADMIN", "VALIDATOR"] },
-    { href: "/validaciones", label: "Validar", icon: BadgeCheck, roles: ["ADMIN", "VALIDATOR"] },
+    { href: "/validaciones", label: "Validar", icon: BadgeCheck, roles: ["VALIDATOR"] },
     { href: "/mi-perfil", label: "Credenciales", icon: Award, roles: ["STUDENT"] },
     { href: "/mi-ruta", label: "Mi ruta", icon: Compass, roles: ["STUDENT"] },
     { href: "/talleres", label: "Talleres", icon: CalendarDays, roles: ["STUDENT"] },

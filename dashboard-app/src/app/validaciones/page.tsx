@@ -30,6 +30,7 @@ type ValidationEvidence = {
 
 type ValidationRecord = {
   id: string;
+  student_name?: string;
   student_key: string;
   credential_name: string;
   issuer_name: string;
@@ -437,7 +438,7 @@ function ValidationsContent() {
 
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              ["Estudiante", selected.student_key],
+              ["Estudiante", selected.student_name || selected.student_key],
               ["Emisor", selected.issuer_name],
               ["Identificador de la credencial", selected.external_id || "No registrado"],
               ["Fecha de emisión", formatDate(selected.issued_on)],
@@ -644,7 +645,7 @@ function ValidationsContent() {
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-gray-500">
-                    {record.student_key} · {record.issuer_name} · {caseTypeLabel(record)} · Actualizado {formatDateTime(record.updated_at)}
+                    {record.student_name || record.student_key} · {record.issuer_name} · {caseTypeLabel(record)} · Actualizado {formatDateTime(record.updated_at)}
                   </p>
                 </div>
                 <span className="shrink-0 text-sm font-semibold text-blue-600 group-hover:underline">
@@ -661,7 +662,7 @@ function ValidationsContent() {
 
 export default function ValidationsPage() {
   return (
-    <RoleGate allow={["ADMIN", "VALIDATOR"]}>
+    <RoleGate allow={["VALIDATOR"]}>
       <ValidationsContent />
     </RoleGate>
   );

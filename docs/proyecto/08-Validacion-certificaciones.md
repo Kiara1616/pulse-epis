@@ -27,7 +27,7 @@ La tabla `audit_logs` también registra el cambio de estado, pero evita copiar e
 
 | Endpoint | Uso | Autorización |
 |---|---|---|
-| `GET /api/v1/validations?as_of=YYYY-MM-DD` | Bandeja sin correo ni código institucional nominal; devuelve `student_key`, evidencia y estado al corte | `VALIDATOR` + `CERTIFICATION_VALIDATE` |
+| `GET /api/v1/validations?as_of=YYYY-MM-DD` | Bandeja del validador; devuelve el nombre del estudiante para la revisión, `student_key` seudónimo para trazabilidad interna, evidencia y estado al corte. Nunca devuelve correo institucional | `VALIDATOR` + `CERTIFICATION_VALIDATE` |
 | `POST /api/v1/validations/{id}` | Ejecutar `START_REVIEW`, `APPROVE`, `OBSERVE` o `REJECT` | `VALIDATOR` + `CERTIFICATION_VALIDATE` |
 | `GET /api/v1/validations/{id}/history` | Consultar historial ascendente e inmutable | `VALIDATOR` + `CERTIFICATION_VALIDATE` |
 | `POST /api/v1/validations/{id}/evidence/{evidence_id}/access` | Emitir enlace temporal de evidencia para revisar | `VALIDATOR` + `CERTIFICATION_VALIDATE` |

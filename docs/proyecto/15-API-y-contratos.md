@@ -87,7 +87,7 @@ La issue #68 añade contratos de vista reutilizables en `dashboard-app/src/share
 | Contrato | Fuente actual y alcance | Campos derivados o provisionales |
 |---|---|---|
 | StudentSummary / StudentCredential | GET /certifications del usuario autenticado | Resumen por estado, etiqueta, cantidad de evidencias y lista de observadas corregibles; no calcular permisos ni histórico |
-| ValidationQueueItem / ValidationCard | GET /validations autorizado al validador | Tarjeta de bandeja; conservar estado, clave seudónima, comentario, cantidad de evidencias y fecha de actualización |
+| ValidationQueueItem / ValidationCard | GET /validations autorizado al validador | Tarjeta de bandeja; mostrar nombre del estudiante para revisión y conservar `student_key` seudónimo para trazabilidad, estado, comentario, cantidad de evidencias y fecha de actualización. Nunca incluir correo |
 | AdminIndicators | GET /indicators/overview | Preserva KPIs, dataset, periodo, corte y cobertura por habilidad; certificado no implica dominio |
 | InterestProfile / LearningRoute | Solo fixtures; sin endpoints actuales | Intereses, objetivo, pasos, requisitos y evidencia registrada; no predecir habilidades ni empleabilidad |
 | CourseCandidate / Opportunity | Solo fixtures; sin persistencia actual | Fuente, fecha, requisitos, estado, audiencia y explicación de relevancia |
