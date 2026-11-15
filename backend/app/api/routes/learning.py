@@ -567,16 +567,16 @@ def create_offer(request: Request, payload: OfferInput, actor: AuthenticatedUser
 def edit_offer(identifier: UUID, request: Request, payload: OfferInput, actor: AuthenticatedUser=Depends(admin)):
     with transaction(request) as s:
         item = get(s, Offer, identifier, True)
-        if item.status not in {'DRAFT', 'PUBLISHED'} or item.course_id != payload.course_id:
-            fail('INVALID_STATE', 409, 'Solo se corrige una oportunidad en borrador o publicada, sin cambiar su curso')
+        if item.status not in {'DRAFT', 'PUBLISHED', 'RETIRED'} or item.course_id != payload.course_id:
+            fail('INVALID_STATE', 409, 'Solo se corrige una oportunidad en borrador, publicada o retirada, sin cambiar su curso')
         before = serialize(s, item)
         ids = active_interests(s, payload.interest_ids)
-        if item.status == 'PUBLISHED':
+        if item.status in {'PUBLISHED', 'RETIRED'}:
             course = get(s, Course, item.course_id, True)
-            if course.status != 'PUBLISHED':
+            if item.status == 'PUBLISHED' and course.status != 'PUBLISHED':
                 fail('INVALID_STATE', 409, 'La oportunidad publicada requiere un curso publicado')
             if not ids and not payload.cycles:
-                fail('PUBLICATION_INCOMPLETE', 422, 'Una oportunidad publicada debe conservar al menos un ciclo o área objetivo')
+                fail('PUBLICATION_INCOMPLETE', 422, 'Una oportunidad publicada o retirada debe conservar al menos un ciclo o área objetivo')
             if len(payload.relevance.strip()) < 10:
                 fail('PUBLICATION_INCOMPLETE', 422, 'La relevancia debe tener al menos 10 caracteres')
         item.title = payload.title
@@ -616,7 +616,7 @@ def transition(kind: str, identifier: UUID, request: Request, payload: Decision,
     with transaction(request) as s:
         item = get(s, model, identifier, True)
         before = serialize(s, item)
-        maps = {Route: {'DRAFT': {'PUBLISHED', 'RETIRED'}, 'PUBLISHED': {'RETIRED'}}, Course: {'DETECTED': {'IN_REVIEW', 'DISCARDED'}, 'IN_REVIEW': {'DISCARDED'}}, Offer: {'DRAFT': {'PUBLISHED', 'RETIRED'}, 'PUBLISHED': {'RETIRED'}}, Workshop: {'DRAFT': {'OPEN'}, 'OPEN': {'CLOSED'}, 'CLOSED': {'COMPLETED'}}}
+        maps = {Route: {'DRAFT': {'PUBLISHED', 'RETIRED'}, 'PUBLISHED': {'RETIRED'}}, Course: {'DETECTED': {'IN_REVIEW', 'DISCARDED'}, 'IN_REVIEW': {'DISCARDED'}}, Offer: {'DRAFT': {'PUBLISHED', 'RETIRED'}, 'PUBLISHED': {'RETIRED'}, 'RETIRED': {'PUBLISHED'}}, Workshop: {'DRAFT': {'OPEN'}, 'OPEN': {'CLOSED'}, 'CLOSED': {'COMPLETED'}}}
         if payload.status not in maps[model].get(item.status, set()):
             fail('INVALID_STATE', 409, 'Transición no permitida')
         if model is Offer:
@@ -624,7 +624,7 @@ def transition(kind: str, identifier: UUID, request: Request, payload: Decision,
             if payload.status == 'PUBLISHED':
                 ids = list(s.scalars(select(OfferInterest.interest_id).where(OfferInterest.offer_id == item.id)))
                 active_interests(s, ids)
-                if course.status != 'IN_REVIEW' or (not ids and (not item.cycles)) or len(item.relevance) < 10:
+                if course.status not in {'IN_REVIEW', 'PUBLISHED', 'RETIRED'} or (not ids and (not item.cycles)) or len(item.relevance) < 10:
                     fail('PUBLICATION_INCOMPLETE', 422, 'Revisa contenido, audiencia y relevancia antes de publicar')
             course_before = serialize(s, course)
             course.status = 'PUBLISHED' if payload.status == 'PUBLISHED' else 'RETIRED'
