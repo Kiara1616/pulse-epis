@@ -213,7 +213,8 @@ function RadarAdmin() {
       relevance: String(form.get("relevance")).trim(),
     };
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-    const publish = selectedOffer?.status !== "PUBLISHED" && submitter?.value === "publish";
+    const reopen = selectedOffer?.status === "RETIRED" && submitter?.value === "republish";
+    const publish = reopen || (selectedOffer?.status !== "PUBLISHED" && submitter?.value === "publish");
     await runAction(async () => {
       const offer = selectedOffer
         ? await learningApi.updateOffer(selectedOffer.id, input)
@@ -227,7 +228,9 @@ function RadarAdmin() {
         );
       }
     }, publish
-      ? "Oportunidad publicada y disponible para estudiantes."
+      ? reopen
+        ? "Oportunidad reabierta y disponible para estudiantes."
+        : "Oportunidad publicada y disponible para estudiantes."
       : selectedOffer?.status === "PUBLISHED"
         ? "Audiencia y datos de la oportunidad actualizados."
         : "Borrador de oportunidad guardado.");
@@ -328,7 +331,7 @@ function RadarAdmin() {
         <p role="status" className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-600">Cargando cursos y oportunidades…</p>
       ) : data ? (
         <>
-          {selectedCourse && (selectedCourse.status === "IN_REVIEW" || selectedOffer?.status === "PUBLISHED") && (
+          {selectedCourse && (selectedCourse.status === "IN_REVIEW" || selectedOffer?.status === "PUBLISHED" || selectedOffer?.status === "RETIRED") && (
             <section className="space-y-6 rounded-2xl border border-blue-200 bg-blue-50/40 p-5 shadow-sm sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -371,15 +374,11 @@ function RadarAdmin() {
                 </button>
               </form>}
 
-              {selectedOffer?.status === "RETIRED" ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-                  La oportunidad asociada fue retirada y no puede volver a publicarse.
-                </div>
-              ) : (
-                <form onSubmit={saveOpportunity} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+              <form onSubmit={saveOpportunity} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
                   <div>
                     <h3 className="font-bold text-slate-900">Oportunidad para estudiantes</h3>
                     <p className="mt-1 text-sm text-slate-600">Define a quién está dirigida y por qué es relevante. Solo los estudiantes que cumplan la audiencia podrán verla.</p>
+                    {selectedOffer?.status === "RETIRED" && <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">Esta oportunidad está retirada. Puedes corregirla y volver a publicarla cuando esté lista.</p>}
                   </div>
                   <label className="block text-sm font-semibold text-slate-800">
                     Título de la oportunidad
@@ -417,14 +416,15 @@ function RadarAdmin() {
                   </label>
                   <div className="flex flex-wrap gap-3">
                     <button name="intent" value="draft" disabled={working} className="rounded-lg border border-blue-300 px-4 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">
-                      {selectedOffer?.status === "PUBLISHED" ? "Guardar cambios" : "Guardar borrador"}
+                      {selectedOffer?.status === "PUBLISHED" || selectedOffer?.status === "RETIRED" ? "Guardar cambios" : "Guardar borrador"}
                     </button>
-                    {selectedOffer?.status !== "PUBLISHED" && <button name="intent" value="publish" disabled={working} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">
+                    {selectedOffer?.status === "RETIRED" ? <button name="intent" value="republish" disabled={working} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">
+                      {working ? "Reabriendo…" : "Volver a publicar"}
+                    </button> : selectedOffer?.status !== "PUBLISHED" && <button name="intent" value="publish" disabled={working} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">
                       {working ? "Publicando…" : "Guardar y publicar"}
                     </button>}
                   </div>
                 </form>
-              )}
             </section>
           )}
 
@@ -482,44 +482,46 @@ function RadarAdmin() {
                   {course.requirements.length > 0 && <p className="mt-3 text-sm text-slate-700">Requisitos: {course.requirements.join(", ")}</p>}
                   <p className="mt-2 text-sm text-slate-700">Habilidades: {course.skills.join(", ")}</p>
                   {offer && <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">{offerLabels[offer.status]}: <strong>{offer.title}</strong></p>}
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    {course.status === "DETECTED" && (
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-wrap items-center gap-3">
+                      {course.status === "DETECTED" && (
                       <button type="button" disabled={working} onClick={() => void runAction(
                         () => learningApi.setStatus<LearningCourse>("courses", course.id, "IN_REVIEW", "Revisión administrativa iniciada."),
                         "Curso enviado a revisión.",
                       ).then(() => setSelectedCourseId(course.id))} className="text-sm font-bold text-blue-700 disabled:opacity-50">
                         Iniciar revisión
                       </button>
-                    )}
-                    {course.status === "IN_REVIEW" && (
+                      )}
+                      {course.status === "IN_REVIEW" && (
                       <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-bold text-blue-700">
                         Revisar y gestionar oportunidad
                       </button>
-                    )}
-                    {course.status === "PUBLISHED" && offer?.status === "PUBLISHED" && (
+                      )}
+                      {(offer?.status === "PUBLISHED" || offer?.status === "RETIRED") && (
                       <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-bold text-blue-700">
-                        Editar audiencia y ciclos
+                        Editar
                       </button>
-                    )}
-                    {course.status === "IN_REVIEW" && (
+                      )}
+                      {course.status === "IN_REVIEW" && (
                       <button type="button" disabled={working} onClick={() => void runAction(
                         () => learningApi.setStatus<LearningCourse>("courses", course.id, "DISCARDED", "Fuente descartada tras revisión administrativa."),
                         "Fuente descartada.",
                       )} className="text-sm font-semibold text-rose-700 disabled:opacity-50">
                         Descartar
                       </button>
-                    )}
+                      )}
+                      {offer?.status === "DRAFT" && course.status === "IN_REVIEW" && (
+                        <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-bold text-blue-700">
+                          Continuar borrador
+                        </button>
+                      )}
+                    </div>
                     {offer?.status === "PUBLISHED" && (
                       <button type="button" disabled={working} onClick={() => void runAction(
                         () => learningApi.setStatus<LearningOffer>("offers", offer.id, "RETIRED", "Oportunidad retirada por administración."),
                         "Oportunidad retirada del catálogo.",
-                      )} className="text-sm font-semibold text-slate-600 disabled:opacity-50">
-                        Retirar oportunidad
-                      </button>
-                    )}
-                    {offer?.status === "DRAFT" && course.status === "IN_REVIEW" && (
-                      <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-bold text-blue-700">
-                        Continuar borrador
+                      )} className="ml-auto shrink-0 text-sm font-semibold text-slate-600 disabled:opacity-50">
+                        Retirar
                       </button>
                     )}
                   </div>
