@@ -8,7 +8,7 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 
 **Regla de presentación:** la interfaz desplegada consulta únicamente datos publicados del padrón y certificaciones validadas. No se muestra un selector ni una sección de demostración; los fixtures sintéticos quedan restringidos a pruebas automatizadas y no se presentan como resultados institucionales.
 
-**Estado verificado el 14/11/2026:** Render está operativo y `/ready` responde HTTP 200. El ETL productivo `43237986208` terminó `APPLIED` para `2026-II` (corte `2026-11-11`): reporta 310 matrículas activas y cero filas de certificación. Los registros de importación reportan 309 filas aceptadas y cero rechazadas; la diferencia de un registro debe conciliarse antes de afirmar que el padrón está completamente reconciliado. El catálogo Radar quedó conectado al feed JSON curado y versionado en Git; el primer `SYNC` productivo se registró con 14 filas omitidas porque ya existían en el catálogo publicado. Las filas se vuelven a consultar semanalmente y siguen requiriendo revisión del administrador. Los datos sintéticos de referencia permanecen deshabilitados en Render.
+**Estado verificado el 15/11/2026:** Render está operativo y `/ready` responde HTTP 200 con el merge `a26ca3f` desplegado. El ETL productivo `43237986208` terminó `APPLIED` para `2026-II` (corte `2026-11-11`): reporta 310 matrículas activas y cero filas de certificación. Los registros de importación reportan 309 filas aceptadas y cero rechazadas; la migración `0018_roster_reconcile` y la opción **Conciliar ausentes** ya están disponibles para resolver la diferencia sin borrar historia, pero esa carga explícita aún debe ejecutarse. El gráfico de matrícula fue verificado en producción con los ocho periodos UPT/GPAD y el padrón vigente de Pulse resaltado para `2026-II`. El catálogo Radar quedó conectado al feed JSON curado y versionado en Git; el primer `SYNC` productivo se registró con 14 filas omitidas porque ya existían en el catálogo publicado. Las filas se vuelven a consultar semanalmente y siguen requiriendo revisión del administrador. Los datos sintéticos de referencia permanecen deshabilitados en Render.
 
 ## 1. Cumplimiento de requisitos
 
@@ -65,7 +65,7 @@ El gráfico **Matrícula por periodo** combina dos fuentes sin mezclar sus signi
 
 Por tanto, durante la exposición se puede explicar que la serie muestra la historia institucional disponible y que el periodo actual se controla con el padrón autorizado importado en Pulse. La diferencia entre fuentes no se oculta ni se corrige inventando filas.
 
-El libro 2026-II revisado contiene **309 filas completas** y **19 pendientes de conciliación**. Render registró la importación con 309 aceptadas y 0 rechazadas. El ETL posterior encontró 310 matrículas activas; esta diferencia de un registro sigue pendiente de conciliación. Los datos nominales no están versionados en Git.
+El libro 2026-II revisado contiene **309 filas completas** y **19 pendientes de conciliación**. Render registró la importación con 309 aceptadas y 0 rechazadas. El ETL posterior encontró 310 matrículas activas; esta diferencia de un registro sigue pendiente de conciliación y puede resolverse desde **Conciliar ausentes** cuando el archivo represente el padrón completo. Los datos nominales no están versionados en Git.
 
 ![Proceso ETL](docs/recursos/diagramas/etl-periodico.svg)
 
@@ -170,7 +170,7 @@ Para completar la aceptación institucional, todavía se requiere:
 
 1. Conciliar la diferencia entre 309 filas aceptadas y los 310 hechos activos publicados por el ETL; revisar también las 19 filas incompletas contra una fuente institucional. No conceder acceso sin confirmar correo y código.
 2. Iniciar sesión con las tres cuentas autorizadas y recorrer Admin → estudiante → validador con una certificación de prueba; verificar audiencia por ciclo, cupos y trazabilidad.
-3. Abrir los seis reportes en producción y confirmar filtros, datos de fuente institucional, corte `2026-11-11` y totales esperados. El ETL reporta cero certificaciones, por lo que el recorrido de certificación validada debe generar evidencia de prueba antes de esperar indicadores de certificaciones.
+3. Abrir los seis reportes en producción y confirmar filtros, datos de fuente institucional, corte `2026-11-11` y totales esperados. El ETL reporta cero certificaciones, por lo que el recorrido de certificación validada debe usar evidencia institucional autorizada antes de esperar indicadores de certificaciones; no se deben inventar credenciales para llenar el tablero.
 4. El primer `SYNC` productivo del feed curado del Radar quedó confirmado: `0 candidatos nuevos; 0 candidatos actualizados; 0 cursos archivados; 14 omitidos`. Las filas permanecen agrupadas por proveedor y en estado publicado solo cuando existe una decisión administrativa. El conector oficial DataCamp sigue disponible como integración opcional, requiere una clave organizacional y verificar el plan/costo; Pulse no extrae HTML sin autorización.
 
 La infraestructura Terraform y sus estimaciones son material de exposición y revisión. Desplegar AWS/GCP o ejecutar Infracost con un plan real queda pendiente de presupuesto y aprobación; un `terraform plan` no crea recursos, pero `apply` sí puede generar cargos.
