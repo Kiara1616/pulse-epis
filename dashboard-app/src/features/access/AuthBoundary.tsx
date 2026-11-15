@@ -104,8 +104,8 @@ function GoogleLoginView({ onLogin }: { onLogin: () => void }) {
     <main className="min-h-screen bg-[#eef3fa] p-4 sm:p-6 lg:p-10">
       <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_24px_70px_rgba(15,49,95,0.14)] sm:min-h-[calc(100vh-3rem)] lg:min-h-[calc(100vh-5rem)] lg:grid-cols-[1.08fr_.92fr]">
         <section className="relative hidden min-h-[680px] overflow-hidden bg-[#0d315f] lg:block">
-          <Image src="/upt-epis-campus.jpg" alt="Instalaciones de la Escuela Profesional de Ingeniería de Sistemas de la UPT" fill priority sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover" />
-          <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(5,34,71,.96)_0%,rgba(11,67,126,.72)_48%,rgba(7,28,61,.92)_100%)]" />
+          <Image src="/login-lab.png" alt="Laboratorio de cómputo" fill priority sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover" />
+          <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(5,34,71,.84)_0%,rgba(11,67,126,.62)_48%,rgba(7,28,61,.88)_100%)]" />
           <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white xl:p-14">
             <div className="flex items-center gap-3">
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/95 p-2 shadow-lg shadow-slate-950/20">
@@ -122,7 +122,9 @@ function GoogleLoginView({ onLogin }: { onLogin: () => void }) {
               <p className="mt-5 max-w-lg text-base leading-7 text-blue-100">Un espacio institucional para consultar indicadores, validar evidencias y descubrir oportunidades de formación.</p>
             </div>
             <div className="flex items-center justify-between gap-4 border-t border-white/20 pt-5 text-xs text-blue-100">
-              <span>Universidad Privada de Tacna</span>
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/95 p-1.5 shadow-lg shadow-slate-950/20">
+                <Image src="/upt-logo.png" alt="Universidad Privada de Tacna" width={26} height={35} className="h-8 w-auto object-contain" />
+              </span>
               <span className="rounded-full border border-white/20 px-3 py-1.5">Acceso seguro</span>
             </div>
           </div>
@@ -139,16 +141,16 @@ function GoogleLoginView({ onLogin }: { onLogin: () => void }) {
             </div>
             <p className="eyebrow mt-10 lg:mt-0">Acceso institucional</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#102c52]">Ingresa a Pulse EPIS</h2>
-            <p className="mt-4 text-[15px] leading-7 text-slate-600">Usa tu cuenta Google institucional para consultar indicadores o administrar tus certificaciones.</p>
+            <p className="mt-4 text-[15px] leading-7 text-slate-600">Accede con tu cuenta Google institucional.</p>
             <button onClick={onLogin} className="mt-8 inline-flex w-full items-center justify-center gap-3 rounded-xl bg-[#123866] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,56,102,.2)] transition hover:bg-[#0d2c54] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#123866]">
               <GoogleMark />
               Continuar con Google
             </button>
             <div className="mt-6 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm leading-6 text-[#31527f]">
               <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-blue-600 text-xs font-bold text-white">✓</span>
-              <p>Solo pueden ingresar las cuentas autorizadas por Pulse y el padrón institucional.</p>
+              <p>Solo para cuentas autorizadas.</p>
             </div>
-            <p className="mt-8 text-center text-xs leading-5 text-slate-400">Al continuar serás redirigido a Google para autenticarte de forma segura.</p>
+            <p className="mt-6 text-center text-xs leading-5 text-slate-400">Inicio de sesión seguro con Google.</p>
           </div>
         </section>
       </div>
