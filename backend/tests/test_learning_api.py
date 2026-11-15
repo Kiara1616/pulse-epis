@@ -119,8 +119,13 @@ def test_review_and_audience_are_required_and_drafts_hidden(context):
     response = a.put('/api/v1/learning/offers/' + offer['id'], json={'course_id': course['id'], 'title': 'Oferta corregida', 'cycles': ['VI'], 'relevance': 'JustificaciÃ³n de relevancia revisada.'})
     assert response.status_code == 200
     publish(a, 'offers', offer, 'PUBLISHED')
+    edited = a.put('/api/v1/learning/offers/' + offer['id'], json={'course_id': course['id'], 'title': 'Oferta publicada actualizada', 'cycles': ['VII', 'VIII'], 'relevance': 'Audiencia actualizada para los ciclos superiores.'})
+    assert edited.status_code == 200, edited.text
+    assert edited.json()['status'] == 'PUBLISHED'
+    assert edited.json()['cycles'] == ['VII', 'VIII']
+    assert a.put('/api/v1/learning/offers/' + offer['id'], json={'course_id': course['id'], 'title': 'Oferta sin audiencia', 'cycles': [], 'relevance': 'Audiencia eliminada de forma accidental.'}).status_code == 422
     assert a.put('/api/v1/learning/courses/' + course['id'], json={'title': 'Cambio', 'provider': 'Proveedor', 'source_url': 'https://example.invalid/cambio', 'checked_on': '2026-01-01', 'skills': ['IA']}).status_code == 409
-    assert one.get('/api/v1/learning/offers').json()[0]['title'] == 'Oferta corregida'
+    assert one.get('/api/v1/learning/offers').json()[0]['title'] == 'Oferta publicada actualizada'
 
 @pytest.mark.parametrize('field,value', [('source_url', 'http://example.invalid/x'), ('checked_on', '2099-01-01'), ('skills', []), ('student_id', 'other')])
 def test_invalid_payloads(context, field, value):

@@ -567,10 +567,18 @@ def create_offer(request: Request, payload: OfferInput, actor: AuthenticatedUser
 def edit_offer(identifier: UUID, request: Request, payload: OfferInput, actor: AuthenticatedUser=Depends(admin)):
     with transaction(request) as s:
         item = get(s, Offer, identifier, True)
-        if item.status != 'DRAFT' or item.course_id != payload.course_id:
-            fail('INVALID_STATE', 409, 'Solo se corrige el borrador sin cambiar su curso')
+        if item.status not in {'DRAFT', 'PUBLISHED'} or item.course_id != payload.course_id:
+            fail('INVALID_STATE', 409, 'Solo se corrige una oportunidad en borrador o publicada, sin cambiar su curso')
         before = serialize(s, item)
         ids = active_interests(s, payload.interest_ids)
+        if item.status == 'PUBLISHED':
+            course = get(s, Course, item.course_id, True)
+            if course.status != 'PUBLISHED':
+                fail('INVALID_STATE', 409, 'La oportunidad publicada requiere un curso publicado')
+            if not ids and not payload.cycles:
+                fail('PUBLICATION_INCOMPLETE', 422, 'Una oportunidad publicada debe conservar al menos un ciclo o área objetivo')
+            if len(payload.relevance.strip()) < 10:
+                fail('PUBLICATION_INCOMPLETE', 422, 'La relevancia debe tener al menos 10 caracteres')
         item.title = payload.title
         item.cycles = list(dict.fromkeys(payload.cycles))
         item.relevance = payload.relevance
