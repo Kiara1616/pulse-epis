@@ -50,7 +50,9 @@ Se cargó el archivo proporcionado `padron_corregido_iniciales_2025-II.csv`: 342
 
 La prueba real del navegador verificó nueve rutas con los tres roles (27 combinaciones), sin errores de JavaScript. Sus resultados y capturas se guardan localmente en `artifacts/local-validation`, excluido de Git. La prueba integrada del backend recorre registro, evidencia, observación, corrección, aprobación, publicación y PDF sobre una base aislada, sin introducir certificaciones ficticias en el padrón del usuario.
 
-## Demostración separada de certificaciones
+## Registro de demostración local histórica
+
+Esta sección documenta una validación local anterior y no describe los datos publicados en Render. En producción, los fixtures sintéticos están deshabilitados y los indicadores solo leen snapshots publicados del padrón y certificaciones aprobadas.
 
 Por elección del usuario, las vistas analíticas locales cargan una demostración de 2020-I a 2026-II. Su base SQLite en memoria es independiente del padrón real. Contiene registros sintéticos de AWS, Cisco, Oracle, Neo4j y Grafana, con habilidades asociadas. El selector Fuente de datos permite consultar las publicaciones reales; su selección se conserva durante la navegación. La exportación Excel, CSV y PDF identifica la demostración.
 
