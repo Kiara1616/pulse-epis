@@ -119,6 +119,12 @@ export type Certification = {
   latest_comment?: string | null;
 };
 
+export type IssuerOption = {
+  id: string | null;
+  name: string;
+  website_url: string | null;
+};
+
 export type RosterImport = {
   id: string;
   period_code: string;

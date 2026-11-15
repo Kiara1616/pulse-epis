@@ -56,15 +56,15 @@ const reports: Array<{ id: ReportId; label: string; icon: typeof Award }> = [
 
 const COLORS = [
   "#2563eb",
-  "#0d9488",
-  "#7c3aed",
-  "#f59e0b",
-  "#0284c7",
-  "#e11d48",
-  "#10b981",
-  "#6366f1",
-  "#ec4899",
-  "#8b5cf6",
+  "#4f83e8",
+  "#6b9cf0",
+  "#7aaaf3",
+  "#31578f",
+  "#8eb9f5",
+  "#5278ae",
+  "#a8c5f8",
+  "#9bb8ec",
+  "#c4d7f8",
 ];
 
 function bucket(date: string, granularity: Granularity) {
@@ -275,8 +275,8 @@ function ReportContent({
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-3 w-3 rounded-full bg-blue-600" /> Estudiantes certificados
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block h-3 w-3 rounded-full bg-emerald-500" /> Certificaciones aprobadas
+                <span className="flex items-center gap-1.5">
+                <span className="inline-block h-3 w-3 rounded-full bg-blue-300" /> Certificaciones aprobadas
               </span>
             </div>
           </div>
@@ -291,8 +291,8 @@ function ReportContent({
                       <stop offset="95%" stopColor="#2563eb" stopOpacity={0.05} />
                     </linearGradient>
                     <linearGradient id="colorCerts" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.05} />
+                      <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -312,7 +312,7 @@ function ReportContent({
                     type="monotone"
                     dataKey="certifications"
                     name="Certificaciones aprobadas"
-                    stroke="#10b981"
+                    stroke="#60a5fa"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorCerts)"
@@ -344,7 +344,7 @@ function ReportContent({
                   <tr key={row.name} className="hover:bg-slate-50/50">
                     <td className="py-2.5 font-medium text-slate-900">{row.name}</td>
                     <td className="py-2.5 font-semibold text-blue-600">{row.value}</td>
-                    <td className="py-2.5 font-semibold text-emerald-600">{row.certifications}</td>
+                    <td className="py-2.5 font-semibold text-blue-700">{row.certifications}</td>
                     <td className="py-2.5 text-slate-600">
                       {row.value > 0 ? (row.certifications / row.value).toFixed(2) : "0.00"}
                     </td>
@@ -525,8 +525,8 @@ function ReportContent({
                 {data.skill_gaps.map((item) => (
                   <tr key={item.skill} className="hover:bg-slate-50/50">
                     <td className="py-2.5 font-medium text-slate-900">{item.skill}</td>
-                    <td className="py-2.5 font-semibold text-emerald-600">{item.certified_students}</td>
-                    <td className="py-2.5 font-semibold text-rose-500">{item.gap_students}</td>
+                    <td className="py-2.5 font-semibold text-blue-700">{item.certified_students}</td>
+                    <td className="py-2.5 font-semibold text-slate-600">{item.gap_students}</td>
                     <td className="py-2.5">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-20 overflow-hidden rounded-full bg-slate-100">
@@ -542,7 +542,7 @@ function ReportContent({
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                           item.gap_students > 100
-                            ? "border border-amber-200 bg-amber-50 text-amber-700"
+                            ? "border border-blue-200 bg-blue-50 text-blue-700"
                             : "border border-blue-200 bg-blue-50 text-blue-700"
                         }`}
                       >
@@ -671,19 +671,19 @@ function ReportContent({
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                           run.status === "APPLIED" || run.status === "SUCCESS"
-                            ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border border-amber-200 bg-amber-50 text-amber-700"
+                            ? "border border-blue-200 bg-blue-50 text-blue-700"
+                            : "border border-slate-200 bg-slate-50 text-slate-600"
                         }`}
                       >
                         {run.status}
                       </span>
                     </td>
                     <td className="font-medium text-slate-700">{run.total_rows}</td>
-                    <td className="font-semibold text-emerald-600">{run.accepted_rows}</td>
-                    <td className={`font-semibold ${run.rejected_rows > 0 ? "text-rose-600" : "text-slate-400"}`}>
+                    <td className="font-semibold text-blue-700">{run.accepted_rows}</td>
+                    <td className={`font-semibold ${run.rejected_rows > 0 ? "text-slate-700" : "text-slate-400"}`}>
                       {run.rejected_rows}
                     </td>
-                    <td className={`font-semibold ${run.duplicate_rows > 0 ? "text-amber-600" : "text-slate-400"}`}>
+                    <td className={`font-semibold ${run.duplicate_rows > 0 ? "text-blue-700" : "text-slate-400"}`}>
                       {run.duplicate_rows}
                     </td>
                     <td>

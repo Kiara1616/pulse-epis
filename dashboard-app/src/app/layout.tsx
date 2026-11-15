@@ -16,10 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body
-        className="antialiased bg-[#F4F7FE] text-gray-900 min-h-screen"
-        suppressHydrationWarning
-      >
+      <body className="min-h-screen antialiased" suppressHydrationWarning>
           <AuthProvider>
             <AuthBoundary>
             <AppShell>{children}</AppShell>

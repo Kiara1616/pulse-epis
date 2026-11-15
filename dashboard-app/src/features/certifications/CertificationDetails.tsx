@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { ApiError, apiFetch } from "@/shared/api/client";
-import type { Certification } from "@/shared/api/types";
+import type { Certification, IssuerOption } from "@/shared/api/types";
 import {
   hasCertificationFormErrors,
   validateCertificationForm,
@@ -22,20 +22,26 @@ const editableFields: Array<{
   { key: "issuer_name", label: "Entidad emisora", type: "text", required: true },
   { key: "issued_on", label: "Fecha de emisión", type: "date", required: true },
   { key: "expires_on", label: "Fecha de vencimiento (opcional)", type: "date" },
-  { key: "source_url", label: "URL de verificación (opcional)", type: "url" },
+  { key: "source_url", label: "URL de verificación (Credly o proveedor; opcional)", type: "url" },
   { key: "skills", label: "Habilidades, separadas por comas", type: "text", required: true },
 ];
 
 export function CertificationDetails({
   item,
+  issuerOptions,
   onSaved,
   onClose,
 }: {
   item: Certification;
+  issuerOptions: IssuerOption[];
   onSaved: () => Promise<void>;
   onClose: () => void;
 }) {
+  const availableIssuers = issuerOptions.some((option) => option.name === item.issuer_name)
+    ? issuerOptions
+    : [{ id: item.issuer_id, name: item.issuer_name, website_url: item.issuer_url }, ...issuerOptions];
   const [form, setForm] = useState<DetailFormValues>({
+    issuer_id: item.issuer_id,
     credential_name: item.credential_name,
     issuer_name: item.issuer_name,
     issued_on: item.issued_on,
@@ -94,6 +100,7 @@ export function CertificationDetails({
         method: "PATCH",
         body: JSON.stringify({
           ...values,
+          issuer_id: form.issuer_id || null,
           expires_on: values.expires_on || null,
           source_url: normalizedSourceUrl,
           skills: skills
@@ -169,7 +176,7 @@ export function CertificationDetails({
       </div>
 
       {item.latest_comment && (
-        <p className="mt-3 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-slate-700">
           <strong>Comentario del validador:</strong> {item.latest_comment}
         </p>
       )}
@@ -179,7 +186,7 @@ export function CertificationDetails({
         </p>
       )}
       {message && (
-        <p role="status" className="mt-3 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800">
+        <p role="status" className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
           {message}
         </p>
       )}
@@ -211,7 +218,7 @@ export function CertificationDetails({
           {hasCertificationFormErrors(errors) && (
             <p
               role="alert"
-              className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+              className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-slate-700"
             >
               Revisa los campos marcados antes de reenviar la corrección.
             </p>
@@ -223,19 +230,47 @@ export function CertificationDetails({
               return (
                 <label key={key} htmlFor={inputId} className="text-sm font-medium">
                   {label}
-                  <input
-                    id={inputId}
-                    disabled={busy}
-                    required={required}
-                    type={type}
-                    value={form[key]}
-                    aria-invalid={Boolean(errors[key])}
-                    aria-describedby={errors[key] ? errorId : undefined}
-                    onChange={(event) => updateField(key, event.target.value)}
-                    className={`mt-1 block w-full rounded-md border px-3 py-2 ${
-                      errors[key] ? "border-rose-300" : "border-slate-300"
-                    }`}
-                  />
+                  {key === "issuer_name" ? (
+                    <select
+                      id={inputId}
+                      disabled={busy || availableIssuers.length === 0}
+                      required={required}
+                      value={form.issuer_name}
+                      aria-invalid={Boolean(errors[key])}
+                      aria-describedby={errors[key] ? errorId : undefined}
+                      onChange={(event) => {
+                        const option = availableIssuers.find((candidate) => candidate.name === event.target.value);
+                        setForm((current) => ({
+                          ...current,
+                          issuer_name: option?.name ?? "",
+                          issuer_id: option?.id ?? "",
+                        }));
+                        setErrors((current) => {
+                          if (!current.issuer_name) return current;
+                          const next = { ...current };
+                          delete next.issuer_name;
+                          return next;
+                        });
+                      }}
+                      className={`mt-1 block w-full rounded-xl border bg-white px-3 py-2 ${errors[key] ? "border-rose-300" : "border-slate-300"}`}
+                    >
+                      {availableIssuers.map((option) => <option key={option.id ?? option.name} value={option.name}>{option.name}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      id={inputId}
+                      disabled={busy}
+                      required={required}
+                      type={type}
+                      value={form[key]}
+                      aria-invalid={Boolean(errors[key])}
+                      aria-describedby={errors[key] ? errorId : undefined}
+                      onChange={(event) => updateField(key, event.target.value)}
+                      className={`mt-1 block w-full rounded-xl border px-3 py-2 ${
+                        errors[key] ? "border-rose-300" : "border-slate-300"
+                      }`}
+                    />
+                  )}
                   {errors[key] && (
                     <span
                       id={errorId}

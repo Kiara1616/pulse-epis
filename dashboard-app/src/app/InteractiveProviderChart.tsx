@@ -15,13 +15,13 @@ import type { AnalyticsMetric } from "@/shared/api/types";
 
 const colors = [
   "#2563eb",
-  "#0d9488",
-  "#7c3aed",
-  "#f59e0b",
-  "#0284c7",
-  "#e11d48",
-  "#475569",
-  "#059669",
+  "#4f83e8",
+  "#6b9cf0",
+  "#7aaaf3",
+  "#31578f",
+  "#8eb9f5",
+  "#5278ae",
+  "#a8c5f8",
 ];
 
 function DistributionCard({
@@ -32,7 +32,7 @@ function DistributionCard({
   rows: AnalyticsMetric[];
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="surface-card overflow-hidden p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-slate-900">{title}</h2>
         <span className="rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-semibold tabular-nums text-blue-700">

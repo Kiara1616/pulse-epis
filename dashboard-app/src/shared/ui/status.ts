@@ -8,13 +8,13 @@ export const certificationLabels: Record<string, string> = {
   EXPIRED: "Vencida",
 };
 export const certificationClasses: Record<string, string> = {
-  PENDING: "bg-amber-50 text-amber-700",
-  UNDER_REVIEW: "bg-blue-50 text-blue-700",
-  APPROVED: "bg-emerald-50 text-emerald-700",
-  OBSERVED: "bg-orange-50 text-orange-700",
-  RESUBMITTED: "bg-violet-50 text-violet-700",
-  REJECTED: "bg-rose-50 text-rose-700",
-  EXPIRED: "bg-gray-100 text-gray-700",
+  PENDING: "bg-blue-50 text-blue-800 ring-1 ring-inset ring-blue-100",
+  UNDER_REVIEW: "bg-blue-100/70 text-blue-800 ring-1 ring-inset ring-blue-200",
+  APPROVED: "bg-sky-50 text-sky-800 ring-1 ring-inset ring-sky-100",
+  OBSERVED: "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200",
+  RESUBMITTED: "bg-indigo-50 text-indigo-800 ring-1 ring-inset ring-indigo-100",
+  REJECTED: "bg-slate-200 text-slate-700 ring-1 ring-inset ring-slate-300",
+  EXPIRED: "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200",
 };
 export function statusLabel(status: string) {
   return certificationLabels[status] ?? "Estado no reconocido";

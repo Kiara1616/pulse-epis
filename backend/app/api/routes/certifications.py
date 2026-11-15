@@ -17,6 +17,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse, RedirectResponse, Response
+from sqlalchemy import select
 
 from ...auth.dependencies import require_permissions
 from ...auth.models import AuthenticatedUser, Permission, Role
@@ -26,6 +27,7 @@ from ...certifications.schemas import (
     CertificationUpdateRequest,
     EvidenceAccessResponse,
     EvidenceResponse,
+    IssuerOption,
     SkillResponse,
 )
 from ...certifications.service import (
@@ -43,6 +45,8 @@ from ...certifications.service import (
     SkillInput,
     StudentNotProvisioned,
 )
+from ...db.models import Issuer
+from ...learning.models import LearningCourse
 
 
 router = APIRouter(prefix="/certifications", tags=["certifications"])
@@ -125,6 +129,7 @@ def create_certification(
 ) -> CertificationResponse:
     service = _service(request)
     draft = CertificationDraft(
+        issuer_id=payload.issuer_id,
         issuer_name=payload.issuer_name,
         issuer_url=payload.issuer_url,
         credential_name=payload.credential_name,
@@ -160,6 +165,62 @@ def create_certification(
             "CERTIFICATION_UNAVAILABLE",
             "The certification service is unavailable",
         ) from exc
+
+
+@router.get(
+    "/issuers",
+    response_model=list[IssuerOption],
+    dependencies=[Depends(_CERTIFICATION_READ)],
+    summary="List issuer options published by the learning catalog",
+)
+def list_issuer_options(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(_CERTIFICATION_READ),
+) -> list[IssuerOption]:
+    """Return canonical issuer choices for the student certification form.
+
+    The learning radar is the source of authorization: published course providers
+    are exposed as selectable issuers. Existing issuer rows are reused when the
+    names match; a missing row is created when the student submits the catalog
+    choice, preserving compatibility with legacy certification records.
+    """
+
+    factory = request.app.state.session_factory
+    if factory is None:
+        raise _http_error(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "CERTIFICATION_UNAVAILABLE",
+            "The certification service is unavailable",
+        )
+    with factory() as session:
+        published_courses = list(
+            session.scalars(
+                select(LearningCourse)
+                .where(LearningCourse.status == "PUBLISHED")
+                .order_by(LearningCourse.provider, LearningCourse.title)
+            )
+        )
+        issuer_rows = list(session.scalars(select(Issuer).order_by(Issuer.name)))
+        existing = {item.name.casefold(): item for item in issuer_rows}
+        options: dict[str, IssuerOption] = {}
+        for course in published_courses:
+            key = course.provider.strip().casefold()
+            issuer = existing.get(key)
+            options[key] = IssuerOption(
+                id=issuer.id if issuer else None,
+                name=issuer.name if issuer else course.provider.strip(),
+                website_url=issuer.website_url if issuer else course.source_url,
+            )
+        # Do not block legacy environments that have issuer records but have not
+        # yet published a radar course. The UI still uses a select, never free text.
+        if not options:
+            for issuer in issuer_rows:
+                options[issuer.name.casefold()] = IssuerOption(
+                    id=issuer.id,
+                    name=issuer.name,
+                    website_url=issuer.website_url,
+                )
+        return sorted(options.values(), key=lambda item: item.name.casefold())
 
 
 @router.get(

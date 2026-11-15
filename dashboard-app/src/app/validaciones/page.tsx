@@ -147,8 +147,8 @@ function priorityLabel(priority: Priority) {
 }
 
 function priorityClass(priority: Priority) {
-  if (priority === "HIGH") return "bg-rose-50 text-rose-700";
-  if (priority === "MEDIUM") return "bg-amber-50 text-amber-700";
+  if (priority === "HIGH") return "bg-blue-100 text-blue-800";
+  if (priority === "MEDIUM") return "bg-blue-50 text-blue-700";
   return "bg-slate-100 text-slate-600";
 }
 
@@ -473,7 +473,7 @@ function ValidationsContent() {
             </a>
           )}
           {selected.latest_comment && (
-            <p className="rounded-lg bg-orange-50 p-3 text-sm text-orange-900">
+            <p className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-slate-700">
               <strong>Último comentario:</strong> {selected.latest_comment}
             </p>
           )}
@@ -578,9 +578,9 @@ function ValidationsContent() {
               <div className="flex flex-wrap gap-3">
                 {(
                   [
-                    ["APPROVE", "Aprobar", "bg-emerald-600 text-white"],
-                    ["OBSERVE", "Observar", "bg-amber-100 text-amber-800"],
-                    ["REJECT", "Rechazar", "bg-rose-50 text-rose-700"],
+                    ["APPROVE", "Aprobar", "bg-blue-600 text-white hover:bg-blue-700"],
+                    ["OBSERVE", "Observar", "bg-blue-50 text-blue-800 hover:bg-blue-100"],
+                    ["REJECT", "Rechazar", "bg-slate-100 text-slate-700 hover:bg-slate-200"],
                   ] as const
                 ).map(([action, label, color]) => (
                   <button

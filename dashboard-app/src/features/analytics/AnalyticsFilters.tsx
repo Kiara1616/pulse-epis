@@ -49,12 +49,12 @@ export function AnalyticsFilters({
         </div>
       </div>
       <div className={`grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-5"}`}>
-        <label className="text-xs font-semibold text-slate-600">
+        <label className="text-sm font-medium text-slate-600">
           Periodo
           <select
             value={filters.period_code}
             onChange={(event) => onChange("period_code", event.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Selecciona...</option>
             {periods.map((period) => (
@@ -64,7 +64,7 @@ export function AnalyticsFilters({
             ))}
           </select>
         </label>
-        <label className="text-xs font-semibold text-slate-600">
+        <label className="text-sm font-medium text-slate-600">
           Fecha de los datos
           <div className="relative mt-1">
             <CalendarDays
@@ -75,7 +75,7 @@ export function AnalyticsFilters({
               type="date"
               value={filters.cutoff_date}
               onChange={(event) => onChange("cutoff_date", event.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
         </label>
@@ -116,13 +116,13 @@ function SelectFilter({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="text-xs font-semibold text-slate-600">
+    <label className="text-sm font-medium text-slate-600">
       {label}
       <select
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
       >
         <option value="">Todos</option>
         {[...new Set(value ? [...values, value] : values)].map((item) => (
