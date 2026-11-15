@@ -1,6 +1,6 @@
 # Cierre de requisitos de la segunda unidad
 
-**Fecha de revisión:** 14/11/2026 (hora de Lima)
+**Fecha de revisión:** 15/11/2026 (hora de Lima)
 **Plataforma elegida:** Google Cloud Platform
 **Regla de cierre:** una configuración local no equivale a un recurso desplegado. Los estados distinguen implementación, validación local y evidencia cloud.
 
