@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision = "0018_roster_reconciliation_counts"
+revision = "0018_roster_reconcile"
 down_revision = "0017_authorized_course_feed"
 branch_labels = None
 depends_on = None
