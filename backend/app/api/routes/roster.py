@@ -150,6 +150,7 @@ def _report_response(report: ImportReport) -> RosterImportResponse:
         total_rows=report.total_rows,
         accepted_rows=report.accepted_rows,
         rejected_rows=report.rejected_rows,
+        deactivated_rows=report.deactivated_rows,
         rejections=[
             {
                 "row_number": rejection.row_number,
@@ -171,6 +172,7 @@ def _history_response(history: ImportHistory) -> RosterImportHistoryResponse:
         total_rows=history.total_rows,
         accepted_rows=history.accepted_rows,
         rejected_rows=history.rejected_rows,
+        deactivated_rows=history.deactivated_rows,
         created_at=history.created_at,
         completed_at=history.completed_at,
     )
@@ -190,6 +192,7 @@ def import_roster(
     file: UploadFile = File(...),
     current_user: AuthenticatedUser = Depends(_PADRON_ADMIN),
     selected_period_only: bool = False,
+    reconcile_missing: bool = False,
 ) -> RosterImportResponse:
     service: RosterImportServiceProtocol = request.app.state.roster_import_service
     settings = request.app.state.settings
@@ -204,6 +207,7 @@ def import_roster(
             period_code=period_code,
             actor_user_id=current_user.id,
             selected_period_only=selected_period_only,
+            reconcile_missing=reconcile_missing,
             filename=file.filename or "",
         )
     except ValueError as exc:
@@ -497,6 +501,7 @@ def reconcile_roster_candidate(
         period_code=period_code,
         actor_user_id=current_user.id,
         selected_period_only=True,
+        reconcile_missing=False,
         filename="candidate-resolution.csv",
     )
     if report.status != "APPLIED" or report.accepted_rows != 1:

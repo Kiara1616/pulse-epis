@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from ..core.config import Settings
 from ..db.models import (
     AcademicPeriod,
+    AuditLog,
     Enrollment,
     RosterImport,
     RosterImportRejection,
@@ -54,6 +55,7 @@ class RosterImportServiceProtocol(Protocol):
         period_code: str,
         actor_user_id: UUID | None,
         selected_period_only: bool = False,
+        reconcile_missing: bool = False,
         filename: str = "roster.csv",
     ) -> "ImportReport":
         """Import a period-scoped CSV and return a non-sensitive report."""
@@ -81,6 +83,7 @@ class ImportReport:
     total_rows: int
     accepted_rows: int
     rejected_rows: int
+    deactivated_rows: int
     rejections: tuple[RosterRejection, ...]
     idempotent: bool
 
@@ -93,6 +96,7 @@ class ImportHistory:
     total_rows: int
     accepted_rows: int
     rejected_rows: int
+    deactivated_rows: int
     created_at: datetime
     completed_at: datetime | None
 
@@ -197,6 +201,7 @@ class RosterImportService:
             total_rows=record.total_rows,
             accepted_rows=record.accepted_rows,
             rejected_rows=record.rejected_rows,
+            deactivated_rows=record.deactivated_rows,
             rejections=rejections,
             idempotent=idempotent,
         )
@@ -330,10 +335,50 @@ class RosterImportService:
             enrollment.status = record.status
 
         session.flush()
-        latest_status = session.scalar(select(Enrollment.status).join(AcademicPeriod, AcademicPeriod.id == Enrollment.period_id)
-            .where(Enrollment.student_id == student.id).order_by(AcademicPeriod.starts_on.desc(), AcademicPeriod.code.desc()).limit(1))
+        self._refresh_student_status(session, student)
+
+    def _refresh_student_status(self, session: Session, student: Student) -> None:
+        latest_status = session.scalar(
+            select(Enrollment.status)
+            .join(AcademicPeriod, AcademicPeriod.id == Enrollment.period_id)
+            .where(Enrollment.student_id == student.id)
+            .order_by(AcademicPeriod.starts_on.desc(), AcademicPeriod.code.desc())
+            .limit(1)
+        )
         if latest_status is not None:
             student.status = latest_status
+
+    def _deactivate_missing_records(
+        self,
+        session: Session,
+        period: AcademicPeriod,
+        records: tuple[RosterRecord, ...],
+    ) -> int:
+        imported_keys = {
+            pseudonymize_student_code(record.code, self._settings.roster_pseudonym_secret)
+            for record in records
+        }
+        active_enrollments = session.scalars(
+            select(Enrollment)
+            .where(
+                Enrollment.period_id == period.id,
+                Enrollment.status == "ACTIVE",
+            )
+        ).all()
+        deactivated = 0
+        deactivated_students: list[Student] = []
+        for enrollment in active_enrollments:
+            student = session.get(Student, enrollment.student_id)
+            if student is None or student.student_key in imported_keys:
+                continue
+            enrollment.status = "INACTIVE"
+            deactivated_students.append(student)
+            deactivated += 1
+        if deactivated_students:
+            session.flush()
+            for student in deactivated_students:
+                self._refresh_student_status(session, student)
+        return deactivated
 
     def import_csv(
         self,
@@ -342,10 +387,14 @@ class RosterImportService:
         period_code: str,
         actor_user_id: UUID | None,
         selected_period_only: bool = False,
+        reconcile_missing: bool = False,
         filename: str = "roster.csv",
     ) -> ImportReport:
         normalized_period_code = normalize_text(period_code)
-        source_sha256 = hashlib.sha256((b"selected-period-v1\0" if selected_period_only else b"") + content).hexdigest()
+        source_prefix = b"selected-period-v1\0" if selected_period_only else b""
+        if reconcile_missing:
+            source_prefix += b"reconcile-missing-v1\0"
+        source_sha256 = hashlib.sha256(source_prefix + content).hexdigest()
 
         with self._session_factory() as session:
             period = self._period(session, normalized_period_code)
@@ -418,6 +467,7 @@ class RosterImportService:
                     total_rows=parsed.total_rows,
                     accepted_rows=accepted_rows,
                     rejected_rows=len(rejected_row_numbers),
+                    deactivated_rows=0,
                     completed_at=datetime.now(timezone.utc),
                 )
                 session.add(import_record)
@@ -438,6 +488,26 @@ class RosterImportService:
                 if not all_rejections:
                     for record in parsed.records:
                         self._apply_record(session, record, period.id)
+                    if reconcile_missing:
+                        deactivated_rows = self._deactivate_missing_records(
+                            session,
+                            period,
+                            parsed.records,
+                        )
+                        import_record.deactivated_rows = deactivated_rows
+                        session.add(
+                            AuditLog(
+                                actor_user_id=actor_user_id,
+                                action="ROSTER_PERIOD_RECONCILED",
+                                entity_type="roster_period",
+                                entity_id=period.code,
+                                after_data={
+                                    "source_sha256": source_sha256,
+                                    "accepted_rows": len(parsed.records),
+                                    "deactivated_rows": deactivated_rows,
+                                },
+                            )
+                        )
                 session.flush()
                 logger.info(
                     "Roster import completed import_id=%s period_id=%s status=%s total_rows=%s accepted_rows=%s rejected_rows=%s source_sha256=%s",
@@ -508,6 +578,7 @@ class RosterImportService:
                     total_rows=record.total_rows,
                     accepted_rows=record.accepted_rows,
                     rejected_rows=record.rejected_rows,
+                    deactivated_rows=record.deactivated_rows,
                     created_at=record.created_at,
                     completed_at=record.completed_at,
                 )
@@ -536,6 +607,7 @@ class UnavailableRosterImportService:
         period_code: str,
         actor_user_id: UUID | None,
         selected_period_only: bool = False,
+        reconcile_missing: bool = False,
         filename: str = "roster.csv",
     ) -> ImportReport:
         self._raise()

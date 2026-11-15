@@ -41,6 +41,7 @@ class RosterImportResponse(BaseModel):
     total_rows: int
     accepted_rows: int
     rejected_rows: int
+    deactivated_rows: int
     rejections: list[RosterRejectionResponse]
     idempotent: bool
 
@@ -52,6 +53,7 @@ class RosterImportHistoryResponse(BaseModel):
     total_rows: int
     accepted_rows: int
     rejected_rows: int
+    deactivated_rows: int
     created_at: datetime
     completed_at: datetime | None
 

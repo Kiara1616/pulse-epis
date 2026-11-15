@@ -126,6 +126,7 @@ export type RosterImport = {
   total_rows: number;
   accepted_rows: number;
   rejected_rows: number;
+  deactivated_rows: number;
   created_at: string;
   completed_at: string | null;
 };
