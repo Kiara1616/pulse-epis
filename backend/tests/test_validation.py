@@ -102,6 +102,7 @@ def make_context(tmp_path: Path):
                     id=student_id,
                     user_id=student_user_id,
                     student_key="student-validation-001",
+                    full_name="Estudiante de prueba",
                     entry_year=2024,
                 ),
                 Issuer(id=issuer_id, name="Issuer Test", website_url="https://issuer.test"),
@@ -309,6 +310,7 @@ def test_validator_api_exposes_queue_and_transitions(tmp_path):
         queue = client.get("/api/v1/validations")
         assert queue.status_code == 200
         assert queue.json()[0]["status"] == "PENDING"
+        assert queue.json()[0]["student_name"] == "Estudiante de prueba"
         assert queue.json()[0]["student_key"] == "student-validation-001"
         assert "email" not in queue.json()[0]
 

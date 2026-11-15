@@ -50,6 +50,7 @@ def _service(request: Request) -> ValidationServiceProtocol:
 def _queue_response(item: ValidationQueueItem) -> ValidationQueueResponse:
     return ValidationQueueResponse(
         id=item.id,
+        student_name=item.student_name,
         student_key=item.student_key,
         credential_name=item.credential_name,
         issuer_name=item.issuer_name,

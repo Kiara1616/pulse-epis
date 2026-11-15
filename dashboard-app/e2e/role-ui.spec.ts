@@ -32,16 +32,15 @@ for (const role of ["STUDENT"])
     ).toBeVisible();
     expect(calls).toBe(0);
   });
-test("ADMIN puede abrir la bandeja de validación", async ({ page }) => {
+test("ADMIN no puede abrir la bandeja de validación", async ({ page }) => {
   await page.route("**/api/v1/auth/config", (r) => r.fulfill({ json: { provider: "google" } }));
   await page.route("**/api/v1/auth/me", (r) => r.fulfill({ json: {
     id: "DEMO", email: "admin@example.invalid", role: "ADMIN", permissions: [], student_id: null,
   } }));
-  await page.route("**/api/v1/validations", (r) => r.fulfill({ json: [] }));
   await page.goto("/validaciones");
-  await expect(page.getByRole("heading", { name: "Acceso restringido" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Bandeja de validaciones" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Validar" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Acceso restringido" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bandeja de validaciones" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Validar" })).toHaveCount(0);
 });
 test("error, reintento y vacío accesibles para validador", async ({ page }) => {
   await page.route("**/api/v1/auth/config", (r) =>

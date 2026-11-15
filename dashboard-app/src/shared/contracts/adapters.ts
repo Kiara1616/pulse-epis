@@ -54,6 +54,7 @@ export function validationCards(
     id: item.id,
     title: item.credential_name,
     issuer: item.issuer_name,
+    studentName: item.student_name,
     studentKey: item.student_key,
     status: displayStatus(item.status),
     updatedAt: item.updated_at,

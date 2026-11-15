@@ -61,6 +61,7 @@ export type StudentSummary = {
 };
 export type ValidationQueueItem = {
   id: string;
+  student_name: string;
   student_key: string;
   credential_name: string;
   issuer_name: string;
@@ -83,6 +84,7 @@ export type ValidationCard = {
   id: string;
   title: string;
   issuer: string;
+  studentName: string;
   studentKey: string;
   status: DisplayStatus;
   updatedAt: string;

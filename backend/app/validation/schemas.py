@@ -48,6 +48,7 @@ class ValidationSkillResponse(BaseModel):
 
 class ValidationQueueResponse(BaseModel):
     id: UUID
+    student_name: str
     student_key: str
     credential_name: str
     issuer_name: str

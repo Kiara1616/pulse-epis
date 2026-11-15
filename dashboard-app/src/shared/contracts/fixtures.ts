@@ -57,6 +57,7 @@ export function validationFixtures(): ValidationQueueItem[] {
     )
     .map((item) => ({
       id: item.id,
+      student_name: "Estudiante de demostración",
       student_key: "DEMO-student-key",
       credential_name: item.credential_name,
       issuer_name: item.issuer_name,

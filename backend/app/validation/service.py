@@ -84,6 +84,7 @@ class ValidationEvidenceView:
 @dataclass(frozen=True, slots=True)
 class ValidationQueueItem:
     id: UUID
+    student_name: str
     student_key: str
     credential_name: str
     issuer_name: str
@@ -235,6 +236,10 @@ class ValidationService:
         )
         return ValidationQueueItem(
             id=certification.id,
+            # The validator needs a human-readable subject to review the case.
+            # Keep the pseudonymous key alongside it for traceability, but never
+            # expose the institutional email from this queue.
+            student_name=student.full_name or student.student_code or student.student_key,
             student_key=student.student_key,
             credential_name=certification.credential_name,
             issuer_name=issuer.name,
