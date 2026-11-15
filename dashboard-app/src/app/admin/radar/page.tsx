@@ -213,7 +213,7 @@ function RadarAdmin() {
       relevance: String(form.get("relevance")).trim(),
     };
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-    const publish = submitter?.value === "publish";
+    const publish = selectedOffer?.status !== "PUBLISHED" && submitter?.value === "publish";
     await runAction(async () => {
       const offer = selectedOffer
         ? await learningApi.updateOffer(selectedOffer.id, input)
@@ -226,7 +226,11 @@ function RadarAdmin() {
           "Oportunidad revisada y aprobada para estudiantes.",
         );
       }
-    }, publish ? "Oportunidad publicada y disponible para estudiantes." : "Borrador de oportunidad guardado.");
+    }, publish
+      ? "Oportunidad publicada y disponible para estudiantes."
+      : selectedOffer?.status === "PUBLISHED"
+        ? "Audiencia y datos de la oportunidad actualizados."
+        : "Borrador de oportunidad guardado.");
   }
 
   return (
@@ -324,11 +328,11 @@ function RadarAdmin() {
         <p role="status" className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-600">Cargando cursos y oportunidades…</p>
       ) : data ? (
         <>
-          {selectedCourse && selectedCourse.status === "IN_REVIEW" && (
+          {selectedCourse && (selectedCourse.status === "IN_REVIEW" || selectedOffer?.status === "PUBLISHED") && (
             <section className="space-y-6 rounded-2xl border border-blue-200 bg-blue-50/40 p-5 shadow-sm sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Revisión de contenido</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-blue-700">{selectedCourse.status === "IN_REVIEW" ? "Revisión de contenido" : "Gestión de oportunidad"}</p>
                   <h2 className="mt-1 text-xl font-bold text-slate-950">{selectedCourse.title}</h2>
                 </div>
                 <button type="button" aria-label="Cerrar revisión" onClick={() => setSelectedCourseId("")} className="rounded-lg p-2 text-slate-500 hover:bg-white">
@@ -336,7 +340,7 @@ function RadarAdmin() {
                 </button>
               </div>
 
-              <form onSubmit={saveCourseReview} className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2">
+              {selectedCourse.status === "IN_REVIEW" && <form onSubmit={saveCourseReview} className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2">
                 <h3 className="font-bold text-slate-900 md:col-span-2">Datos del curso</h3>
                 <label className="text-sm font-semibold text-slate-800">
                   Título
@@ -365,13 +369,9 @@ function RadarAdmin() {
                 <button disabled={working} className="w-fit rounded-lg border border-blue-300 px-4 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">
                   Guardar correcciones
                 </button>
-              </form>
+              </form>}
 
-              {selectedOffer?.status === "PUBLISHED" ? (
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                  Esta oportunidad ya está publicada. Puedes retirarla desde su tarjeta.
-                </div>
-              ) : selectedOffer?.status === "RETIRED" ? (
+              {selectedOffer?.status === "RETIRED" ? (
                 <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
                   La oportunidad asociada fue retirada y no puede volver a publicarse.
                 </div>
@@ -417,11 +417,11 @@ function RadarAdmin() {
                   </label>
                   <div className="flex flex-wrap gap-3">
                     <button name="intent" value="draft" disabled={working} className="rounded-lg border border-blue-300 px-4 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50 disabled:opacity-50">
-                      Guardar borrador
+                      {selectedOffer?.status === "PUBLISHED" ? "Guardar cambios" : "Guardar borrador"}
                     </button>
-                    <button name="intent" value="publish" disabled={working} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">
+                    {selectedOffer?.status !== "PUBLISHED" && <button name="intent" value="publish" disabled={working} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-50">
                       {working ? "Publicando…" : "Guardar y publicar"}
-                    </button>
+                    </button>}
                   </div>
                 </form>
               )}
@@ -494,6 +494,11 @@ function RadarAdmin() {
                     {course.status === "IN_REVIEW" && (
                       <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-bold text-blue-700">
                         Revisar y gestionar oportunidad
+                      </button>
+                    )}
+                    {course.status === "PUBLISHED" && offer?.status === "PUBLISHED" && (
+                      <button type="button" onClick={() => setSelectedCourseId(course.id)} className="text-sm font-bold text-blue-700">
+                        Editar audiencia y ciclos
                       </button>
                     )}
                     {course.status === "IN_REVIEW" && (

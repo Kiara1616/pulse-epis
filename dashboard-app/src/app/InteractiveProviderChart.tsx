@@ -97,7 +97,7 @@ function DistributionCard({
         </div>
       ) : (
         <p className="py-12 text-center text-sm text-slate-500">
-          Sin certificaciones aprobadas para este corte.
+          Sin certificaciones aprobadas. El radar de cursos se reporta por separado.
         </p>
       )}
     </section>
@@ -112,9 +112,12 @@ export function InteractiveProviderChart({
   bySkill: AnalyticsMetric[];
 }) {
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <DistributionCard title="Entidades emisoras" rows={byIssuer} />
-      <DistributionCard title="Habilidades acreditadas" rows={bySkill} />
-    </div>
+    <section aria-label="Distribución de certificaciones aprobadas" className="space-y-3">
+      <p className="text-xs text-slate-500">Estas distribuciones se calculan con certificaciones de estudiantes aprobadas por el validador; los proveedores del radar pertenecen al catálogo de oportunidades.</p>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <DistributionCard title="Entidades emisoras" rows={byIssuer} />
+        <DistributionCard title="Habilidades acreditadas" rows={bySkill} />
+      </div>
+    </section>
   );
 }
