@@ -27,7 +27,7 @@ La rama se actualizó sobre `origin/main` en `0b67964`, que ya incorpora trabajo
 
 - `backend/app/api/routes/learning.py` y la migración `0010_learning_domain` exponen rutas persistentes para intereses, rutas, cursos, oportunidades, talleres, preferencias del estudiante, solicitudes y auditoría.
 - La API de formación usa la sesión existente: `ADMIN` administra catálogos y decisiones; `STUDENT` consulta catálogos publicados, guarda sus preferencias y gestiona sus propias solicitudes; `VALIDATOR` no recibe permisos de administración de formación.
-- `/admin/radar` continúa siendo un prototipo visual sintético y todavía no sustituye sus datos de demostración por la API persistente.
+- `/admin/radar` ya usa la API persistente y el feed autorizado versionado; las detecciones siguen requiriendo revisión administrativa antes de publicarse.
 
 Por tanto, “fuera de alcance” en este documento significa “no implementado por VA-01”; no significa que las issues posteriores no hayan añadido capacidades en `main`.
 

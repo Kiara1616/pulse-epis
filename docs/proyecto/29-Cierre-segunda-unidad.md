@@ -1,12 +1,12 @@
 # Cierre de requisitos de la segunda unidad
 
-**Fecha de revisión:** 12/11/2026
+**Fecha de revisión:** 14/11/2026 (hora de Lima)
 **Plataforma elegida:** Google Cloud Platform
 **Regla de cierre:** una configuración local no equivale a un recurso desplegado. Los estados distinguen implementación, validación local y evidencia cloud.
 
 El proyecto separado [BigQuery Sandbox](../../infra/bigquery/README.md) demuestra sin facturación dos tablas de hechos con datos sintéticos y una consulta por fecha de corte. No está conectado a la base de Render y no sustituye Cloud SQL, Cloud Storage ni el ETL programado de esta arquitectura objetivo.
 
-El workflow diario a las 03:00 de Lima (08:00 UTC; GitHub Actions puede iniciar con retraso) `.github/workflows/etl-scheduled.yml` llama por HTTPS a un endpoint ETL de Render. GitHub conserva la credencial del programador y Pulse accede a PostgreSQL por la red privada de Render. El 12/11/2026 se ejecutó manualmente y respondió `APPLIED` para `2026-II`, corte `2026-11-11`; el manifiesto registró cero filas de certificación y no informa el total de matrículas. Debe confirmarse ese total en Pulse antes de presentar los seis dashboards como conciliados con el Excel. El workflow semanal `.github/workflows/course-radar-scheduled.yml` consulta feeds JSON/RSS públicos que el administrador haya autorizado. La prueba productiva terminó `SKIPPED` porque no hay fuentes activas; no extrae HTML ni publica cursos automáticamente.
+El workflow diario a las 03:00 de Lima (08:00 UTC; GitHub Actions puede iniciar con retraso) `.github/workflows/etl-scheduled.yml` llama por HTTPS a un endpoint ETL de Render. GitHub conserva la credencial del programador y Pulse accede a PostgreSQL por la red privada de Render. El workflow productivo `43237986208` terminó `APPLIED` para `2026-II`, corte `2026-11-11`; publicó 310 matrículas activas y cero filas de certificación. Las importaciones vigentes del padrón registran 309 filas aceptadas y 0 rechazadas; la diferencia corresponde al código legado `98018499`, que debe confirmarse antes de conciliarse. El workflow semanal `.github/workflows/course-radar-scheduled.yml` consulta el feed JSON autorizado y versionado por administración. El primer `SYNC` productivo registró 0 candidatos nuevos, 0 actualizados, 0 archivados y 14 omitidos por duplicidad; no extrae HTML ni publica detecciones sin revisión.
 
 ```mermaid
 flowchart LR
@@ -23,23 +23,23 @@ flowchart LR
 | Requisito | Implementación disponible | Evidencia local | Brecha para cierre total | Estado |
 |---|---|---|---|---|
 | Arquitectura Data Warehouse o Data Lake | PostgreSQL de Render como warehouse operacional/analítico lógico; GCP Cloud SQL y Cloud Storage como diseño futuro de DW/Data Lake | Mermaid, SVG, modelo de hechos y exportación JSONL probada | Captura de buckets, Cloud SQL y una partición creada en GCP | Diseño local listo; GCP no desplegado |
-| ETL automatizado en nube | ETL diario por GitHub Actions dentro de Render; futuro Cloud Run Job/Cloud Scheduler en Terraform; Radar con workflow semanal para feeds autorizados | API, workflows versionados, suites locales y dos corridas manuales verificadas en producción | Confirmar conteo de matrículas y reportes con datos del padrón; registrar un feed autorizado para Radar | Workflows productivos conectados; aceptación de datos y feed pendiente |
+| ETL automatizado en nube | ETL diario por GitHub Actions dentro de Render; futuro Cloud Run Job/Cloud Scheduler en Terraform; Radar con workflow semanal para el feed autorizado | API, workflows versionados, suites locales, corrida `43237986208` aplicada y sincronización Radar registrada | Conciliar 309 filas aceptadas contra 310 hechos activos y completar evidencia de certificación | Workflows productivos conectados; conciliación y certificación institucional pendientes |
 | Infraestructura como código y costos | Terraform para Cloud Run, Cloud SQL, Storage, IAM, secretos, monitoreo, presupuesto y Scheduler | `terraform validate` correcto; USD 11.36 demo y USD 155.69 piloto | `terraform plan`, `apply`, Infracost ligado al plan y factura/Billing Export del piloto | Completo local; cloud pendiente |
 | Diagramas de proceso e infraestructura | Data Warehouse/Data Lake, ETL periódico e infraestructura GCP | Tres fuentes Mermaid y tres SVG renderizados | Comparación visual contra recursos desplegados | Completo local |
-| Seis reportes con tiempo | Panorama, Evolución, Certificaciones, Habilidades, Cohortes y Calidad | Rutas, API día/mes/año y filtros temporales | Importación oficial, publicación de Gold y prueba contra esos datos en Render | Implementado local; corte institucional pendiente |
+| Seis reportes con tiempo | Panorama, Evolución, Certificaciones, Habilidades, Cohortes y Calidad | Rutas, API día/mes/año, filtros temporales y revisión conectada en Render | Registrar certificación real aprobada para poblar los indicadores de credenciales | Implementado y verificado; certificación institucional pendiente |
 
 ## Evidencia técnica vigente
 
-- Backend: 108 pruebas aprobadas y 1 omitida por dependencia externa de PostgreSQL.
-- Frontend: lint y compilación de producción correctos.
-- Navegador: 60 pruebas E2E aprobadas y 1 recorrido integral con API/sesiones reales aprobado.
+- Backend: 117 pruebas aprobadas y 1 omitida por dependencia externa de PostgreSQL.
+- Frontend: lint, comprobación TypeScript y compilación de producción correctos; el flujo de navegador con API y sesiones reales pasó en CI.
 - Terraform: configuración válida con Google Provider 7.46.2.
-- Migración: Render ejecuta `alembic upgrade head` antes de iniciar la aplicación. El despliegue `9f48691` está `live`, `/ready` respondió HTTP 200 y las rutas nuevas de padrón/conciliación están en OpenAPI.
-- Repositorio: PR #114 integrado en `main` como `9f486911ce15d6e6aafe0b1069e1435095117849`; los checks de frontend, backend, documentación y contenedor terminaron correctamente.
-- Ejecución productiva: Radar semanal `SKIPPED` con cero feeds activos. ETL diario de prueba `APPLIED` para `2026-II` y corte `2026-11-11`, con cero filas de certificación. El total de matrículas debe comprobarse desde la pantalla de Padrón.
+- Migración: Render ejecuta `alembic upgrade head` antes de iniciar la aplicación. El despliegue `d9f8ff5` está `live`, `/ready` respondió HTTP 200 y las rutas nuevas de padrón/conciliación están en OpenAPI.
+- Repositorio: los PR #114–#119, #124, #135, #136 y #137 están integrados en `main`; sus checks de frontend, backend, documentación y contenedor terminaron correctamente.
+- Ejecución productiva: Radar semanal con feed autorizado y sincronización registrada; ETL diario `APPLIED` para `2026-II` y corte `2026-11-11`, con 310 matrículas activas y cero filas de certificación. El padrón vigente tiene 309 filas aceptadas y la diferencia queda en conciliación explícita.
 - PostgreSQL: la consulta directa de esta sesión fue rechazada porque Render tiene vacía la lista de IPs permitidas; no se alteró la regla de red.
 - Costos: escenario demo USD 11.36/mes y piloto USD 155.69/mes, antes de impuestos y egreso no previsto.
-- Aplicación local: frontend en `http://127.0.0.1:3000` y API en `http://127.0.0.1:8000`.
+- Aplicación desplegada: `https://pulse-epis-rirr.onrender.com/`; frontend y API responden en el mismo origen.
+- Indicadores: los seis reportes y el histórico de matrícula fueron abiertos en producción; los datos sintéticos permanecen deshabilitados en Render.
 
 ## Plan de cierre de nube
 
