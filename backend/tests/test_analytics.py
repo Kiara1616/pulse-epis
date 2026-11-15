@@ -173,6 +173,7 @@ def test_indicator_endpoints_require_permission_and_never_return_student_keys():
         settings=Settings(environment="test", log_level="WARNING"),
         analytics_service=AnalyticsService(factory),
     )
+    app.state.session_factory = factory
     admin = AuthenticatedUser(id=uuid4(), email="admin@virtual.upt.pe", role=Role.ADMIN)
     app.dependency_overrides[get_current_user] = lambda: admin
 
@@ -190,6 +191,32 @@ def test_indicator_endpoints_require_permission_and_never_return_student_keys():
     assert {item["id"] for item in dictionary.json()} == {
         "active_students", "certified_students", "coverage_percent", "approved_certifications", "expiring_soon"
     }
+    engine.dispose()
+
+
+def test_enrollment_history_merges_upt_reference_with_current_pulse_snapshot():
+    engine, factory = _analytics_fixture()
+    app = create_app(
+        settings=Settings(environment="test", log_level="WARNING"),
+        analytics_service=AnalyticsService(factory),
+    )
+    app.state.session_factory = factory
+    admin = AuthenticatedUser(id=uuid4(), email="admin@virtual.upt.pe", role=Role.ADMIN)
+    app.dependency_overrides[get_current_user] = lambda: admin
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/indicators/enrollment-history")
+
+    assert response.status_code == 200
+    history = response.json()
+    assert [row["period_code"] for row in history] == [
+        "2023-I", "2023-II", "2024-I", "2024-II", "2025-I", "2025-II", "2026-I", "2026-II"
+    ]
+    assert history[0]["basis"] == "public_history"
+    current = history[-1]
+    assert current["basis"] == "published_snapshot"
+    assert current["active_students"] == 3
+    assert current["reference_total"] == 324
     engine.dispose()
 
 

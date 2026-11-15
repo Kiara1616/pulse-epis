@@ -17,7 +17,10 @@ import { apiFetch } from "@/shared/api/client";
 type EnrollmentPoint = {
   period_code: string;
   active_students: number;
-  basis: "published";
+  basis: "public_history" | "published_snapshot";
+  reference_total: number;
+  source_label: string;
+  source_url: string;
 };
 
 export function EnrollmentHistory() {
@@ -54,7 +57,7 @@ export function EnrollmentHistory() {
         Matrícula por periodo
       </h2>
       <p className="mt-2 text-xs leading-5 text-slate-500">
-        Periodos con padrón y snapshot ETL publicados.
+        Histórico agregado UPT/GPAD y padrón actual publicado en Pulse.
       </p>
       {loading ? (
         <p role="status" className="mt-6 text-sm text-slate-500">
@@ -108,7 +111,7 @@ export function EnrollmentHistory() {
                   {rows.map((row) => (
                     <Cell
                       key={row.period_code}
-                      fill="#3b82f6"
+                      fill={row.basis === "published_snapshot" ? "#1d4ed8" : "#93c5fd"}
                     />
                   ))}
                 </Bar>
@@ -122,8 +125,17 @@ export function EnrollmentHistory() {
         </p>
       )}
       <p className="mt-3 text-xs text-slate-500">
-        Fuente: snapshots ETL de padrón publicados.
+        Fuente: UPT/GPAD para el histórico; snapshot ETL de Pulse para el periodo vigente.
       </p>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500" aria-label="Leyenda de fuentes">
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-300" aria-hidden="true" />Histórico UPT/GPAD</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-800" aria-hidden="true" />Padrón vigente en Pulse</span>
+      </div>
+      {rows.filter((row) => row.basis === "published_snapshot" && row.active_students !== row.reference_total).map((row) => (
+        <p key={`${row.period_code}-reconciliation`} className="mt-2 text-xs text-amber-700">
+          {row.period_code}: Pulse publica {row.active_students} estudiantes activos; GPAD reporta {row.reference_total}. La diferencia queda visible para conciliación institucional.
+        </p>
+      ))}
     </section>
   );
 }

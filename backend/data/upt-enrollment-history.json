@@ -1,0 +1,50 @@
+[
+  {
+    "period_code": "2023-I",
+    "public_total": 276,
+    "source_label": "UPT · GPAD",
+    "source_url": "https://portal.upt.edu.pe/management/uploads/20260417113058_69e2604275521.pdf"
+  },
+  {
+    "period_code": "2023-II",
+    "public_total": 276,
+    "source_label": "UPT · GPAD",
+    "source_url": "https://portal.upt.edu.pe/management/uploads/20260417113105_69e2604922095.pdf"
+  },
+  {
+    "period_code": "2024-I",
+    "public_total": 309,
+    "source_label": "UPT · GPAD",
+    "source_url": "https://portal.upt.edu.pe/management/uploads/20260417113849_69e26219a95ad.pdf"
+  },
+  {
+    "period_code": "2024-II",
+    "public_total": 331,
+    "source_label": "UPT · GPAD",
+    "source_url": "https://portal.upt.edu.pe/management/uploads/20260417113859_69e26223199e4.pdf"
+  },
+  {
+    "period_code": "2025-I",
+    "public_total": 340,
+    "source_label": "UPT · GPAD",
+    "source_url": "https://portal.upt.edu.pe/management/uploads/20260417113904_69e2622837adb.pdf"
+  },
+  {
+    "period_code": "2025-II",
+    "public_total": 342,
+    "source_label": "UPT · GPAD",
+    "source_url": "https://portal.upt.edu.pe/management/uploads/20260417113909_69e2622d73033.pdf"
+  },
+  {
+    "period_code": "2026-I",
+    "public_total": 340,
+    "source_label": "UPT · GPAD",
+    "source_url": "https://portal.upt.edu.pe/management/uploads/20260511084522_6a01dd72da01f.pdf"
+  },
+  {
+    "period_code": "2026-II",
+    "public_total": 324,
+    "source_label": "UPT · GPAD",
+    "source_url": "https://portal.upt.edu.pe/management/uploads/20260929153732_6abc218cd3dc2.pdf"
+  }
+]

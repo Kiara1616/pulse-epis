@@ -8,7 +8,7 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 
 **Regla de presentación:** la interfaz desplegada consulta únicamente datos publicados del padrón y certificaciones validadas. No se muestra un selector ni una sección de demostración; los fixtures sintéticos quedan restringidos a pruebas automatizadas y no se presentan como resultados institucionales.
 
-**Estado verificado el 12/11/2026:** el commit `bd7de97` está desplegado en Render, la migración `0015` terminó y `/ready` responde HTTP 200. El ETL productivo `43237986208` terminó `APPLIED` para `2026-II` (corte `2026-11-11`): reporta 310 matrículas activas y cero filas de certificación. Los registros de importación reportan 309 filas aceptadas y cero rechazadas; la diferencia de un registro debe conciliarse antes de afirmar que el padrón está completamente reconciliado. El Radar semanal terminó `SKIPPED` porque no hay feeds activos.
+**Estado verificado el 14/11/2026:** Render está operativo y `/ready` responde HTTP 200. El ETL productivo `43237986208` terminó `APPLIED` para `2026-II` (corte `2026-11-11`): reporta 310 matrículas activas y cero filas de certificación. Los registros de importación reportan 309 filas aceptadas y cero rechazadas; la diferencia de un registro debe conciliarse antes de afirmar que el padrón está completamente reconciliado. El Radar semanal terminó `SKIPPED` porque no hay feeds activos.
 
 ## 1. Cumplimiento de requisitos
 
@@ -18,7 +18,7 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 | ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [workflow semanal Radar](.github/workflows/course-radar-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | ETL productivo aplicado para `2026-II`: 310 matrículas activas y cero certificaciones al corte. La página de publicación coteja el último padrón y ETL, y avisa si el corte está desactualizado o los conteos difieren, sin modificar registros. Radar necesita un feed autorizado activo. |
 | IaC y costos | [Terraform](infra/environments/demo), [estimación](infra/costs/estimate.md), [workflow](.github/workflows/infrastructure.yml) | Terraform valida; `apply`, Cloud Billing e Infracost oficial siguen pendientes para evitar gasto no autorizado. |
 | Diagramas de procesos e infraestructura | [ETL](docs/recursos/diagramas/etl-periodico.svg), [GCP](docs/recursos/diagramas/infraestructura-gcp.svg) | Listos en Mermaid y SVG para exposición. |
-| Seis reportes y filtros temporales | [Rutas de reportes](dashboard-app/src/app/reportes) | Implementados con periodo académico, fecha de corte, cohorte, ciclo y proveedor. |
+| Seis reportes y filtros temporales | [Rutas de reportes](dashboard-app/src/app/reportes) | Implementados con periodo académico, fecha de corte, cohorte, ciclo y proveedor. El resumen incluye el histórico agregado UPT/GPAD y resalta el padrón vigente de Pulse. |
 
 ## 2. Explicación simple: Bronze, Silver y Gold
 
@@ -55,6 +55,15 @@ El flujo de operación es:
 5. El ETL valida, calcula el hash de fuente y publica un snapshot atómico.
 6. Los seis reportes leen únicamente el snapshot Gold publicado.
 7. Si la fuente no cambia, la corrida es idempotente; si falla calidad, se conserva el último corte válido.
+
+### Matrícula histórica y padrón vigente
+
+El gráfico **Matrícula por periodo** combina dos fuentes sin mezclar sus significados:
+
+- `backend/data/upt-enrollment-history.json` conserva los totales agregados publicados por UPT/GPAD para `2023-I` a `2026-II`, junto con el PDF de origen. Estos totales no contienen identidades y no se usan para crear estudiantes.
+- Cuando existe un snapshot publicado de Pulse para un periodo, el gráfico muestra ese conteo como **padrón vigente en Pulse**. Para `2026-II` se muestra el valor ETL de Pulse (310) y se conserva el total GPAD (324) como referencia de conciliación visible.
+
+Por tanto, durante la exposición se puede explicar que la serie muestra la historia institucional disponible y que el periodo actual se controla con el padrón autorizado importado en Pulse. La diferencia entre fuentes no se oculta ni se corrige inventando filas.
 
 El libro 2026-II revisado contiene **309 filas completas** y **19 pendientes de conciliación**. Render registró la importación con 309 aceptadas y 0 rechazadas. El ETL posterior encontró 310 matrículas activas; esta diferencia de un registro sigue pendiente de conciliación. Los datos nominales no están versionados en Git.
 
@@ -144,15 +153,16 @@ Durante la demostración, cambia **Periodo** y **Fecha de corte**. La fecha perm
 
 1. Abrir Pulse EPIS y mostrar el rol Administrador.
 2. Explicar Bronze → Silver → Gold con la tabla de la sección 2.
-3. Mostrar el padrón, una certificación validada y el proceso de publicación de indicadores.
-4. Abrir los seis reportes y cambiar periodo/fecha de corte.
-5. Mostrar los tres diagramas y el bloque de Terraform.
-6. Mostrar la tabla de costos y aclarar: `plan` no cobra; `apply` sí crea recursos.
-7. Cerrar indicando que Render ejecuta el MVP actual y GCP está listo para activarse cuando haya presupuesto institucional.
+3. Mostrar **Matrícula por periodo**: la serie histórica UPT/GPAD (`2023-I`–`2026-II`) y el padrón vigente de `2026-II` publicado en Pulse. Aclarar la diferencia 324 vs. 310 como conciliación pendiente, no como dato inventado.
+4. Mostrar el padrón, una certificación validada y el proceso de publicación de indicadores.
+5. Abrir los seis reportes y cambiar periodo/fecha de corte.
+6. Mostrar los tres diagramas y el bloque de Terraform.
+7. Mostrar la tabla de costos y aclarar: `plan` no cobra; `apply` sí crea recursos.
+8. Cerrar indicando que Render ejecuta el MVP actual y GCP está listo para activarse cuando haya presupuesto institucional.
 
 ## 8. Cierre operativo pendiente
 
-Los PR #114, #115, #116, #117, #118 y #119 están integrados en `main`; sus checks de CI pasaron. Render desplegó `bd7de97` como `dep-dbqsq6tckfvc73dclaq0`; la migración 0015 terminó y `/ready` responde HTTP 200. No se han aprovisionado recursos AWS/GCP ni habilitado facturación.
+Los PR #114, #115, #116, #117, #118, #119 y #124 están integrados en `main`; sus checks de CI pasaron. No se han aprovisionado recursos AWS/GCP ni habilitado facturación.
 
 La carga del padrón **sí se aplicó en producción**: los registros de Render del 12/11/2026 muestran dos importaciones `APPLIED` para `2026-II`, cada una con 309 filas aceptadas y 0 rechazadas. El libro contiene además 19 filas incompletas, que no se incluyen en esas matrículas. El ETL posterior (#43237986208) informa 310 hechos de matrícula activa, una diferencia de un registro respecto del conteo importado que administración debe conciliar. El reporte OPLA citado en la guía informa 324 matriculados al 28/09/2026; es una referencia de otra fecha y no debe compararse como si fuera el mismo corte. Antes de afirmar cobertura completa, verificar la población vigente y las 19 filas incompletas con una fuente institucional. No agregar filas por semejanza de nombres ni asumir que las 19 explican la diferencia.
 
