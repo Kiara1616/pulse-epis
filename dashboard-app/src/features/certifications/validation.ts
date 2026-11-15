@@ -6,6 +6,7 @@ export const EVIDENCE_MIME_TYPES = [
 ] as const;
 
 export type CertificationFormValues = {
+  issuer_id?: string;
   credential_name: string;
   issuer_name: string;
   issued_on: string;

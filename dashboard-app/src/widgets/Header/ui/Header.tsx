@@ -26,13 +26,13 @@ export function Header({ onOpenMenu }: { onOpenMenu: () => void }) {
   const firstName = name.split(/\s+/)[0] || name;
 
   return (
-    <header className={`flex min-h-16 items-center gap-3 px-4 py-3 sm:px-6 lg:px-8 ${pathname === "/" ? "justify-between" : "justify-end"}`}>
-      <button type="button" onClick={onOpenMenu} aria-label="Abrir menú lateral" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-slate-700 hover:bg-slate-100 md:hidden">
+    <header className={`flex min-h-16 items-center gap-3 border-b border-slate-200/70 bg-[#f6f8fc]/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-10 ${pathname === "/" ? "justify-between" : "justify-end"}`}>
+      <button type="button" onClick={onOpenMenu} aria-label="Abrir menú lateral" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-slate-700 hover:bg-white md:hidden">
         <Menu size={21} aria-hidden="true" />
       </button>
-      {pathname === "/" && <p className="mr-auto text-base font-semibold tracking-tight text-slate-900 sm:text-xl">Hola, {firstName}</p>}
+      {pathname === "/" && <p className="mr-auto text-base font-semibold tracking-tight text-[#17345f] sm:text-xl">Hola, {firstName}</p>}
       <div className="min-w-0 text-left sm:text-right" aria-label={`Cuenta vinculada a ${email}`}>
-        <span className="block truncate text-sm font-semibold leading-5 text-slate-900">{name}</span>
+        <span className="block truncate text-sm font-semibold leading-5 text-[#17345f]">{name}</span>
         <span title={email} className="block truncate text-xs leading-4 text-slate-500 sm:text-sm">{email}</span>
       </div>
     </header>

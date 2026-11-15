@@ -103,6 +103,7 @@ class CertificationDraft:
     expires_on: date | None
     source_url: str | None
     skills: tuple[SkillInput, ...]
+    issuer_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -395,8 +396,16 @@ class CertificationService:
         session: Session,
         name: str,
         website_url: str | None,
+        issuer_id: UUID | None = None,
     ) -> Issuer:
         normalized_name = _clean_text(name, field="issuer_name", maximum=150)
+        if issuer_id is not None:
+            issuer = session.get(Issuer, issuer_id)
+            if issuer is None:
+                raise CertificationInvalid("issuer_id is not available")
+            if issuer.name.casefold() != normalized_name.casefold():
+                raise CertificationInvalid("issuer_id does not match issuer_name")
+            return issuer
         issuer = session.scalar(
             select(Issuer).where(func.lower(Issuer.name) == normalized_name.casefold())
         )
@@ -568,7 +577,12 @@ class CertificationService:
         try:
             with session.begin():
                 student = self._student(session, actor_user_id)
-                issuer = self._issuer(session, draft.issuer_name, draft.issuer_url)
+                issuer = self._issuer(
+                    session,
+                    draft.issuer_name,
+                    draft.issuer_url,
+                    draft.issuer_id,
+                )
                 if self._duplicate_certification(
                     session,
                     student_id=student.id,
@@ -710,15 +724,20 @@ class CertificationService:
                     changes.get("source_url", certification.source_url),
                     field="source_url",
                 )
-                if "issuer_name" in changes:
-                    if not isinstance(changes["issuer_name"], str):
+                if "issuer_name" in changes or "issuer_id" in changes:
+                    issuer_name = changes.get("issuer_name", issuer.name)
+                    if not isinstance(issuer_name, str):
                         raise CertificationInvalid("issuer_name is invalid")
+                    issuer_id = changes.get("issuer_id")
+                    if issuer_id is not None and not isinstance(issuer_id, UUID):
+                        raise CertificationInvalid("issuer_id is invalid")
                     issuer = self._issuer(
                         session,
-                        changes["issuer_name"],
+                        issuer_name,
                         changes.get("issuer_url")
                         if isinstance(changes.get("issuer_url"), str)
                         else None,
+                        issuer_id,
                     )
                 if self._duplicate_certification(
                     session,

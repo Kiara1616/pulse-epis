@@ -19,16 +19,39 @@ test('evidencia, validación, perfil, oportunidad y participación con API real'
   // Catalog prerequisites have no authoring screen; create only these via real API.
   const interestResponse = await adminContext.request.post('http://127.0.0.1:8080/api/v1/learning/interests', { data: { name: 'IA sintética' } });
   expect(interestResponse.status()).toBe(201);
-  await interestResponse.json();
+  const interest = await interestResponse.json();
   const routeResponse = await adminContext.request.post('http://127.0.0.1:8080/api/v1/learning/routes', { data: { title: 'Ruta sintética', description: 'Ruta de aceptación con datos ficticios', steps: [{ title: 'Fundamentos de Python', skills: ['Python'], prerequisites: [] }] } });
   expect(routeResponse.status()).toBe(201);
   const route = await routeResponse.json();
   const publication = await adminContext.request.post(`http://127.0.0.1:8080/api/v1/learning/routes/${route.id}/status`, { data: { status: 'PUBLISHED', reason: 'Ruta sintética revisada para aceptación.' } });
   expect(publication.ok()).toBeTruthy();
+  const issuerCourseResponse = await adminContext.request.post('http://127.0.0.1:8080/api/v1/learning/courses', { data: {
+    title: 'Certificación sintética de Python',
+    provider: 'Emisor sintético',
+    source_url: 'https://example.com/synthetic-python-certificate',
+    checked_on: '2026-09-01',
+    requirements: [],
+    skills: ['Python'],
+  } });
+  expect(issuerCourseResponse.status()).toBe(201);
+  const issuerCourse = await issuerCourseResponse.json();
+  const issuerReview = await adminContext.request.post(`http://127.0.0.1:8080/api/v1/learning/courses/${issuerCourse.id}/status`, { data: { status: 'IN_REVIEW', reason: 'Fuente sintética preparada para el catálogo de certificaciones.' } });
+  expect(issuerReview.ok()).toBeTruthy();
+  const issuerOfferResponse = await adminContext.request.post('http://127.0.0.1:8080/api/v1/learning/offers', { data: {
+    course_id: issuerCourse.id,
+    title: 'Certificación sintética de Python',
+    cycles: ['VIII'],
+    interest_ids: [interest.id],
+    relevance: 'Certificación sintética para validar el flujo de evidencias y habilidades de Python.',
+  } });
+  expect(issuerOfferResponse.status()).toBe(201);
+  const issuerOffer = await issuerOfferResponse.json();
+  const issuerPublication = await adminContext.request.post(`http://127.0.0.1:8080/api/v1/learning/offers/${issuerOffer.id}/status`, { data: { status: 'PUBLISHED', reason: 'Proveedor sintético aprobado para la prueba de aceptación.' } });
+  expect(issuerPublication.ok()).toBeTruthy();
   await login(student, 'student', '/mi-perfil');
   await student.getByRole('button', { name: 'Nueva certificación', exact: true }).click();
   await student.getByLabel('Nombre de la certificación').fill('Python sintético');
-  await student.getByLabel('Entidad emisora').fill('Emisor sintético');
+  await student.getByLabel('Entidad emisora').selectOption({ label: 'Emisor sintético' });
   await student.getByLabel('Fecha de emisión', { exact: true }).fill('2026-09-01');
   await student.getByLabel('Habilidades, separadas por comas').fill('Python');
   await student.locator('input[type="file"]').setInputFiles({ name: 'evidencia-demo.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\nsynthetic evidence\n%%EOF') });

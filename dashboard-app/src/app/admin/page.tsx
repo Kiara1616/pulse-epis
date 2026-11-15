@@ -54,10 +54,10 @@ function AdminContent() {
   return (
     <div className="space-y-7">
       <header>
-        <p className="text-sm font-bold uppercase tracking-wider text-blue-600">
+        <p className="eyebrow">
           Control institucional
         </p>
-        <h1 className="mt-1 text-3xl font-semibold text-gray-900">
+        <h1 className="page-title mt-1">
           Centro de administración
         </h1>
         <p className="mt-2 text-gray-500">
@@ -87,7 +87,7 @@ function AdminContent() {
           <Link
             key={module.title}
             href={module.href}
-            className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+            className="surface-card group p-6 transition hover:border-blue-200 hover:shadow-md"
           >
             <module.icon className="mb-4 text-blue-600" />
             <h2 className="flex justify-between font-bold text-gray-900">
@@ -100,7 +100,7 @@ function AdminContent() {
             <p className="mt-2 min-h-10 text-sm text-gray-500">
               {module.description}
             </p>
-            <span className="mt-5 inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
+            <span className="mt-5 inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
               {module.status}
             </span>
           </Link>

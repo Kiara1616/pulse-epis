@@ -59,6 +59,7 @@ class SkillRequest(BaseModel):
 
 
 class CertificationCreateRequest(BaseModel):
+    issuer_id: UUID | None = None
     issuer_name: str = Field(min_length=1, max_length=150)
     issuer_url: str | None = Field(default=None, max_length=2048)
     credential_name: str = Field(min_length=1, max_length=200)
@@ -99,6 +100,7 @@ class CertificationCreateRequest(BaseModel):
 
 
 class CertificationUpdateRequest(BaseModel):
+    issuer_id: UUID | None = None
     issuer_name: str | None = Field(default=None, max_length=150)
     issuer_url: str | None = Field(default=None, max_length=2048)
     credential_name: str | None = Field(default=None, max_length=200)
@@ -147,6 +149,14 @@ class SkillResponse(BaseModel):
     id: UUID
     name: str
     level: str | None
+
+
+class IssuerOption(BaseModel):
+    """Issuer exposed to the student form from the administrator catalog."""
+
+    id: UUID | None
+    name: str
+    website_url: str | None
 
 
 class EvidenceResponse(BaseModel):

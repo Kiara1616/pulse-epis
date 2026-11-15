@@ -267,7 +267,7 @@ function RadarAdmin() {
           </button>
         </div>
       )}
-      {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
+      {notice && <p role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">{notice}</p>}
 
       <details className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center gap-2 p-5 font-bold text-slate-950">
@@ -367,7 +367,7 @@ function RadarAdmin() {
               </form>
 
               {selectedOffer?.status === "PUBLISHED" ? (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
                   Esta oportunidad ya está publicada. Puedes retirarla desde su tarjeta.
                 </div>
               ) : selectedOffer?.status === "RETIRED" ? (

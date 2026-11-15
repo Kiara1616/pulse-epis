@@ -129,10 +129,10 @@ function StudentPathContent() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
+        <p className="eyebrow">
           Tu desarrollo profesional
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="page-title mt-2">
           Mi ruta
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
@@ -176,7 +176,7 @@ function StudentPathContent() {
         <>
           <section
             aria-labelledby="path-preferences-heading"
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+            className="surface-card p-5 sm:p-6"
           >
             <div className="flex items-start gap-3">
               <div className="rounded-xl bg-blue-50 p-2.5 text-blue-700">
@@ -250,7 +250,7 @@ function StudentPathContent() {
                 ))}
               </select>
               {profile?.route_id && !routes.some((route) => route.id === profile.route_id) && (
-                <p className="mt-2 text-xs text-amber-800">
+                <p className="mt-2 text-xs text-slate-600">
                   La ruta que tenías seleccionada ya no está publicada; elige otra o guarda sin ruta.
                 </p>
               )}
@@ -265,13 +265,13 @@ function StudentPathContent() {
               >
                 {saving ? "Guardando…" : "Guardar preferencias"}
               </button>
-              {notice && <p role="status" className="text-sm font-medium text-emerald-800">{notice}</p>}
+              {notice && <p role="status" className="text-sm font-medium text-blue-800">{notice}</p>}
             </div>
           </section>
 
-          <section aria-labelledby="selected-route-heading" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <section aria-labelledby="selected-route-heading" className="surface-card p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-700">
+              <div className="rounded-xl bg-blue-50 p-2.5 text-blue-700">
                 <BookOpen size={20} aria-hidden="true" />
               </div>
               <div>
@@ -322,10 +322,10 @@ function StudentPathContent() {
 
           <section aria-labelledby="opportunities-heading" className="space-y-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
+              <p className="eyebrow">
                 Formación disponible
               </p>
-              <h2 id="opportunities-heading" className="mt-1 text-2xl font-bold text-slate-950">
+              <h2 id="opportunities-heading" className="section-title mt-1 text-2xl">
                 Oportunidades publicadas
               </h2>
               <p className="mt-1 text-sm text-slate-600">
@@ -335,8 +335,8 @@ function StudentPathContent() {
             {offers.length > 0 ? (
               <div className="grid gap-4 lg:grid-cols-2">
                 {offers.map((offer) => (
-                  <article key={offer.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+                  <article key={offer.id} className="surface-card p-5">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
                       <CheckCircle2 size={14} aria-hidden="true" /> Publicada
                     </span>
                     <h3 className="mt-3 text-lg font-bold text-slate-950">{offer.title}</h3>

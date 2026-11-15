@@ -28,16 +28,16 @@ const field = "mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2
 
 const applicationStatusPresentation: Record<LearningApplication["status"], { label: string; className: string }> = {
   SUBMITTED: { label: "Enviada", className: "bg-sky-50 text-sky-700 ring-sky-200" },
-  ACCEPTED: { label: "Aceptada", className: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
-  REJECTED: { label: "Rechazada", className: "bg-rose-50 text-rose-700 ring-rose-200" },
-  COMPLETED: { label: "Finalizada", className: "bg-violet-50 text-violet-700 ring-violet-200" },
+  ACCEPTED: { label: "Aceptada", className: "bg-blue-50 text-blue-700 ring-blue-200" },
+  REJECTED: { label: "Rechazada", className: "bg-slate-100 text-slate-700 ring-slate-200" },
+  COMPLETED: { label: "Finalizada", className: "bg-indigo-50 text-indigo-700 ring-indigo-200" },
 };
 
 const workshopStatusPresentation: Record<LearningWorkshop["status"], { label: string; className: string }> = {
   DRAFT: { label: "Borrador", className: "bg-slate-100 text-slate-700" },
-  OPEN: { label: "Abierto", className: "bg-emerald-50 text-emerald-700" },
-  CLOSED: { label: "Cerrado", className: "bg-amber-50 text-amber-800" },
-  COMPLETED: { label: "Finalizado", className: "bg-violet-50 text-violet-700" },
+  OPEN: { label: "Abierto", className: "bg-blue-50 text-blue-700" },
+  CLOSED: { label: "Cerrado", className: "bg-slate-100 text-slate-700" },
+  COMPLETED: { label: "Finalizado", className: "bg-indigo-50 text-indigo-700" },
 };
 
 function StatusPill({ status }: { status: LearningApplication["status"] }) {
@@ -155,7 +155,7 @@ function StudentWorkshopView() {
         <p>Solo verás tus solicitudes. Confirmar que leíste los requisitos no significa que acredites cumplirlos ni reserva un cupo; la decisión se registra en el sistema.</p>
       </aside>
       {error && <ErrorPanel message={error} retry={retryStudentLoad} />}
-      {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
+      {notice && <p role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">{notice}</p>}
 
       {loading ? <LoadingPanel label="Cargando talleres y tus solicitudes…" /> : !error ? (
         <>
@@ -200,16 +200,16 @@ function StudentWorkshopView() {
                           <ul className="mt-3 flex flex-wrap gap-2">
                             {workshop.requirements.map((requirement) => (
                               <li key={requirement} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                                <Check size={15} aria-hidden="true" className="shrink-0 text-emerald-600" /> {requirement}
+                                <Check size={15} aria-hidden="true" className="shrink-0 text-blue-600" /> {requirement}
                               </li>
                             ))}
                           </ul>
                         ) : <p className="mt-2 text-sm text-slate-600">No se indicaron requisitos previos.</p>}
                       </div>
                       {application ? (
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
                           <div className="flex items-center gap-3">
-                            <CheckCircle2 size={20} aria-hidden="true" className="text-emerald-700" />
+                            <CheckCircle2 size={20} aria-hidden="true" className="text-blue-700" />
                             <div>
                               <p className="font-bold text-slate-950">Solicitud registrada</p>
                               <p className="mt-1 text-xs text-slate-600">{formatLearningDate(application.created_at)}</p>
@@ -405,7 +405,7 @@ function AdminWorkshopView() {
       </header>
 
       {error && <ErrorPanel message={error} retry={retryAdminLoad} />}
-      {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{notice}</p>}
+      {notice && <p role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">{notice}</p>}
 
       {loading ? <LoadingPanel label="Cargando talleres y solicitudes…" /> : !error || workshops.length > 0 ? (
         <>
@@ -474,8 +474,8 @@ function AdminWorkshopView() {
                     {workshop.requirements.length > 0 && <p className="mt-2 text-sm text-slate-600">Requisitos: {workshop.requirements.join(", ")}</p>}
                     <div className="mt-4 flex flex-wrap gap-3">
                       {workshop.status === "DRAFT" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "OPEN")} className="text-sm font-bold text-blue-700">Abrir solicitudes</button>}
-                      {workshop.status === "OPEN" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "CLOSED")} className="text-sm font-bold text-amber-800">Cerrar solicitudes</button>}
-                      {workshop.status === "CLOSED" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "COMPLETED")} className="text-sm font-bold text-violet-800">Marcar finalizado</button>}
+                      {workshop.status === "OPEN" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "CLOSED")} className="text-sm font-semibold text-blue-700">Cerrar solicitudes</button>}
+                      {workshop.status === "CLOSED" && <button type="button" disabled={working} onClick={() => void changeWorkshopStatus(workshop, "COMPLETED")} className="text-sm font-semibold text-indigo-700">Marcar finalizado</button>}
                     </div>
                   </article>
                 ))}
@@ -517,11 +517,11 @@ function AdminWorkshopView() {
                           <div className="flex flex-wrap gap-3">
                             {application.status === "SUBMITTED" && (
                               <>
-                                <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "ACCEPTED")} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">Aceptar</button>
-                                <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "REJECTED")} className="rounded-lg border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700 disabled:opacity-50">Rechazar</button>
+                                <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "ACCEPTED")} className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">Aceptar</button>
+                                <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "REJECTED")} className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Rechazar</button>
                               </>
                             )}
-                            {application.status === "ACCEPTED" && <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "COMPLETED")} className="rounded-lg bg-violet-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">Marcar finalizada</button>}
+                            {application.status === "ACCEPTED" && <button type="button" disabled={working || reason.trim().length < 10} onClick={() => void decide(application, "COMPLETED")} className="rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">Marcar finalizada</button>}
                           </div>
                         </div>
                       ) : null}

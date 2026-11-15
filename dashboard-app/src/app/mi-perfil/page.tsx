@@ -19,7 +19,7 @@ import { statusLabel, statusClass } from "@/shared/ui/status";
 import { AsyncState } from "@/shared/ui/AsyncState";
 import { RoleGate } from "@/features/access/RoleGate";
 import { ApiError, apiFetch } from "@/shared/api/client";
-import type { Certification } from "@/shared/api/types";
+import type { Certification, IssuerOption } from "@/shared/api/types";
 import {
   certificationStatuses,
   type StudentSummary,
@@ -61,6 +61,9 @@ function formatDate(value: string) {
 
 function StudentProfileContent() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
+  const [issuerOptions, setIssuerOptions] = useState<IssuerOption[]>([]);
+  const [issuerCatalogLoading, setIssuerCatalogLoading] = useState(true);
+  const [issuerCatalogError, setIssuerCatalogError] = useState<string | null>(null);
   const [summary, setSummary] = useState<StudentSummary | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState("");
@@ -77,12 +80,29 @@ function StudentProfileContent() {
   const level = "Other";
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [form, setForm] = useState({
+    issuer_id: "",
     credential_name: "",
     issuer_name: "",
     issued_on: "",
     expires_on: "",
     source_url: "",
   });
+
+  const loadIssuerOptions = useCallback(async () => {
+    setIssuerCatalogLoading(true);
+    setIssuerCatalogError(null);
+    try {
+      setIssuerOptions(await apiFetch<IssuerOption[]>("/certifications/issuers"));
+    } catch (loadError) {
+      setIssuerCatalogError(
+        loadError instanceof Error
+          ? loadError.message
+          : "No se pudo cargar el catálogo de entidades emisoras.",
+      );
+    } finally {
+      setIssuerCatalogLoading(false);
+    }
+  }, []);
 
   const loadCertifications = useCallback(async () => {
     setLoading(true);
@@ -115,6 +135,11 @@ function StudentProfileContent() {
     return () => window.clearTimeout(timer);
   }, [loadCertifications]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadIssuerOptions(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadIssuerOptions]);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -135,6 +160,7 @@ function StudentProfileContent() {
           method: "POST",
           body: JSON.stringify({
             ...form,
+            issuer_id: form.issuer_id || null,
             expires_on: form.expires_on || null,
             source_url: normalizedSourceUrl,
             skills: skillNames
@@ -185,6 +211,7 @@ function StudentProfileContent() {
         }
       }
       setForm({
+        issuer_id: "",
         credential_name: "",
         issuer_name: "",
         issued_on: "",
@@ -331,10 +358,10 @@ function StudentProfileContent() {
     <div className="space-y-6">
       <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">
+          <p className="eyebrow">
             Tu desarrollo profesional
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+          <h1 className="page-title mt-2">
             Mi avance
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
@@ -345,7 +372,7 @@ function StudentProfileContent() {
         <button
           onClick={toggleCertificationForm}
           aria-expanded={showForm}
-          className="inline-flex w-fit items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+          className="primary-button"
         >
           <Plus aria-hidden="true" size={18} />
           {showForm ? "Cerrar formulario" : "Nueva certificación"}
@@ -356,7 +383,7 @@ function StudentProfileContent() {
         <div
           role="status"
           aria-live="polite"
-          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"
         >
           {message}
         </div>
@@ -384,22 +411,22 @@ function StudentProfileContent() {
               id="student-certification-form"
               onSubmit={submit}
               noValidate
-              className="scroll-mt-6 rounded-2xl border border-blue-100 bg-white p-6 shadow-sm"
+              className="surface-card scroll-mt-6 p-6"
             >
               {hasCertificationFormErrors(formErrors) && (
                 <p
                   role="alert"
-                  className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                  className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
                 >
                   Revisa los campos marcados antes de enviar la certificación.
                 </p>
               )}
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">
+                  <p className="eyebrow">
                     Nueva evidencia
                   </p>
-                  <h2 className="mt-1 font-bold text-gray-900">
+                  <h2 className="card-title mt-1">
                     Registrar certificación
                   </h2>
                 </div>
@@ -425,16 +452,41 @@ function StudentProfileContent() {
                   error={formErrors.credential_name}
                   required
                 />
-                <Field
-                  label="Entidad emisora"
-                  value={form.issuer_name}
-                  onChange={(value) =>
-                    setForm((current) => ({ ...current, issuer_name: value }))
-                  }
-                  onEdited={() => clearFormError("issuer_name")}
-                  error={formErrors.issuer_name}
-                  required
-                />
+                <label className="form-label">
+                  Entidad emisora
+                  <select
+                    required
+                    value={form.issuer_name}
+                    disabled={issuerCatalogLoading || issuerOptions.length === 0}
+                    onChange={(event) => {
+                      const option = issuerOptions.find((item) => item.name === event.target.value);
+                      setForm((current) => ({
+                        ...current,
+                        issuer_name: option?.name ?? "",
+                        issuer_id: option?.id ?? "",
+                      }));
+                      clearFormError("issuer_name");
+                    }}
+                    className={`mt-1 block w-full rounded-xl border bg-white px-3 py-2.5 ${formErrors.issuer_name ? "border-rose-300" : "border-slate-300"}`}
+                  >
+                    <option value="">
+                      {issuerCatalogLoading ? "Cargando entidades…" : "Selecciona una entidad"}
+                    </option>
+                    {issuerOptions.map((option) => (
+                      <option key={option.id ?? option.name} value={option.name}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.issuer_name && <span className="mt-1 block text-xs font-medium text-rose-700">{formErrors.issuer_name}</span>}
+                  {issuerCatalogError ? (
+                    <span className="mt-1 block text-xs text-rose-700">{issuerCatalogError}</span>
+                  ) : issuerOptions.length === 0 && !issuerCatalogLoading ? (
+                    <span className="mt-1 block text-xs text-slate-500">El administrador debe publicar primero una entidad desde el radar de cursos.</span>
+                  ) : (
+                    <span className="mt-1 block text-xs text-slate-500">Selecciona una entidad publicada por administración.</span>
+                  )}
+                </label>
                 <Field
                   label="Fecha de emisión"
                   type="date"
@@ -457,7 +509,7 @@ function StudentProfileContent() {
                   error={formErrors.expires_on}
                 />
                 <Field
-                  label="URL pública de verificación (opcional)"
+                  label="URL de verificación (Credly o proveedor; opcional)"
                   type="url"
                   value={form.source_url}
                   onChange={(value) =>
@@ -509,7 +561,7 @@ function StudentProfileContent() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 font-bold text-white disabled:opacity-60"
+                  className="primary-button disabled:opacity-60"
                 >
                   {submitting && (
                     <Loader2 aria-hidden="true" className="animate-spin" size={16} />
@@ -521,7 +573,7 @@ function StudentProfileContent() {
           )}
 
           {createdId && (
-            <p className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800">
+            <p className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
               La certificación ya está registrada. Al reenviar se reintentará únicamente adjuntar el archivo; también puedes abrir su detalle en el historial.
             </p>
           )}
@@ -531,6 +583,7 @@ function StudentProfileContent() {
               <CertificationDetails
                 key={selected.id}
                 item={selected}
+                issuerOptions={issuerOptions}
                 onSaved={loadCertifications}
                 onClose={() => setSelectedId(null)}
               />
@@ -540,12 +593,12 @@ function StudentProfileContent() {
           <section
             id="student-certification-history"
             aria-labelledby="student-history-heading"
-            className="scroll-mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+            className="surface-card scroll-mt-6 overflow-hidden"
           >
             <div className="border-b border-slate-100 p-5 md:p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-400">
+                  <p className="eyebrow text-slate-500">
                     Tus registros
                   </p>
                   <h2 id="student-history-heading" className="mt-1 font-semibold text-slate-900">
@@ -696,28 +749,28 @@ function StudentOverview({
       value: summary.approved,
       description: "Listas para mostrar en tu avance.",
       icon: CheckCircle2,
-      tone: "border-emerald-100 bg-emerald-50 text-emerald-700",
+      tone: "status-card status-card-approved",
     },
     {
       label: "Pendientes",
       value: summary.pending,
       description: "En espera o en revisión.",
       icon: Clock3,
-      tone: "border-amber-100 bg-amber-50 text-amber-700",
+      tone: "status-card status-card-pending",
     },
     {
       label: "Observadas",
       value: summary.observed,
       description: "Requieren revisar un comentario.",
       icon: MessageCircleWarning,
-      tone: "border-orange-100 bg-orange-50 text-orange-700",
+      tone: "status-card status-card-observed",
     },
     {
       label: "Vencidas",
       value: summary.expired,
       description: "Con fecha de vencimiento superada.",
       icon: CalendarClock,
-      tone: "border-slate-200 bg-slate-50 text-slate-700",
+      tone: "status-card status-card-expired",
     },
   ] as const;
   const corrections = summary.credentials.filter(
@@ -728,10 +781,10 @@ function StudentOverview({
     <section aria-labelledby="student-summary-heading" className="space-y-4">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">
+          <p className="eyebrow">
             Resumen de tu avance
           </p>
-          <h2 id="student-summary-heading" className="mt-1 text-2xl font-bold text-slate-950">
+          <h2 id="student-summary-heading" className="section-title mt-1 text-2xl">
             Un paso a la vez
           </h2>
         </div>
@@ -748,12 +801,12 @@ function StudentOverview({
             <article
               key={card.label}
               aria-label={`${card.label}: ${card.value}`}
-              className={`rounded-2xl border p-5 shadow-sm ${card.tone}`}
+              className={`p-5 shadow-sm ${card.tone}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold">{card.label}</p>
-                  <p className="mt-2 text-3xl font-bold tracking-tight">{card.value}</p>
+                  <p className="text-sm font-medium">{card.label}</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight">{card.value}</p>
                 </div>
                 <Icon aria-hidden="true" size={22} />
               </div>
@@ -764,13 +817,13 @@ function StudentOverview({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+        <section className="soft-panel p-6 shadow-sm">
           <div className="flex items-start gap-3">
             <span className="rounded-xl bg-blue-600 p-3 text-white">
               <ArrowRight aria-hidden="true" size={20} />
             </span>
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
+              <p className="eyebrow">
                 Siguiente acción
               </p>
               <h3 className="mt-1 text-lg font-bold text-slate-950">{nextAction.title}</h3>
@@ -779,7 +832,7 @@ function StudentOverview({
               </p>
               <button
                 onClick={onNextAction}
-                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                className="primary-button mt-5"
               >
                 {nextAction.buttonLabel}
                 <ArrowRight aria-hidden="true" size={16} />
@@ -790,10 +843,10 @@ function StudentOverview({
 
         <section
           aria-labelledby="student-attention-heading"
-          className="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm"
+          className="surface-card p-6"
         >
           <div className="flex items-center gap-2">
-            <MessageCircleWarning aria-hidden="true" className="text-orange-600" size={19} />
+            <MessageCircleWarning aria-hidden="true" className="text-blue-600" size={19} />
             <h3 id="student-attention-heading" className="font-bold text-slate-950">
               Necesitan tu atención
             </h3>
@@ -801,14 +854,14 @@ function StudentOverview({
           {corrections.length > 0 ? (
             <div className="mt-4 space-y-3">
               {corrections.map((item) => (
-                <div key={item.id} className="rounded-xl bg-orange-50 p-3">
-                  <p className="text-sm font-semibold text-orange-950">{item.title}</p>
-                  <p className="mt-1 text-xs leading-5 text-orange-900/80">
+                <div key={item.id} className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                  <p className="text-sm font-medium text-slate-900">{item.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
                     {item.comment ?? "Revisa la observación del validador."}
                   </p>
                   <button
                     onClick={() => onOpenCredential(item.id)}
-                    className="mt-2 text-xs font-bold text-orange-800 underline underline-offset-2"
+                    className="mt-2 text-xs font-semibold text-blue-700 underline underline-offset-2"
                   >
                     Abrir corrección
                   </button>

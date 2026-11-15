@@ -55,12 +55,12 @@ export function IndicatorCards({ data }: { data: AnalyticsOverview }) {
           key={card.label}
           title={card.definition}
           aria-label={`${card.label}: ${card.value}. ${card.definition}`}
-          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+          className="surface-card p-4"
         >
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-slate-100 text-slate-600">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-700">
             <card.icon size={20} />
           </div>
-          <p className="mt-4 text-sm text-slate-500">{card.label}</p>
+          <p className="mt-4 text-sm font-medium text-slate-600">{card.label}</p>
           <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">
             {card.value}
           </p>
