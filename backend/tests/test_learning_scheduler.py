@@ -81,7 +81,7 @@ def test_weekly_radar_detects_courses_but_does_not_publish_them(monkeypatch):
                 active=True,
             )
         )
-    feed_row = {"title": "Curso de prueba", "url": "https://catalog.example/python", "skills": ["Python"]}
+    feed_row = {"title": "Curso de prueba", "provider": "Proveedor alternativo", "url": "https://catalog.example/python", "skills": ["Python"]}
     monkeypatch.setattr(learning_routes, "source_rows", lambda *_: iter([dict(feed_row)]))
     with TestClient(app) as client:
         headers = {"X-Pulse-ETL-Secret": "catalog-scheduler-secret"}
@@ -107,6 +107,7 @@ def test_weekly_radar_detects_courses_but_does_not_publish_them(monkeypatch):
         assert course is not None
         assert course.status == "PUBLISHED"
         assert course.title == "Título actualizado antes de revisión"
+        assert course.provider == "Proveedor alternativo"
         refresh_audit = session.scalar(select(LearningAudit).where(LearningAudit.action == "REFRESH"))
         assert refresh_audit is not None
         assert refresh_audit.before["title"] == "Curso de prueba"

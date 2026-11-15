@@ -259,6 +259,10 @@ def sync_source(session, actor, source, settings):
         if not skills:
             skipped += 1
             continue
+        provider = str(row.get('provider') or source.provider).strip()[:150]
+        if not provider:
+            skipped += 1
+            continue
         existing = session.scalar(select(Course).where(Course.source_url == url).with_for_update())
         if existing is not None:
             # Refresh metadata only while the candidate is still unreviewed. Once
@@ -266,7 +270,7 @@ def sync_source(session, actor, source, settings):
             if existing.status == 'DETECTED':
                 next_values = {
                     'title': title[:200],
-                    'provider': source.provider,
+                    'provider': provider,
                     'requirements': requirements,
                     'skills': skills,
                 }
@@ -284,7 +288,7 @@ def sync_source(session, actor, source, settings):
             else:
                 skipped += 1
             continue
-        course = Course(title=title[:200], provider=source.provider, source_url=url, checked_on=date.today(), requirements=requirements, skills=skills, status='DETECTED')
+        course = Course(title=title[:200], provider=provider, source_url=url, checked_on=date.today(), requirements=requirements, skills=skills, status='DETECTED')
         session.add(course)
         audit(session, actor, course, 'DETECTED', f'Curso detectado desde feed {source.provider}')
         created += 1

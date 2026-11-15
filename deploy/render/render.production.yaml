@@ -36,7 +36,7 @@ services:
       - key: PULSE_EVIDENCE_STORAGE_PATH
         value: /var/data/evidence
       - key: PULSE_DEMO_ANALYTICS_ENABLED
-        value: 'true'
+        value: 'false'
       - key: PULSE_GOOGLE_CLIENT_ID
         sync: false
       - key: PULSE_GOOGLE_CLIENT_SECRET
