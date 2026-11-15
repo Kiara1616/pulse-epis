@@ -155,10 +155,11 @@ Durante la demostración, cambia **Periodo** y **Fecha de corte**. La fecha perm
 2. Explicar Bronze → Silver → Gold con la tabla de la sección 2.
 3. Mostrar **Matrícula por periodo**: la serie histórica UPT/GPAD (`2023-I`–`2026-II`) y el padrón vigente de `2026-II` publicado en Pulse. Aclarar la diferencia 324 vs. 310 como conciliación pendiente, no como dato inventado.
 4. Mostrar el padrón y el proceso de publicación de indicadores. La cobertura de certificaciones permanece en cero hasta que un estudiante registre evidencia real y un validador la apruebe; no se deben inventar credenciales para llenar el tablero.
-5. Abrir los seis reportes y cambiar periodo/fecha de corte.
-6. Mostrar los tres diagramas y el bloque de Terraform.
-7. Mostrar la tabla de costos y aclarar: `plan` no cobra; `apply` sí crea recursos.
-8. Cerrar indicando que Render ejecuta el MVP actual y GCP está listo para activarse cuando haya presupuesto institucional.
+5. Mostrar Mi ruta y Talleres: el estudiante de ciclo VIII recibe una oportunidad oficial, solicita el taller de Python y el administrador revisa la solicitud, el cupo y el motivo de aceptación.
+6. Abrir los seis reportes y cambiar periodo/fecha de corte.
+7. Mostrar los tres diagramas y el bloque de Terraform.
+8. Mostrar la tabla de costos y aclarar: `plan` no cobra; `apply` sí crea recursos.
+9. Cerrar indicando que Render ejecuta el MVP actual y GCP está listo para activarse cuando haya presupuesto institucional.
 
 ## 8. Cierre operativo pendiente
 
@@ -169,7 +170,7 @@ La carga del padrón **sí se aplicó en producción**: los registros de Render 
 Para completar la aceptación institucional, todavía se requiere:
 
 1. Conciliar la diferencia entre 309 filas aceptadas y los 310 hechos activos publicados por el ETL; revisar también las 19 filas incompletas contra una fuente institucional. No conceder acceso sin confirmar correo y código.
-2. El inicio de sesión y la segmentación de navegación de las tres cuentas autorizadas ya fueron comprobados en producción (ADMIN, VALIDATOR y STUDENT). Para cerrar la evidencia de negocio todavía falta registrar una certificación real autorizada y recorrer su decisión de validación, además de verificar audiencia por ciclo, cupos y trazabilidad.
+2. El inicio de sesión y la segmentación de navegación de las tres cuentas autorizadas ya fueron comprobados en producción (ADMIN, VALIDATOR y STUDENT). También se comprobó el flujo Admin → estudiante → solicitud → aceptación del taller con audiencia de ciclo VIII, cupos y motivo auditado. Para cerrar la evidencia de negocio todavía falta registrar una certificación real autorizada y recorrer su decisión de validación.
 3. La revisión de los seis reportes en producción quedó comprobada: Panorama, Evolución, Certificaciones, Habilidades, Cohortes y Calidad cargan sin errores; los filtros Año/Mes/Día, ingreso, ciclo y proveedor responden. Para mostrar indicadores de certificaciones se necesita evidencia institucional autorizada; el ETL actual reporta cero certificaciones y no se deben inventar credenciales.
 4. El primer `SYNC` productivo del feed curado del Radar quedó confirmado: `0 candidatos nuevos; 0 candidatos actualizados; 0 cursos archivados; 14 omitidos`. Las filas permanecen agrupadas por proveedor y en estado publicado solo cuando existe una decisión administrativa. El conector oficial DataCamp sigue disponible como integración opcional, requiere una clave organizacional y verificar el plan/costo; Pulse no extrae HTML sin autorización.
 
