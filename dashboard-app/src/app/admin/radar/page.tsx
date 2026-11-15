@@ -33,6 +33,19 @@ const offerLabels: Record<LearningOffer["status"], string> = {
 
 const cycles = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
+const providerLabels: Record<string, string> = {
+  datacamp: "DataCamp",
+};
+
+function providerGroupKey(provider: string) {
+  return provider.trim().toLocaleLowerCase("es");
+}
+
+function providerDisplayName(provider: string) {
+  const trimmed = provider.trim();
+  return (providerLabels[providerGroupKey(trimmed)] ?? trimmed) || "Proveedor sin identificar";
+}
+
 type RadarData = {
   courses: LearningCourse[];
   offers: LearningOffer[];
@@ -96,12 +109,20 @@ function RadarAdmin() {
     [data, filter],
   );
   const providerGroups = useMemo(() => {
-    const groups = new Map<string, LearningCourse[]>();
+    const groups = new Map<string, { label: string; courses: LearningCourse[] }>();
     for (const course of visibleCourses) {
-      const provider = course.provider.trim() || "Proveedor sin identificar";
-      groups.set(provider, [...(groups.get(provider) ?? []), course]);
+      const key = providerGroupKey(course.provider) || "unknown";
+      const current = groups.get(key);
+      if (current) {
+        current.courses.push(course);
+      } else {
+        groups.set(key, {
+          label: providerDisplayName(course.provider),
+          courses: [course],
+        });
+      }
     }
-    return [...groups.entries()].sort(([left], [right]) => left.localeCompare(right, "es"));
+    return [...groups.entries()].sort(([, left], [, right]) => left.label.localeCompare(right.label, "es"));
   }, [visibleCourses]);
 
   async function runAction(action: () => Promise<unknown>, success: string): Promise<boolean> {
@@ -412,16 +433,17 @@ function RadarAdmin() {
               <p className="mt-1 text-sm text-slate-600">Selecciona una entidad para consultar y gestionar sus cursos detectados.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {providerGroups.map(([provider, courses]) => {
-                const isExpanded = expandedProvider === provider;
+              {providerGroups.map(([providerKey, group]) => {
+                const { label: provider, courses } = group;
+                const isExpanded = expandedProvider === providerKey;
                 const published = courses.filter((course) => course.status === "PUBLISHED").length;
                 return (
                   <button
-                    key={provider}
+                    key={providerKey}
                     type="button"
                     aria-expanded={isExpanded}
                     aria-controls={`provider-${provider.replace(/[^a-zA-Z0-9]/g, "-")}`}
-                    onClick={() => setExpandedProvider(isExpanded ? "" : provider)}
+                    onClick={() => setExpandedProvider(isExpanded ? "" : providerKey)}
                     className={`flex items-center gap-4 rounded-2xl border p-5 text-left shadow-sm transition ${isExpanded ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"}`}
                   >
                     <span className="rounded-xl bg-blue-100 p-3 text-blue-700"><Building2 size={22} aria-hidden="true" /></span>
@@ -434,8 +456,8 @@ function RadarAdmin() {
                 );
               })}
             </div>
-            {providerGroups.map(([provider, courses]) => expandedProvider === provider && (
-              <div key={provider} id={`provider-${provider.replace(/[^a-zA-Z0-9]/g, "-")}`} className="rounded-2xl border border-blue-200 bg-blue-50/30 p-4 sm:p-5">
+            {providerGroups.map(([providerKey, { label: provider, courses }]) => expandedProvider === providerKey && (
+              <div key={providerKey} id={`provider-${provider.replace(/[^a-zA-Z0-9]/g, "-")}`} className="rounded-2xl border border-blue-200 bg-blue-50/30 p-4 sm:p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Cursos de {provider}</p>

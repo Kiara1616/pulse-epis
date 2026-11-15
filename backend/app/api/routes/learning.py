@@ -30,6 +30,17 @@ MAX_CATALOG_ITEMS = 500
 DATACAMP_CATALOG_HOST = 'lms-catalog-api.datacamp.com'
 DATACAMP_CATALOG_PATH = '/v1/catalog/live-courses'
 DATACAMP_ARCHIVED_CATALOG_PATH = '/v1/catalog/archived-courses'
+_PROVIDER_ALIASES = {
+    'datacamp': 'DataCamp',
+    'data camp': 'DataCamp',
+}
+
+
+def canonical_provider_name(value: str) -> str:
+    """Keep known provider aliases in one display/grouping label."""
+
+    normalized = str(value or '').strip()
+    return _PROVIDER_ALIASES.get(normalized.casefold(), normalized)
 
 def datacamp_archived_feed_url(feed_url: str) -> str | None:
     """Return the official archive endpoint for an exact live-catalog URL."""
@@ -259,7 +270,7 @@ def sync_source(session, actor, source, settings):
         if not skills:
             skipped += 1
             continue
-        provider = str(row.get('provider') or source.provider).strip()[:150]
+        provider = canonical_provider_name(str(row.get('provider') or source.provider))[:150]
         if not provider:
             skipped += 1
             continue
@@ -393,6 +404,7 @@ def create_catalog_source(request: Request, payload: CatalogSourceInput, actor: 
     with transaction(request) as s:
         values = payload.model_dump()
         values['feed_url'] = str(payload.feed_url)
+        values['provider'] = canonical_provider_name(values['provider'])
         item = CatalogSource(**values)
         s.add(item)
         audit(s, actor, item, 'CREATE', 'Alta de feed autorizado para detectar cursos')
@@ -514,6 +526,7 @@ def create_course(request: Request, payload: CourseInput, actor: AuthenticatedUs
     with transaction(request) as s:
         values = payload.model_dump()
         values['source_url'] = str(payload.source_url)
+        values['provider'] = canonical_provider_name(values['provider'])
         item = Course(**values)
         s.add(item)
         audit(s, actor, item, 'CREATE', 'Alta manual de fuente')
@@ -528,6 +541,7 @@ def edit_course(identifier: UUID, request: Request, payload: CourseInput, actor:
         before = serialize(s, item)
         values = payload.model_dump()
         values['source_url'] = str(payload.source_url)
+        values['provider'] = canonical_provider_name(values['provider'])
         for k, v in values.items():
             setattr(item, k, v)
         audit(s, actor, item, 'UPDATE', 'Corrección de fuente', before)

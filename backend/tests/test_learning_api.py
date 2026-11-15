@@ -165,6 +165,27 @@ def test_catalog_sync_and_external_handoff(context, monkeypatch):
     assert response.headers['location'] == 'https://example.invalid/detected'
 
 
+def test_datacamp_provider_alias_is_canonicalized(context):
+    clients, _, _, _ = context
+    admin = clients['admin']
+    source = post(admin, '/admin/sources', {
+        'provider': 'datacamp',
+        'feed_url': 'https://example.invalid/datacamp.json',
+        'format': 'JSON',
+        'default_skills': ['Python'],
+        'default_requirements': [],
+    })
+    assert source['provider'] == 'DataCamp'
+    course = post(admin, '/courses', {
+        'title': 'Curso DataCamp',
+        'provider': 'datacamp',
+        'source_url': 'https://example.invalid/datacamp-course',
+        'checked_on': '2026-01-01',
+        'skills': ['Python'],
+    })
+    assert course['provider'] == 'DataCamp'
+
+
 def test_catalog_feed_rejects_private_destinations(monkeypatch):
     monkeypatch.setattr(
         learning_routes.socket,
