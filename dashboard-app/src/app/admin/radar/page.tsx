@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Building2, ChevronDown, ExternalLink, Info, Plus, RefreshCw, X } from "lucide-react";
+import { ChevronDown, ExternalLink, Info, Plus, RefreshCw, X } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
+import { ProviderLogo } from "@/shared/ui/ProviderLogo";
 import {
   getLearningErrorMessage,
   learningApi,
@@ -446,7 +447,7 @@ function RadarAdmin() {
                     onClick={() => setExpandedProvider(isExpanded ? "" : providerKey)}
                     className={`flex items-center gap-4 rounded-2xl border p-5 text-left shadow-sm transition ${isExpanded ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"}`}
                   >
-                    <span className="rounded-xl bg-blue-100 p-3 text-blue-700"><Building2 size={22} aria-hidden="true" /></span>
+                    <ProviderLogo provider={provider} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold text-slate-950">{provider}</span>
                       <span className="mt-1 block text-sm text-slate-600">{courses.length} {courses.length === 1 ? "curso" : "cursos"} · {published} publicados</span>
