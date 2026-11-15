@@ -61,6 +61,15 @@ async function mockApi(page: Page, role: Role) {
     contentType: "application/json",
     body: JSON.stringify([]),
   }));
+  await page.route("**/api/v1/certifications/issuers", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify([
+      { id: "aws", name: "AWS", website_url: "https://aws.amazon.com" },
+      { id: "oracle", name: "Oracle", website_url: "https://education.oracle.com" },
+      { id: "datacamp", name: "DataCamp", website_url: "https://www.datacamp.com" },
+    ]),
+  }));
   await page.route("**/api/v1/validations", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -87,17 +96,17 @@ test.describe("navegación por rol", () => {
     const detail = page.getByRole("region", { name: "Detalle de certificación" });
     await expect(detail.getByText("Completa el nombre de la certificación")).toBeVisible();
     await detail.getByLabel("Nombre de la certificación").fill("AWS Cloud Fundamentals");
-    await detail.getByLabel("URL de verificación (opcional)").fill("https:example.com");
+    await detail.getByLabel("URL de verificación (Credly o proveedor; opcional)").fill("https:example.com");
     await detail.getByRole("button", { name: "Reenviar corrección" }).click();
     await expect(detail.getByText("Usa una URL HTTP(S) válida", { exact: false })).toBeVisible();
     expect(patchCalls).toBe(0);
 
-    await detail.getByLabel("URL de verificación (opcional)").fill("https:///example.com");
+    await detail.getByLabel("URL de verificación (Credly o proveedor; opcional)").fill("https:///example.com");
     await detail.getByRole("button", { name: "Reenviar corrección" }).click();
     await expect(detail.getByText("Usa una URL HTTP(S) válida", { exact: false })).toBeVisible();
     expect(patchCalls).toBe(0);
 
-    await detail.getByLabel("URL de verificación (opcional)").fill("   ");
+    await detail.getByLabel("URL de verificación (Credly o proveedor; opcional)").fill("   ");
     await detail.getByRole("button", { name: "Reenviar corrección" }).click();
     await expect(detail.getByText("Corrección reenviada al validador.")).toBeVisible();
     expect(patchCalls).toBe(1);
@@ -395,10 +404,10 @@ test.describe("navegación por rol", () => {
     await page.goto("/mi-perfil");
     await page.getByRole("button", { name: "Nueva certificación", exact: true }).click();
     await page.getByLabel("Nombre de la certificación").fill("AWS Cloud Practitioner");
-    await page.getByLabel("Entidad emisora").fill("AWS");
+    await page.getByLabel("Entidad emisora").selectOption({ label: "AWS" });
     await page.getByLabel("Fecha de emisión").fill("2026-09-10");
     await page.getByLabel("Fecha de vencimiento (opcional)").fill("2026-09-01");
-    await page.getByLabel("URL pública de verificación (opcional)").fill("ftp://invalid.example.test");
+    await page.getByLabel("URL de verificación (Credly o proveedor; opcional)").fill("ftp://invalid.example.test");
     await page.getByLabel("Habilidades, separadas por comas").fill("Cloud");
     await page.getByRole("button", { name: "Enviar a validación" }).click();
 
@@ -408,13 +417,13 @@ test.describe("navegación por rol", () => {
 
     await page.getByLabel("Fecha de vencimiento (opcional)").fill("2026-09-20");
     for (const invalidUrl of ["https:example.com", "https:///example.com"]) {
-      await page.getByLabel("URL pública de verificación (opcional)").fill(invalidUrl);
+      await page.getByLabel("URL de verificación (Credly o proveedor; opcional)").fill(invalidUrl);
       await page.getByRole("button", { name: "Enviar a validación" }).click();
       await expect(page.getByText("Usa una URL HTTP(S) válida", { exact: false })).toBeVisible();
       expect(createCalls).toBe(0);
     }
 
-    await page.getByLabel("URL pública de verificación (opcional)").fill("https://verify.example.test/aws");
+    await page.getByLabel("URL de verificación (Credly o proveedor; opcional)").fill("https://verify.example.test/aws");
     await page.locator('input[type="file"]').setInputFiles({
       name: "evidence.txt",
       mimeType: "text/plain",
@@ -449,9 +458,9 @@ test.describe("navegación por rol", () => {
     await page.goto("/mi-perfil");
     await page.getByRole("button", { name: "Nueva certificación", exact: true }).click();
     await page.getByLabel("Nombre de la certificación").fill("AWS Cloud Practitioner");
-    await page.getByLabel("Entidad emisora").fill("AWS");
+    await page.getByLabel("Entidad emisora").selectOption({ label: "AWS" });
     await page.getByLabel("Fecha de emisión").fill("2026-09-10");
-    await page.getByLabel("URL pública de verificación (opcional)").fill("   ");
+    await page.getByLabel("URL de verificación (Credly o proveedor; opcional)").fill("   ");
     await page.getByLabel("Habilidades, separadas por comas").fill("Cloud");
     await page.getByRole("button", { name: "Enviar a validación" }).click();
 
