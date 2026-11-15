@@ -134,7 +134,7 @@ Infracost complementa la estimación después de tener un `terraform plan` váli
 
 El administrador registra un feed **JSON o RSS público autorizado** desde Radar. GitHub Actions ejecuta la consulta semanal los lunes a las 04:00 de Lima y también se puede sincronizar manualmente. Pulse limita la lectura al feed registrado, registra fecha y resumen, deduplica por URL y deja los hallazgos en `DETECTED`. El administrador revisa, edita, selecciona ciclos y publica cada oportunidad.
 
-El MVP incluye un feed curado y versionado en [`backend/data/course-catalog-feed.json`](backend/data/course-catalog-feed.json), registrado por la migración `0017_authorized_course_feed.py`. Cada fila conserva el proveedor y el enlace HTTPS oficial; la consulta del feed no raspa HTML ni requiere claves de proveedores. Si una entidad no ofrece API/feed o permiso de extracción, se mantiene su catálogo manual con la misma revisión y auditoría. Radar nunca marca un curso detectado como oportunidad publicada ni crea certificaciones de estudiantes.
+El MVP incluye un feed curado y versionado en [`backend/data/course-catalog-feed.json`](backend/data/course-catalog-feed.json), registrado por la migración `0017_authorized_course_feed.py`. Cada fila conserva el proveedor y el enlace HTTPS oficial; la consulta del feed no raspa HTML ni requiere claves de proveedores. En la revisión del 15/11/2026, los 14 enlaces del catálogo respondieron HTTP 200 y redirigieron a los dominios oficiales de sus proveedores. Si una entidad no ofrece API/feed o permiso de extracción, se mantiene su catálogo manual con la misma revisión y auditoría. Radar nunca marca un curso detectado como oportunidad publicada ni crea certificaciones de estudiantes.
 
 ## 6. Los seis reportes
 
