@@ -1,6 +1,9 @@
 """Aggregate-only dashboard indicators and metric definitions."""
 
 from datetime import date
+import json
+from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -24,6 +27,23 @@ from ...db.models import AcademicPeriod, FactStudentPeriod
 
 router = APIRouter(prefix="/indicators", tags=["indicators"])
 _ANALYTICS_READ = require_permissions(Permission.ANALYTICS_READ)
+_UPT_ENROLLMENT_HISTORY = Path(__file__).resolve().parents[3] / "data" / "upt-enrollment-history.json"
+
+
+@lru_cache(maxsize=1)
+def _public_enrollment_history() -> tuple[dict[str, int | str], ...]:
+    """Load aggregate UPT/GPAD totals without importing nominal student data."""
+
+    payload = json.loads(_UPT_ENROLLMENT_HISTORY.read_text(encoding="utf-8"))
+    return tuple(
+        {
+            "period_code": str(row["period_code"]),
+            "public_total": int(row["public_total"]),
+            "source_label": str(row["source_label"]),
+            "source_url": str(row["source_url"]),
+        }
+        for row in payload
+    )
 
 def _service(request: Request, dataset: str):
     if dataset == "demo":
@@ -54,7 +74,7 @@ def analytics_config(request: Request) -> dict[str, object]:
 
 @router.get("/enrollment-history", dependencies=[Depends(_ANALYTICS_READ)])
 def enrollment_history(request: Request) -> list[dict[str, int | str]]:
-    """Return active enrollment counts from the latest published snapshot per period."""
+    """Merge published Pulse snapshots with verified aggregate UPT/GPAD history."""
 
     latest_cutoffs = (
         select(
@@ -80,10 +100,35 @@ def enrollment_history(request: Request) -> list[dict[str, int | str]]:
             .group_by(AcademicPeriod.code, AcademicPeriod.starts_on)
             .order_by(AcademicPeriod.starts_on.asc(), AcademicPeriod.code.asc())
         ).all()
-    return [
-        {"period_code": code, "active_students": int(active_students), "basis": "published"}
-        for code, active_students in rows
-    ]
+    published = {code: int(active_students) for code, active_students in rows}
+    published_periods = set(published)
+    result: list[dict[str, int | str]] = []
+    for historical in _public_enrollment_history():
+        period_code = str(historical["period_code"])
+        public_total = int(historical["public_total"])
+        active_students = published.pop(period_code, public_total)
+        result.append(
+            {
+                "period_code": period_code,
+                "active_students": active_students,
+                "basis": "published_snapshot" if period_code in published_periods else "public_history",
+                "reference_total": public_total,
+                "source_label": "Pulse · snapshot ETL" if period_code in published_periods else historical["source_label"],
+                "source_url": "https://pulse-epis-rirr.onrender.com/admin/publicaciones" if period_code in published_periods else historical["source_url"],
+            }
+        )
+    for period_code, active_students in published.items():
+        result.append(
+            {
+                "period_code": period_code,
+                "active_students": active_students,
+                "basis": "published_snapshot",
+                "reference_total": active_students,
+                "source_label": "Pulse · snapshot ETL",
+                "source_url": "https://pulse-epis-rirr.onrender.com/admin/publicaciones",
+            }
+        )
+    return result
 
 
 @router.get("/reference/students", dependencies=[Depends(_ANALYTICS_READ)])
