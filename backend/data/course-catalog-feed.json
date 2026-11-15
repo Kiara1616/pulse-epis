@@ -1,0 +1,102 @@
+{
+  "courses": [
+    {
+      "title": "Python Essentials 1",
+      "provider": "Cisco Networking Academy",
+      "url": "https://www.skillsforall.com/course/python-essentials-1?courseLang=en-US",
+      "skills": ["Python", "Programación", "Resolución de problemas"],
+      "requirements": ["Sin requisitos previos"]
+    },
+    {
+      "title": "AWS Cloud Practitioner Essentials",
+      "provider": "AWS Skill Builder",
+      "url": "https://explore.skillbuilder.aws/learn/courses/134/aws-cloud-practitioner-essentials",
+      "skills": ["AWS", "Arquitectura cloud", "Seguridad", "Costos cloud"],
+      "requirements": ["Conocimientos generales de TI"]
+    },
+    {
+      "title": "Data Analyst with Python",
+      "provider": "DataCamp",
+      "url": "https://www.datacamp.com/tracks/data-analyst-with-python",
+      "skills": ["Python", "Pandas", "Visualización", "Análisis de datos"],
+      "requirements": ["Programación básica"]
+    },
+    {
+      "title": "OCI Architect Associate Learning Path",
+      "provider": "Oracle University",
+      "url": "https://learn.oracle.com/ols/learning-path/become-an-oci-architect-associate/163512/162234",
+      "skills": ["OCI", "Arquitectura cloud", "Seguridad cloud"],
+      "requirements": ["Fundamentos de TI"]
+    },
+    {
+      "title": "Core Grafana Concepts",
+      "provider": "Grafana Labs",
+      "url": "https://grafana.com/docs/learning-paths/core-grafana-concepts/",
+      "skills": ["Grafana", "Observabilidad", "Dashboards", "Métricas"],
+      "requirements": ["Fundamentos de sistemas"]
+    },
+    {
+      "title": "Neo4j Certified Professional",
+      "provider": "Neo4j GraphAcademy",
+      "url": "https://graphacademy.neo4j.com/certifications/neo4j-certification",
+      "skills": ["Neo4j", "Cypher", "Modelado de grafos"],
+      "requirements": ["Fundamentos de bases de datos"]
+    },
+    {
+      "title": "MongoDB Associate Developer",
+      "provider": "MongoDB University",
+      "url": "https://learn.mongodb.com/pages/mongodb-associate-developer-exam",
+      "skills": ["MongoDB", "NoSQL", "Modelado documental"],
+      "requirements": ["Programación", "Fundamentos de bases de datos"]
+    },
+    {
+      "title": "Redis Insight",
+      "provider": "Redis University",
+      "url": "https://university.redis.io/course/ibjgkshzhox41u?tab=details",
+      "skills": ["Redis", "Redis Insight", "NoSQL"],
+      "requirements": ["Fundamentos de Redis"]
+    },
+    {
+      "title": "Fundamentals of Liquibase (LB101)",
+      "provider": "Liquibase University",
+      "url": "https://learn.liquibase.com/",
+      "skills": ["Liquibase", "Migraciones", "Versionado de base de datos"],
+      "requirements": ["SQL", "Fundamentos de bases de datos"]
+    },
+    {
+      "title": "Microsoft Certified: Azure Fundamentals (AZ-900)",
+      "provider": "Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/credentials/certifications/azure-fundamentals/",
+      "skills": ["Azure", "Arquitectura cloud", "Gobernanza", "Seguridad"],
+      "requirements": ["Fundamentos de TI"]
+    },
+    {
+      "title": "Cloud Digital Leader Learning Path",
+      "provider": "Google Cloud Skills Boost",
+      "url": "https://www.cloudskillsboost.google/paths/9",
+      "skills": ["Google Cloud", "Datos", "Transformación digital"],
+      "requirements": ["Sin requisitos técnicos avanzados"]
+    },
+    {
+      "title": "SnowPro Core Certification Prep",
+      "provider": "Snowflake University",
+      "url": "https://learn.snowflake.com/en/courses/OD-COREPREP/",
+      "skills": ["Snowflake", "Data warehouse", "Carga de datos"],
+      "requirements": ["SQL", "Experiencia básica con Snowflake"]
+    },
+    {
+      "title": "GitHub Foundations Certification",
+      "provider": "GitHub Skills",
+      "url": "https://resources.github.com/learn/certifications/",
+      "skills": ["Git", "GitHub", "Colaboración", "CI/CD"],
+      "requirements": ["Fundamentos de control de versiones"]
+    },
+    {
+      "title": "Introduction to SQL",
+      "provider": "DataCamp",
+      "url": "https://www.datacamp.com/courses/introduction-to-sql",
+      "skills": ["SQL", "Bases de datos", "Análisis de datos"],
+      "requirements": ["Sin requisitos previos"]
+    }
+  ]
+}

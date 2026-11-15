@@ -4,10 +4,10 @@ from uuid import uuid4
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from backend.app.learning.models import LearningInterest,LearningRoute,LearningStep,LearningCourse,LearningOpportunity,LearningWorkshop,LearningOfferInterest
+from backend.app.learning.models import LearningInterest,LearningRoute,LearningStep,LearningCourse,LearningOpportunity,LearningWorkshop,LearningOfferInterest,LearningCatalogSource
 
 ROOT=Path(__file__).resolve().parents[2]
 def test_learning_migration_constraints_and_rollback(tmp_path):
@@ -16,6 +16,10 @@ def test_learning_migration_constraints_and_rollback(tmp_path):
     command.upgrade(config,'head');engine=create_engine(url)
     assert {'learning_interests','learning_routes','learning_steps','student_learning_profiles','student_learning_interests','learning_courses','learning_offers','learning_offer_interests','learning_workshops','learning_applications','learning_audit'} <= set(inspect(engine).get_table_names())
     with Session(engine) as s:
+        source = s.scalar(select(LearningCatalogSource).where(LearningCatalogSource.feed_url.like('%course-catalog-feed.json')))
+        assert source is not None
+        assert source.active is True
+        assert source.format == 'JSON'
         interest=LearningInterest(name='Interés sintético');route=LearningRoute(title='Ruta sintética',description='Solo prueba');s.add_all([interest,route]);s.commit()
         s.add(LearningStep(route_id=route.id,position=1,title='Paso',skills=['Python'],prerequisites=[]));s.commit()
         s.add(LearningStep(route_id=route.id,position=1,title='Duplicado',skills=[],prerequisites=[]))
