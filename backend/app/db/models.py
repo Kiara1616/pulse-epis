@@ -158,6 +158,7 @@ class RosterImport(Base):
     total_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     accepted_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     rejected_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    deactivated_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -14,7 +14,7 @@ from backend.app.auth.models import AuthenticatedUser, Role
 from backend.app.auth.store import InMemoryUserDirectory
 from backend.app.core.config import Settings
 from backend.app.db.base import Base
-from backend.app.db.models import AcademicPeriod, Enrollment, RosterCandidate, RosterImport, Student, User
+from backend.app.db.models import AcademicPeriod, AuditLog, Enrollment, RosterCandidate, RosterImport, Student, User
 from backend.app.main import create_app
 from backend.app.roster.parser import parse_roster_candidate_upload, parse_roster_csv
 from backend.app.roster.service import RosterImportService, pseudonymize_student_code
@@ -167,6 +167,39 @@ def test_import_is_atomic_pseudonymized_and_idempotent(caplog):
     log_messages = " ".join(record.getMessage() for record in caplog.records)
     assert "student.one@virtual.upt.pe" not in log_messages
     assert "kz2023077087" not in log_messages
+    engine.dispose()
+
+
+def test_full_roster_reconciliation_marks_absent_active_enrollment_inactive_and_audits():
+    service, session_factory, _, actor_id, engine = make_service()
+    service.import_csv(VALID_CSV, period_code="2026-II", actor_user_id=actor_id)
+    reduced_csv = b"""code,email,school,plan,cycle,status,period
+kz2023077087,student.one@virtual.upt.pe,EPIS,Plan 2020,VIII,ACTIVE,2026-II
+"""
+
+    report = service.import_csv(
+        reduced_csv,
+        period_code="2026-II",
+        actor_user_id=actor_id,
+        reconcile_missing=True,
+    )
+
+    assert report.status == "APPLIED"
+    assert report.accepted_rows == 1
+    assert report.deactivated_rows == 1
+    with session_factory() as session:
+        enrollments = session.scalars(select(Enrollment).order_by(Enrollment.cycle)).all()
+        assert {enrollment.status for enrollment in enrollments} == {"ACTIVE", "INACTIVE"}
+        inactive = next(enrollment for enrollment in enrollments if enrollment.status == "INACTIVE")
+        inactive_student = session.get(Student, inactive.student_id)
+        assert inactive_student is not None
+        assert inactive_student.status == "INACTIVE"
+        audit = session.scalar(
+            select(AuditLog).where(AuditLog.action == "ROSTER_PERIOD_RECONCILED")
+        )
+        assert audit is not None
+        assert audit.after_data["deactivated_rows"] == 1
+        assert audit.after_data["accepted_rows"] == 1
     engine.dispose()
 
 
