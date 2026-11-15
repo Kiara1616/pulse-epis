@@ -106,6 +106,16 @@ async function mockRadarApi(page: Page, initialStatus = "DETECTED") {
     await route.fulfill({ json: currentOffer });
   });
 
+  await page.route("**/api/v1/learning/offers/*", async (route) => {
+    if (route.request().method() === "PUT") {
+      const body = route.request().postDataJSON();
+      currentOffer = { ...currentOffer, ...body };
+      await route.fulfill({ json: currentOffer });
+      return;
+    }
+    await route.continue();
+  });
+
   await page.route("**/api/v1/learning/interests", (route) =>
     route.fulfill({
       json: [{ id: interestId, name: "Inteligencia artificial", active: true, created_at: "2026-10-01T12:00:00Z" }],
@@ -151,11 +161,17 @@ test("admin revisa un curso y publica una oportunidad persistida", async ({ page
   ]);
   expect((writes[3].body as { status: string; reason: string }).status).toBe("PUBLISHED");
 
-  await page.getByRole("button", { name: "Retirar oportunidad" }).click();
+  await page.getByRole("button", { name: "Retirar" }).click();
   await expect(page.getByRole("article").getByText("Retirado", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Editar" })).toBeVisible();
+  await page.getByRole("button", { name: "Editar" }).click();
+  await expect(page.getByText("Esta oportunidad está retirada. Puedes corregirla y volver a publicarla cuando esté lista.", { exact: true })).toBeVisible();
+  await page.getByLabel("Título de la oportunidad").fill("Formación aplicada en IA reabierta");
+  await page.getByRole("button", { name: "Volver a publicar" }).click();
+  await expect(page.getByRole("status")).toContainText("Oportunidad reabierta y disponible para estudiantes.");
   await page.reload();
   await page.getByRole("button", { name: /Universidad de ejemplo/ }).click();
-  await expect(page.getByRole("article").getByText("Retirado", { exact: true })).toBeVisible();
+  await expect(page.getByRole("article").getByText("Publicado", { exact: true })).toBeVisible();
 });
 
 test("el radar muestra carga vacía real y registra una fuente manual", async ({ page }) => {
