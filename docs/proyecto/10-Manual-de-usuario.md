@@ -93,11 +93,11 @@ El centro administrativo de #72 ya está integrado desde main. La integración d
 
 ## VA-09: prototipo del radar de cursos
 
-#75 añade /admin/radar, protegido para ADMIN, y accesos desde sidebar y centro administrativo. Es una demostración con tres cursos sintéticos y fuentes example.invalid: no descarga URLs, no guarda datos y no publica para estudiantes. Las acciones afectan memoria y se reinician al recargar.
+#75 incorporó `/admin/radar`, protegido para `ADMIN`. En el estado actual de producción, el administrador registra un feed JSON/RSS público autorizado o revisa el feed curado versionado. La sincronización semanal conserva proveedor, URL oficial, fecha de consulta y estado; no se raspa HTML ni se crean certificaciones.
 
-DETECTED permite iniciar revisión o descartar; IN_REVIEW permite corregir título/requisitos y definir audiencia y relevancia, publicar o descartar. Publicar exige audiencia no vacía y explicación de al menos 10 caracteres; no ocurre automáticamente. PUBLISHED permite retirar; descartado/retirado son terminales en esta demostración. Cada tarjeta conserva fuente, consulta, requisitos, estado e historial simulado. El filtro contempla vacío.
+Un candidato `DETECTED` puede pasar a revisión o descartarse. En `IN_REVIEW`, el administrador puede corregir título/requisitos, definir audiencia por ciclo y explicar la relevancia. Publicar exige audiencia no vacía y explicación de al menos 10 caracteres. `PUBLISHED` permite retirar la oportunidad; todas las transiciones quedan persistidas y auditadas. Las tarjetas se agrupan por proveedor canónico y los enlaces se abren en la fuente oficial.
 
-Audiencia se declara como texto de ejemplo; los catálogos y relaciones finales dependen del modelo #77 y la API #78. Los contratos #68 y el centro administrativo #72/#73 ya están integrados desde main; el Radar conserva sus indicadores, prioridades, calidad y enlaces existentes. No equivale a inscripción, elegibilidad o recomendación institucional. [Captura sintética](../recursos/imagenes/va75-radar-demo.png). Pruebas: flujo corregir/publicar/retirar, requisito de audiencia/relevancia, descarte, filtro, reinicio y permisos. Rollback: revertir commit y reconstruir frontend; sin migraciones.
+El Radar no equivale a inscripción, elegibilidad ni recomendación institucional. La captura sintética `va75-radar-demo.png` conserva evidencia histórica de un prototipo local y no representa la interfaz ni los datos publicados en Render. Pruebas: revisión/publicación/retiro, validación de audiencia y relevancia, duplicados, filtro, sincronización y permisos. Rollback: revertir el commit de aplicación y reconstruir frontend; las migraciones se revierten únicamente con respaldo y procedimiento documentado.
 
 ### Formación integrada y recorrido VA-14
 
