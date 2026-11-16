@@ -20,6 +20,7 @@ EXPECTED_TABLES = {
     "academic_periods",
     "enrollments",
     "issuers",
+    "issuer_requests",
     "skills",
     "certifications",
     "certification_status_history",

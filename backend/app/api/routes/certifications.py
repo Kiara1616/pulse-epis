@@ -46,6 +46,7 @@ from ...certifications.service import (
     StudentNotProvisioned,
 )
 from ...db.models import Issuer
+from ...issuer_catalog.service import is_unresolved_issuer
 from ...learning.models import LearningCourse
 from ...integrations.apify import ApifyIntegrationError
 from ...linkedin.schemas import (
@@ -238,16 +239,22 @@ def list_issuer_options(
                 id=issuer.id if issuer else None,
                 name=issuer.name if issuer else course.provider.strip(),
                 website_url=issuer.website_url if issuer else course.source_url,
+                logo_url=issuer.logo_url if issuer else None,
             )
         # Do not block legacy environments that have issuer records but have not
         # yet published a radar course. The UI still uses a select, never free text.
-        if not options:
-            for issuer in issuer_rows:
-                options[issuer.name.casefold()] = IssuerOption(
+        for issuer in issuer_rows:
+            if is_unresolved_issuer(issuer.name):
+                continue
+            options.setdefault(
+                issuer.name.casefold(),
+                IssuerOption(
                     id=issuer.id,
                     name=issuer.name,
                     website_url=issuer.website_url,
-                )
+                    logo_url=issuer.logo_url,
+                ),
+            )
         return sorted(options.values(), key=lambda item: item.name.casefold())
 
 

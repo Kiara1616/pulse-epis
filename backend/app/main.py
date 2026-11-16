@@ -15,6 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from .api.routes.auth import router as auth_router
 from .api.routes.analytics import router as analytics_router
 from .api.routes.certifications import router as certifications_router
+from .api.routes.issuers import router as issuers_router
 from .api.routes.validations import router as validations_router
 from .api.errors import (
     http_exception_handler,
@@ -54,6 +55,11 @@ from .linkedin.service import (
     LinkedInSyncService,
     UnavailableLinkedInService,
 )
+from .issuer_catalog.service import (
+    IssuerCatalogService,
+    IssuerCatalogServiceProtocol,
+    UnavailableIssuerCatalogService,
+)
 from .repositories.readiness import ApplicationReadinessRepository, ReadinessRepository
 from .roster.service import (
     RosterImportService,
@@ -80,6 +86,7 @@ def create_app(
     certification_service: CertificationServiceProtocol | None = None,
     linkedin_service: LinkedInServiceProtocol | None = None,
     validation_service: ValidationServiceProtocol | None = None,
+    issuer_catalog_service: IssuerCatalogServiceProtocol | None = None,
     analytics_service: AnalyticsServiceProtocol | None = None,
 ) -> FastAPI:
     """Create an isolated application instance for production or tests."""
@@ -111,6 +118,11 @@ def create_app(
             validation_service = ValidationService(session_factory, settings)
         else:
             validation_service = UnavailableValidationService()
+    if issuer_catalog_service is None:
+        if session_factory is not None:
+            issuer_catalog_service = IssuerCatalogService(session_factory, settings)
+        else:
+            issuer_catalog_service = UnavailableIssuerCatalogService()
     if linkedin_service is None:
         if session_factory is not None:
             linkedin_service = LinkedInSyncService(
@@ -162,6 +174,7 @@ def create_app(
     app.state.certification_service = certification_service
     app.state.linkedin_service = linkedin_service
     app.state.validation_service = validation_service
+    app.state.issuer_catalog_service = issuer_catalog_service
     app.state.analytics_service = analytics_service
 
     app.add_middleware(
@@ -192,6 +205,7 @@ def create_app(
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(roster_router, prefix=settings.api_prefix)
     app.include_router(certifications_router, prefix=settings.api_prefix)
+    app.include_router(issuers_router, prefix=settings.api_prefix)
     app.include_router(validations_router, prefix=settings.api_prefix)
     app.include_router(analytics_router, prefix=settings.api_prefix)
     return app

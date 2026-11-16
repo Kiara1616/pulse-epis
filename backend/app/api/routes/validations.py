@@ -9,13 +9,25 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from ...auth.dependencies import require_permissions
 from ...auth.models import AuthenticatedUser, Permission
+from ...issuer_catalog.schemas import IssuerCatalogResponse, IssuerResolutionResponse
 from ...validation.schemas import (
+    IssuerAssignmentRequest,
+    IssuerRequestCreate,
+    IssuerRequestResponse,
     ValidationDecisionRequest,
     ValidationDecisionResponse,
     ValidationEvidenceAccessResponse,
     ValidationEvidenceResponse,
     ValidationHistoryResponse,
     ValidationQueueResponse,
+)
+from ...issuer_catalog.service import (
+    IssuerActorNotAllowed,
+    IssuerCatalogConflict,
+    IssuerCatalogInvalid,
+    IssuerCatalogUnavailable,
+    IssuerNotFound,
+    IssuerRequestView,
 )
 from ...validation.service import (
     ValidationActorNotAllowed,
@@ -100,6 +112,24 @@ def _decision_response(item: ValidationDecision) -> ValidationDecisionResponse:
     )
 
 
+def _issuer_request_response(item: IssuerRequestView) -> IssuerRequestResponse:
+    return IssuerRequestResponse(
+        id=item.id,
+        certification_id=item.certification_id,
+        credential_name=item.credential_name,
+        student_name=item.student_name,
+        raw_name=item.raw_name,
+        website_url=item.website_url,
+        note=item.note,
+        status=item.status,
+        resolved_issuer_id=item.resolved_issuer_id,
+        decision_comment=item.decision_comment,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+        decided_at=item.decided_at,
+    )
+
+
 @router.get(
     "",
     response_model=list[ValidationQueueResponse],
@@ -154,6 +184,75 @@ def reference_validations(
     from ...analytics.demo import demo_validation_records
 
     return demo_validation_records(period_code=period_code)
+
+
+@router.put(
+    "/{certification_id}/issuer",
+    response_model=IssuerResolutionResponse,
+    dependencies=[Depends(_VALIDATOR)],
+    summary="Assign a canonical issuer to a certification",
+)
+def assign_certification_issuer(
+    certification_id: UUID,
+    payload: IssuerAssignmentRequest,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(_VALIDATOR),
+) -> IssuerResolutionResponse:
+    try:
+        result = _service(request).assign_issuer(current_user.id, certification_id, payload.issuer_id)
+        return IssuerResolutionResponse(
+            certification_id=result.certification_id,
+            issuer=IssuerCatalogResponse(
+                id=result.issuer.id,
+                name=result.issuer.name,
+                website_url=result.issuer.website_url,
+                logo_url=result.issuer.logo_url,
+                created_at=result.issuer.created_at,
+            ),
+            request_id=result.request_id,
+        )
+    except IssuerNotFound as exc:
+        raise _http_error(status.HTTP_404_NOT_FOUND, "NOT_FOUND", str(exc)) from exc
+    except (IssuerCatalogInvalid, IssuerCatalogConflict) as exc:
+        raise _http_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", str(exc)) from exc
+    except IssuerActorNotAllowed as exc:
+        raise _http_error(status.HTTP_403_FORBIDDEN, "FORBIDDEN", str(exc)) from exc
+    except IssuerCatalogUnavailable as exc:
+        raise _http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "ISSUER_CATALOG_UNAVAILABLE", str(exc)) from exc
+
+
+@router.post(
+    "/{certification_id}/issuer-request",
+    response_model=IssuerRequestResponse,
+    dependencies=[Depends(_VALIDATOR)],
+    summary="Request an issuer to be added to the canonical catalog",
+)
+def request_certification_issuer(
+    certification_id: UUID,
+    payload: IssuerRequestCreate,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(_VALIDATOR),
+) -> IssuerRequestResponse:
+    try:
+        return _issuer_request_response(
+            _service(request).request_issuer(
+                current_user.id,
+                certification_id,
+                raw_name=payload.raw_name,
+                website_url=payload.website_url,
+                note=payload.note,
+            )
+        )
+    except IssuerNotFound as exc:
+        raise _http_error(status.HTTP_404_NOT_FOUND, "NOT_FOUND", str(exc)) from exc
+    except IssuerCatalogConflict as exc:
+        raise _http_error(status.HTTP_409_CONFLICT, "REQUEST_EXISTS", str(exc)) from exc
+    except IssuerCatalogInvalid as exc:
+        raise _http_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", str(exc)) from exc
+    except IssuerActorNotAllowed as exc:
+        raise _http_error(status.HTTP_403_FORBIDDEN, "FORBIDDEN", str(exc)) from exc
+    except IssuerCatalogUnavailable as exc:
+        raise _http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "ISSUER_CATALOG_UNAVAILABLE", str(exc)) from exc
 
 
 @router.post(

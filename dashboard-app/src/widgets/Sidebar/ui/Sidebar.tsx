@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, GraduationCap, Cpu, ScanSearch, Settings, BadgeCheck, UsersRound, Award, Compass, LogOut, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Database, ChartNoAxesCombined, X } from "lucide-react";
+import { LayoutDashboard, GraduationCap, Cpu, ScanSearch, Settings, BadgeCheck, UsersRound, Award, Compass, LogOut, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Database, ChartNoAxesCombined, Building2, X } from "lucide-react";
 import type { AppRole } from "@/shared/api/types";
 import { roleLabels, useRole } from "@/features/access/RoleProvider";
 import { useAuth } from "@/features/access/AuthProvider";
@@ -36,6 +36,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
   const adminLinks = [
     { href: "/admin", label: "Centro de administración", icon: Settings },
     { href: "/admin/estudiantes", label: "Padrón", icon: UsersRound },
+    { href: "/admin/emisores", label: "Entidades emisoras", icon: Building2 },
     { href: "/admin/radar", label: "Radar de cursos", icon: ScanSearch },
     { href: "/admin/publicaciones", label: "Publicar indicadores", icon: Database },
     { href: "/talleres", label: "Talleres", icon: CalendarDays },

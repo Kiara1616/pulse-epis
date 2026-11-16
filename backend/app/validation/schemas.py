@@ -91,6 +91,32 @@ class ValidationEvidenceAccessResponse(BaseModel):
     expires_at: datetime
 
 
+class IssuerAssignmentRequest(BaseModel):
+    issuer_id: UUID
+
+
+class IssuerRequestCreate(BaseModel):
+    raw_name: str | None = Field(default=None, max_length=150)
+    website_url: str | None = Field(default=None, max_length=2048)
+    note: str = Field(min_length=1, max_length=2000)
+
+
+class IssuerRequestResponse(BaseModel):
+    id: UUID
+    certification_id: UUID
+    credential_name: str
+    student_name: str
+    raw_name: str
+    website_url: str | None
+    note: str
+    status: str
+    resolved_issuer_id: UUID | None
+    decision_comment: str | None
+    created_at: datetime
+    updated_at: datetime
+    decided_at: datetime | None
+
+
 __all__ = [
     "ValidationDecisionRequest",
     "ValidationDecisionResponse",
@@ -98,4 +124,7 @@ __all__ = [
     "ValidationEvidenceResponse",
     "ValidationHistoryResponse",
     "ValidationQueueResponse",
+    "IssuerAssignmentRequest",
+    "IssuerRequestCreate",
+    "IssuerRequestResponse",
 ]

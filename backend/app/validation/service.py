@@ -31,6 +31,12 @@ from ..db.models import (
     User,
     Validation,
 )
+from ..issuer_catalog.service import (
+    IssuerCatalogService,
+    IssuerCatalogServiceProtocol,
+    IssuerRequestView,
+    IssuerResolutionView,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -185,6 +191,25 @@ class ValidationServiceProtocol(Protocol):
     ) -> EvidenceAccess:
         """Issue temporary evidence access for a validator."""
 
+    def assign_issuer(
+        self,
+        actor_user_id: UUID,
+        certification_id: UUID,
+        issuer_id: UUID,
+    ) -> IssuerResolutionView:
+        """Assign an existing canonical issuer to a pending certification."""
+
+    def request_issuer(
+        self,
+        actor_user_id: UUID,
+        certification_id: UUID,
+        *,
+        raw_name: str | None,
+        website_url: str | None,
+        note: str,
+    ) -> IssuerRequestView:
+        """Request administrator creation or approval of an issuer."""
+
 
 def _normalize_comment(comment: str | None) -> str | None:
     if comment is None:
@@ -203,6 +228,7 @@ class ValidationService:
     def __init__(self, session_factory: sessionmaker[Session], settings: Settings) -> None:
         self._session_factory = session_factory
         self._settings = settings
+        self._issuer_catalog: IssuerCatalogServiceProtocol = IssuerCatalogService(session_factory, settings)
 
     def _validator(self, session: Session, actor_user_id: UUID) -> User:
         actor = session.get(User, actor_user_id)
@@ -359,6 +385,10 @@ class ValidationService:
                     Evidence.retention_until >= now,
                 ).limit(1)) is None:
                     raise ValidationInvalid("Adjunta y revisa al menos una evidencia vigente antes de aprobar.")
+                if action == "APPROVE":
+                    issuer = session.get(Issuer, certification.issuer_id)
+                    if issuer is None or issuer.name.strip().casefold() in {"por confirmar", "emisor por confirmar", "sin emisor"}:
+                        raise ValidationInvalid("Resuelve la entidad emisora antes de aprobar la certificación.")
                 certification.status = target_status
                 certification.updated_at = now
                 if action in {"APPROVE", "OBSERVE", "REJECT"}:
@@ -473,6 +503,31 @@ class ValidationService:
             evidence_id,
         )
 
+    def assign_issuer(
+        self,
+        actor_user_id: UUID,
+        certification_id: UUID,
+        issuer_id: UUID,
+    ) -> IssuerResolutionView:
+        return self._issuer_catalog.assign_issuer(actor_user_id, certification_id, issuer_id)
+
+    def request_issuer(
+        self,
+        actor_user_id: UUID,
+        certification_id: UUID,
+        *,
+        raw_name: str | None,
+        website_url: str | None,
+        note: str,
+    ) -> IssuerRequestView:
+        return self._issuer_catalog.create_request(
+            actor_user_id,
+            certification_id,
+            raw_name=raw_name,
+            website_url=website_url,
+            note=note,
+        )
+
 
 class UnavailableValidationService:
     """Explicit failure mode when the API has no configured database."""
@@ -516,6 +571,14 @@ class UnavailableValidationService:
         certification_id: UUID,
         evidence_id: UUID,
     ) -> EvidenceAccess:
+        self._raise()
+        raise AssertionError("unreachable")
+
+    def assign_issuer(self, actor_user_id: UUID, certification_id: UUID, issuer_id: UUID) -> IssuerResolutionView:
+        self._raise()
+        raise AssertionError("unreachable")
+
+    def request_issuer(self, actor_user_id: UUID, certification_id: UUID, *, raw_name: str | None, website_url: str | None, note: str) -> IssuerRequestView:
         self._raise()
         raise AssertionError("unreachable")
 
