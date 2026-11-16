@@ -6,6 +6,7 @@ import { statusLabel, statusClass } from "@/shared/ui/status";
 import { AsyncState } from "@/shared/ui/AsyncState";
 import { RoleGate } from "@/features/access/RoleGate";
 import { apiFetch } from "@/shared/api/client";
+import type { IssuerCatalogItem } from "@/shared/api/types";
 import { ValidationHistory } from "@/features/certifications/ValidationHistory";
 
 type Status =
@@ -178,6 +179,12 @@ function ValidationsContent() {
   const [ageFilter, setAgeFilter] = useState<AgeFilter>("ALL");
   const [caseFilter, setCaseFilter] = useState<CaseFilter>("ALL");
   const [currentTime, setCurrentTime] = useState<number | null>(null);
+  const [issuerOptions, setIssuerOptions] = useState<IssuerCatalogItem[]>([]);
+  const [issuerId, setIssuerId] = useState("");
+  const [requestIssuerName, setRequestIssuerName] = useState("");
+  const [requestIssuerUrl, setRequestIssuerUrl] = useState("");
+  const [requestIssuerNote, setRequestIssuerNote] = useState("");
+  const [requestIssuerOpen, setRequestIssuerOpen] = useState(false);
 
   const selected = records.find((record) => record.id === selectedId);
 
@@ -185,7 +192,12 @@ function ValidationsContent() {
     setLoading(true);
     try {
       setError(null);
-      setRecords(await apiFetch<ValidationRecord[]>("/validations"));
+      const [queue, issuers] = await Promise.all([
+        apiFetch<ValidationRecord[]>("/validations"),
+        apiFetch<IssuerCatalogItem[]>("/issuers"),
+      ]);
+      setRecords(queue);
+      setIssuerOptions(issuers);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -287,6 +299,14 @@ function ValidationsContent() {
     setPreviewError(false);
     setHistoryId(null);
     setError(null);
+    const matchingIssuer = issuerOptions.find(
+      (issuer) => issuer.name.trim().toLocaleLowerCase() === record.issuer_name.trim().toLocaleLowerCase(),
+    );
+    setIssuerId(matchingIssuer?.id ?? "");
+    setRequestIssuerName(record.issuer_name.trim().toLocaleLowerCase() === "por confirmar" ? "" : record.issuer_name);
+    setRequestIssuerUrl(record.issuer_url ?? "");
+    setRequestIssuerNote("");
+    setRequestIssuerOpen(false);
     if (record.evidences[0]) void openEvidence(record, record.evidences[0]);
   }
 
@@ -296,6 +316,58 @@ function ValidationsContent() {
     setPreviewError(false);
     setHistoryId(null);
     setComment("");
+    setIssuerId("");
+    setRequestIssuerName("");
+    setRequestIssuerUrl("");
+    setRequestIssuerNote("");
+    setRequestIssuerOpen(false);
+  }
+
+  async function assignIssuer(record: ValidationRecord) {
+    if (!issuerId) {
+      setError("Selecciona una entidad emisora del catálogo.");
+      return;
+    }
+    setActingId(record.id);
+    setError(null);
+    try {
+      await apiFetch(`/validations/${record.id}/issuer`, {
+        method: "PUT",
+        body: JSON.stringify({ issuer_id: issuerId }),
+      });
+      await loadRecords();
+      setRequestIssuerOpen(false);
+    } catch (assignError) {
+      setError(assignError instanceof Error ? assignError.message : "No se pudo asignar el emisor.");
+    } finally {
+      setActingId(null);
+    }
+  }
+
+  async function requestIssuer(record: ValidationRecord) {
+    if (!requestIssuerName.trim() || !requestIssuerNote.trim()) {
+      setError("Indica el nombre del emisor y el motivo de la solicitud.");
+      return;
+    }
+    setActingId(record.id);
+    setError(null);
+    try {
+      await apiFetch(`/validations/${record.id}/issuer-request`, {
+        method: "POST",
+        body: JSON.stringify({
+          raw_name: requestIssuerName.trim(),
+          website_url: requestIssuerUrl.trim() || null,
+          note: requestIssuerNote.trim(),
+        }),
+      });
+      setRequestIssuerOpen(false);
+      setRequestIssuerNote("");
+      await loadRecords();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudo enviar la solicitud.");
+    } finally {
+      setActingId(null);
+    }
   }
 
   function clearFilters() {
@@ -356,6 +428,7 @@ function ValidationsContent() {
               {visibleRecords.length} de {records.length} casos visibles · ordenados por prioridad
             </p>
           </div>
+
           {filtersActive && (
             <button
               type="button"
@@ -470,6 +543,70 @@ function ValidationsContent() {
                 "Sin habilidades registradas"}
             </p>
           </div>
+
+          {(selected.status === "PENDING" || selected.status === "RESUBMITTED" || selected.status === "UNDER_REVIEW") && (
+            <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4" aria-label="Resolver entidad emisora">
+              <div>
+                <h4 className="font-semibold text-slate-900">Entidad emisora</h4>
+                <p className="text-sm text-slate-600">
+                  Selecciona una entidad del catálogo. Si no existe, solicita su alta al administrador; la certificación no se aprobará con “Por confirmar”.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="min-w-[260px] flex-1 text-sm font-semibold text-slate-700">
+                  Entidad registrada
+                  <select
+                    value={issuerId}
+                    onChange={(event) => setIssuerId(event.target.value)}
+                    disabled={actingId !== null}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
+                  >
+                    <option value="">Seleccionar entidad…</option>
+                    {issuerOptions.map((issuer) => (
+                      <option key={issuer.id} value={issuer.id}>{issuer.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={actingId !== null || !issuerId}
+                  onClick={() => void assignIssuer(selected)}
+                  className="rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white disabled:opacity-50"
+                >
+                  Guardar emisor
+                </button>
+                <button
+                  type="button"
+                  disabled={actingId !== null}
+                  onClick={() => setRequestIssuerOpen((open) => !open)}
+                  className="rounded-lg border border-blue-200 bg-white px-4 py-2.5 font-semibold text-blue-700 disabled:opacity-50"
+                >
+                  Solicitar nueva entidad
+                </button>
+              </div>
+              {requestIssuerOpen && (
+                <div className="grid gap-3 border-t border-blue-100 pt-3 md:grid-cols-2">
+                  <label className="text-sm font-semibold text-slate-700">
+                    Nombre detectado o propuesto
+                    <input value={requestIssuerName} onChange={(event) => setRequestIssuerName(event.target.value)} maxLength={150} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="Ej. Linux Foundation" />
+                  </label>
+                  <label className="text-sm font-semibold text-slate-700">
+                    Sitio oficial (opcional)
+                    <input value={requestIssuerUrl} onChange={(event) => setRequestIssuerUrl(event.target.value)} maxLength={2048} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="https://…" />
+                  </label>
+                  <label className="text-sm font-semibold text-slate-700 md:col-span-2">
+                    Motivo y evidencia de la solicitud
+                    <textarea value={requestIssuerNote} onChange={(event) => setRequestIssuerNote(event.target.value)} maxLength={2000} rows={2} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="Explica por qué el emisor no coincide con el catálogo." />
+                  </label>
+                  <div className="md:col-span-2">
+                    <button type="button" disabled={actingId !== null} onClick={() => void requestIssuer(selected)} className="rounded-lg bg-slate-900 px-4 py-2.5 font-semibold text-white disabled:opacity-50">
+                      Enviar solicitud al administrador
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
           {selected.issuer_url && (
             <a href={selected.issuer_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">

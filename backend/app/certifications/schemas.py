@@ -157,6 +157,7 @@ class IssuerOption(BaseModel):
     id: UUID | None
     name: str
     website_url: str | None
+    logo_url: str | None = None
 
 
 class EvidenceResponse(BaseModel):

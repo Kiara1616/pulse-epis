@@ -134,6 +134,31 @@ export type IssuerOption = {
   id: string | null;
   name: string;
   website_url: string | null;
+  logo_url?: string | null;
+};
+
+export type IssuerCatalogItem = {
+  id: string;
+  name: string;
+  website_url: string | null;
+  logo_url: string | null;
+  created_at: string;
+};
+
+export type IssuerRequest = {
+  id: string;
+  certification_id: string;
+  credential_name: string;
+  student_name: string;
+  raw_name: string;
+  website_url: string | null;
+  note: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | string;
+  resolved_issuer_id: string | null;
+  decision_comment: string | null;
+  created_at: string;
+  updated_at: string;
+  decided_at: string | null;
 };
 
 export type RosterImport = {

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Database, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, Building2, CalendarDays, Database, ShieldCheck, Users } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
 import { AnalyticsFilters } from "@/features/analytics/AnalyticsFilters";
 import { useAnalytics } from "@/features/analytics/useAnalytics";
@@ -22,6 +22,14 @@ const modules = [
     href: "/tecnologias",
     icon: ShieldCheck,
     status: "Detalle disponible",
+  },
+  {
+    title: "Entidades emisoras",
+    description:
+      "Mantén el catálogo oficial y resuelve solicitudes de nuevos emisores.",
+    href: "/admin/emisores",
+    icon: Building2,
+    status: "Catálogo canónico",
   },
   {
     title: "Publicar indicadores",
