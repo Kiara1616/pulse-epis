@@ -192,12 +192,15 @@ function ValidationsContent() {
     setLoading(true);
     try {
       setError(null);
-      const [queue, issuers] = await Promise.all([
-        apiFetch<ValidationRecord[]>("/validations"),
-        apiFetch<IssuerCatalogItem[]>("/issuers"),
-      ]);
+      // The validation queue is the primary workflow. A temporary catalog
+      // failure must not hide the cases that the validator needs to review.
+      const queue = await apiFetch<ValidationRecord[]>("/validations");
       setRecords(queue);
-      setIssuerOptions(issuers);
+      try {
+        setIssuerOptions(await apiFetch<IssuerCatalogItem[]>("/issuers"));
+      } catch {
+        setIssuerOptions([]);
+      }
     } catch (loadError) {
       setError(
         loadError instanceof Error
