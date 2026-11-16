@@ -53,6 +53,8 @@ class IssuerView:
     name: str
     website_url: str | None
     logo_url: str | None
+    is_active: bool
+    archived_at: datetime | None
     created_at: datetime
 
 
@@ -81,7 +83,7 @@ class IssuerResolutionView:
 
 
 class IssuerCatalogServiceProtocol(Protocol):
-    def list_issuers(self) -> list[IssuerView]: ...
+    def list_issuers(self, *, include_inactive: bool = False) -> list[IssuerView]: ...
 
     def create_issuer(
         self,
@@ -101,6 +103,10 @@ class IssuerCatalogServiceProtocol(Protocol):
         website_url: str | None = None,
         logo_url: str | None = None,
     ) -> IssuerView: ...
+
+    def archive_issuer(self, actor_user_id: UUID, issuer_id: UUID) -> IssuerView: ...
+
+    def restore_issuer(self, actor_user_id: UUID, issuer_id: UUID) -> IssuerView: ...
 
     def assign_issuer(
         self,
@@ -225,6 +231,8 @@ class IssuerCatalogService:
             name=issuer.name,
             website_url=issuer.website_url,
             logo_url=issuer.logo_url,
+            is_active=issuer.is_active,
+            archived_at=issuer.archived_at,
             created_at=issuer.created_at,
         )
 
@@ -248,10 +256,13 @@ class IssuerCatalogService:
             decided_at=request.decided_at,
         )
 
-    def list_issuers(self) -> list[IssuerView]:
+    def list_issuers(self, *, include_inactive: bool = False) -> list[IssuerView]:
         try:
             with self._session_factory() as session:
-                rows = session.scalars(select(Issuer).order_by(Issuer.name)).all()
+                statement = select(Issuer).order_by(Issuer.name)
+                if not include_inactive:
+                    statement = statement.where(Issuer.is_active.is_(True))
+                rows = session.scalars(statement).all()
                 return [self._issuer_view(item) for item in rows if not is_unresolved_issuer(item.name)]
         except IssuerCatalogError:
             raise
@@ -278,7 +289,7 @@ class IssuerCatalogService:
                 duplicate = session.scalar(select(Issuer).where(func.lower(Issuer.name) == normalized_name.casefold()))
                 if duplicate is not None:
                     raise IssuerCatalogConflict("La entidad emisora ya existe")
-                issuer = Issuer(id=uuid4(), name=normalized_name, website_url=website, logo_url=logo, created_at=_now())
+                issuer = Issuer(id=uuid4(), name=normalized_name, website_url=website, logo_url=logo, is_active=True, archived_at=None, created_at=_now())
                 session.add(issuer)
                 session.flush()
                 _audit(session, actor_user_id=actor_user_id, action="ISSUER_CREATED", entity_type="ISSUER", entity_id=issuer.id, before=None, after={"name": issuer.name, "website_url": issuer.website_url})
@@ -333,6 +344,71 @@ class IssuerCatalogService:
         finally:
             session.close()
 
+    def archive_issuer(self, actor_user_id: UUID, issuer_id: UUID) -> IssuerView:
+        session = self._session_factory()
+        try:
+            with session.begin():
+                self._actor(session, actor_user_id, "ADMIN")
+                issuer = session.get(Issuer, issuer_id)
+                if issuer is None or is_unresolved_issuer(issuer.name):
+                    raise IssuerNotFound("La entidad emisora no existe")
+                if not issuer.is_active:
+                    raise IssuerCatalogConflict("La entidad emisora ya está retirada")
+                before = {
+                    "is_active": issuer.is_active,
+                    "archived_at": issuer.archived_at.isoformat() if issuer.archived_at else None,
+                }
+                issuer.is_active = False
+                issuer.archived_at = _now()
+                session.flush()
+                _audit(
+                    session,
+                    actor_user_id=actor_user_id,
+                    action="ISSUER_ARCHIVED",
+                    entity_type="ISSUER",
+                    entity_id=issuer.id,
+                    before=before,
+                    after={"is_active": issuer.is_active, "archived_at": issuer.archived_at.isoformat()},
+                )
+                return self._issuer_view(issuer)
+        except (IssuerActorNotAllowed, IssuerNotFound, IssuerCatalogConflict):
+            raise
+        except Exception as exc:
+            raise IssuerCatalogUnavailable("No se pudo retirar la entidad emisora") from exc
+        finally:
+            session.close()
+
+    def restore_issuer(self, actor_user_id: UUID, issuer_id: UUID) -> IssuerView:
+        session = self._session_factory()
+        try:
+            with session.begin():
+                self._actor(session, actor_user_id, "ADMIN")
+                issuer = session.get(Issuer, issuer_id)
+                if issuer is None or is_unresolved_issuer(issuer.name):
+                    raise IssuerNotFound("La entidad emisora no existe")
+                if issuer.is_active:
+                    raise IssuerCatalogConflict("La entidad emisora ya está activa")
+                before = {"is_active": issuer.is_active, "archived_at": issuer.archived_at}
+                issuer.is_active = True
+                issuer.archived_at = None
+                session.flush()
+                _audit(
+                    session,
+                    actor_user_id=actor_user_id,
+                    action="ISSUER_RESTORED",
+                    entity_type="ISSUER",
+                    entity_id=issuer.id,
+                    before={"is_active": before["is_active"], "archived_at": before["archived_at"].isoformat() if before["archived_at"] else None},
+                    after={"is_active": issuer.is_active, "archived_at": None},
+                )
+                return self._issuer_view(issuer)
+        except (IssuerActorNotAllowed, IssuerNotFound, IssuerCatalogConflict):
+            raise
+        except Exception as exc:
+            raise IssuerCatalogUnavailable("No se pudo restaurar la entidad emisora") from exc
+        finally:
+            session.close()
+
     def assign_issuer(self, actor_user_id: UUID, certification_id: UUID, issuer_id: UUID) -> IssuerResolutionView:
         session = self._session_factory()
         try:
@@ -344,6 +420,8 @@ class IssuerCatalogService:
                     raise IssuerNotFound("La certificación no existe")
                 if issuer is None or is_unresolved_issuer(issuer.name):
                     raise IssuerNotFound("La entidad emisora no existe en el catálogo")
+                if not issuer.is_active:
+                    raise IssuerCatalogInvalid("La entidad emisora está retirada; restáurala antes de asignarla")
                 if certification.status in {"APPROVED", "REJECTED", "EXPIRED"}:
                     raise IssuerCatalogInvalid("Solo se pueden resolver certificaciones pendientes de validación")
                 old = session.get(Issuer, certification.issuer_id)
@@ -446,14 +524,18 @@ class IssuerCatalogService:
                     raise IssuerNotFound("La entidad emisora seleccionada no existe")
                 if issuer is not None and is_unresolved_issuer(issuer.name):
                     raise IssuerCatalogInvalid("La entidad seleccionada no es válida")
+                if issuer is not None and not issuer.is_active:
+                    raise IssuerCatalogInvalid("La entidad emisora está retirada; restáurala antes de aprobar la solicitud")
                 if issuer is None:
                     issuer = session.scalar(select(Issuer).where(func.lower(Issuer.name) == canonical_name.casefold()))
                     if issuer is None:
-                        issuer = Issuer(id=uuid4(), name=canonical_name, website_url=website or request.website_url, logo_url=logo, created_at=_now())
+                        issuer = Issuer(id=uuid4(), name=canonical_name, website_url=website or request.website_url, logo_url=logo, is_active=True, archived_at=None, created_at=_now())
                         session.add(issuer)
                         session.flush()
                     elif is_unresolved_issuer(issuer.name):
                         raise IssuerCatalogInvalid("El nombre del emisor debe ser concreto")
+                    elif not issuer.is_active:
+                        raise IssuerCatalogInvalid("La entidad emisora ya existe, pero está retirada; restáurala antes de aprobar la solicitud")
                 if website_url is not None:
                     issuer.website_url = website
                 if logo_url is not None:
@@ -514,7 +596,7 @@ class UnavailableIssuerCatalogService:
     def _raise(self) -> None:
         raise IssuerCatalogUnavailable("PULSE_DATABASE_URL no está configurado")
 
-    def list_issuers(self) -> list[IssuerView]:
+    def list_issuers(self, *, include_inactive: bool = False) -> list[IssuerView]:
         self._raise()
         return []
 
@@ -523,6 +605,14 @@ class UnavailableIssuerCatalogService:
         raise AssertionError("unreachable")
 
     def update_issuer(self, actor_user_id: UUID, issuer_id: UUID, *, name: str | None = None, website_url: str | None = None, logo_url: str | None = None) -> IssuerView:
+        self._raise()
+        raise AssertionError("unreachable")
+
+    def archive_issuer(self, actor_user_id: UUID, issuer_id: UUID) -> IssuerView:
+        self._raise()
+        raise AssertionError("unreachable")
+
+    def restore_issuer(self, actor_user_id: UUID, issuer_id: UUID) -> IssuerView:
         self._raise()
         raise AssertionError("unreachable")
 

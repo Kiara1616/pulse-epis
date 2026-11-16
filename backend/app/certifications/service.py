@@ -401,6 +401,8 @@ class CertificationService:
         name: str,
         website_url: str | None,
         issuer_id: UUID | None = None,
+        *,
+        allow_inactive_existing: bool = False,
     ) -> Issuer:
         normalized_name = _clean_text(name, field="issuer_name", maximum=150)
         if issuer_id is not None:
@@ -409,6 +411,8 @@ class CertificationService:
                 raise CertificationInvalid("issuer_id is not available")
             if issuer.name.casefold() != normalized_name.casefold():
                 raise CertificationInvalid("issuer_id does not match issuer_name")
+            if not issuer.is_active and not allow_inactive_existing:
+                raise CertificationInvalid("issuer_id is not available")
             return issuer
         issuer = session.scalar(
             select(Issuer).where(func.lower(Issuer.name) == normalized_name.casefold())
@@ -418,10 +422,14 @@ class CertificationService:
                 id=uuid4(),
                 name=normalized_name,
                 website_url=_validated_url(website_url, field="issuer_url"),
+                is_active=True,
+                archived_at=None,
                 created_at=_utc_now(),
             )
             session.add(issuer)
             session.flush()
+        elif not issuer.is_active and not allow_inactive_existing:
+            raise CertificationInvalid("issuer_name refers to a retired issuer")
         return issuer
 
     def _skills(
@@ -755,6 +763,11 @@ class CertificationService:
                         if isinstance(changes.get("issuer_url"), str)
                         else None,
                         issuer_id,
+                        allow_inactive_existing=(
+                            (issuer_id == certification.issuer_id)
+                            if issuer_id is not None
+                            else issuer_name.casefold() == issuer.name.casefold()
+                        ),
                     )
                 if self._duplicate_certification(
                     session,

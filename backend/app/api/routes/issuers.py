@@ -46,6 +46,8 @@ def _issuer_response(item) -> IssuerCatalogResponse:
         name=item.name,
         website_url=item.website_url,
         logo_url=item.logo_url,
+        is_active=item.is_active,
+        archived_at=item.archived_at,
         created_at=item.created_at,
     )
 
@@ -74,9 +76,17 @@ def _request_response(item) -> IssuerRequestResponse:
     dependencies=[Depends(_CATALOG_READ)],
     summary="List canonical issuer entities",
 )
-def list_issuers(request: Request, current_user: AuthenticatedUser = Depends(_CATALOG_READ)) -> list[IssuerCatalogResponse]:
+def list_issuers(
+    request: Request,
+    include_inactive: bool = Query(default=False),
+    current_user: AuthenticatedUser = Depends(_CATALOG_READ),
+) -> list[IssuerCatalogResponse]:
     try:
-        return [_issuer_response(item) for item in _service(request).list_issuers()]
+        if include_inactive and current_user.role != Role.ADMIN:
+            raise _http_error(status.HTTP_403_FORBIDDEN, "FORBIDDEN", "Solo el administrador puede consultar emisores retirados")
+        return [_issuer_response(item) for item in _service(request).list_issuers(include_inactive=include_inactive)]
+    except HTTPException:
+        raise
     except IssuerCatalogUnavailable as exc:
         raise _http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "ISSUER_CATALOG_UNAVAILABLE", str(exc)) from exc
 
@@ -116,6 +126,44 @@ def update_issuer(issuer_id: UUID, payload: IssuerUpdateRequest, request: Reques
         raise _http_error(status.HTTP_409_CONFLICT, "ISSUER_EXISTS", str(exc)) from exc
     except IssuerCatalogInvalid as exc:
         raise _http_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", str(exc)) from exc
+    except IssuerActorNotAllowed as exc:
+        raise _http_error(status.HTTP_403_FORBIDDEN, "FORBIDDEN", str(exc)) from exc
+    except IssuerCatalogUnavailable as exc:
+        raise _http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "ISSUER_CATALOG_UNAVAILABLE", str(exc)) from exc
+
+
+@router.post(
+    "/{issuer_id}/archive",
+    response_model=IssuerCatalogResponse,
+    dependencies=[Depends(_ADMIN)],
+    summary="Retire an issuer from new selections without deleting history",
+)
+def archive_issuer(issuer_id: UUID, request: Request, current_user: AuthenticatedUser = Depends(_ADMIN)) -> IssuerCatalogResponse:
+    try:
+        return _issuer_response(_service(request).archive_issuer(current_user.id, issuer_id))
+    except IssuerNotFound as exc:
+        raise _http_error(status.HTTP_404_NOT_FOUND, "NOT_FOUND", str(exc)) from exc
+    except IssuerCatalogConflict as exc:
+        raise _http_error(status.HTTP_409_CONFLICT, "ISSUER_STATE_CONFLICT", str(exc)) from exc
+    except IssuerActorNotAllowed as exc:
+        raise _http_error(status.HTTP_403_FORBIDDEN, "FORBIDDEN", str(exc)) from exc
+    except IssuerCatalogUnavailable as exc:
+        raise _http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "ISSUER_CATALOG_UNAVAILABLE", str(exc)) from exc
+
+
+@router.post(
+    "/{issuer_id}/restore",
+    response_model=IssuerCatalogResponse,
+    dependencies=[Depends(_ADMIN)],
+    summary="Restore an issuer to the active catalog",
+)
+def restore_issuer(issuer_id: UUID, request: Request, current_user: AuthenticatedUser = Depends(_ADMIN)) -> IssuerCatalogResponse:
+    try:
+        return _issuer_response(_service(request).restore_issuer(current_user.id, issuer_id))
+    except IssuerNotFound as exc:
+        raise _http_error(status.HTTP_404_NOT_FOUND, "NOT_FOUND", str(exc)) from exc
+    except IssuerCatalogConflict as exc:
+        raise _http_error(status.HTTP_409_CONFLICT, "ISSUER_STATE_CONFLICT", str(exc)) from exc
     except IssuerActorNotAllowed as exc:
         raise _http_error(status.HTTP_403_FORBIDDEN, "FORBIDDEN", str(exc)) from exc
     except IssuerCatalogUnavailable as exc:
