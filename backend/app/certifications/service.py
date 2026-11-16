@@ -104,6 +104,8 @@ class CertificationDraft:
     source_url: str | None
     skills: tuple[SkillInput, ...]
     issuer_id: UUID | None = None
+    source_kind: str = "MANUAL"
+    source_external_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +146,8 @@ class CertificationView:
     updated_at: datetime
     correction_allowed: bool
     latest_comment: str | None = None
+    source_kind: str = "MANUAL"
+    source_external_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -501,6 +505,8 @@ class CertificationService:
                 CertificationStatusHistory.certification_id == certification.id,
                 CertificationStatusHistory.comment.is_not(None),
             ).order_by(CertificationStatusHistory.changed_at.desc(), CertificationStatusHistory.id.desc()).limit(1)),
+            source_kind=certification.source_kind,
+            source_external_id=certification.source_external_id,
         )
 
     def _duplicate_certification(
@@ -572,6 +578,14 @@ class CertificationService:
         if expires_on is not None and expires_on < issued_on:
             raise CertificationInvalid("expires_on cannot precede issued_on")
         source_url = _validated_url(draft.source_url, field="source_url")
+        source_kind = _clean_text(draft.source_kind, field="source_kind", maximum=30).upper()
+        if source_kind not in {"MANUAL", "LINKEDIN_PROFILE", "LINKEDIN_PUBLICATION"}:
+            raise CertificationInvalid("source_kind is invalid")
+        source_external_id = _optional_text(
+            draft.source_external_id,
+            field="source_external_id",
+            maximum=255,
+        )
 
         session = self._session_factory()
         try:
@@ -603,6 +617,8 @@ class CertificationService:
                     expires_on=expires_on,
                     status="PENDING",
                     source_url=source_url,
+                    source_kind=source_kind,
+                    source_external_id=source_external_id,
                     created_at=now,
                     updated_at=now,
                 )
@@ -628,6 +644,7 @@ class CertificationService:
                         "issuer_id": str(issuer.id),
                         "credential_name": credential_name,
                         "issued_on": issued_on.isoformat(),
+                        "source_kind": source_kind,
                     },
                 )
                 session.flush()

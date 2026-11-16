@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     google_allowed_staff_emails: str = ""
     etl_scheduler_secret: SecretStr | None = None
     datacamp_catalog_api_token: SecretStr | None = None
+    # LinkedIn synchronization is opt-in.  The token is kept server-side and
+    # never exposed to the browser or persisted with scraped data.
+    apify_enabled: bool = False
+    apify_api_token: SecretStr | None = None
+    apify_profile_actor_id: str = "harvestapi~linkedin-profile-scraper"
+    apify_posts_actor_id: str = "harvestapi~linkedin-profile-posts"
+    apify_run_timeout_seconds: int = 90
+    apify_max_posts: int = 10
+    apify_sync_cooldown_seconds: int = 900
     local_auth_seed: bool = False
     local_auth_password: SecretStr = SecretStr("pulse-local-demo")
     demo_data_seed: bool = False
@@ -174,6 +183,38 @@ class Settings(BaseSettings):
             raise ValueError("roster_max_rows must be positive")
         return value
 
+    @field_validator(
+        "apify_profile_actor_id",
+        "apify_posts_actor_id",
+    )
+    @classmethod
+    def normalize_apify_actor_id(cls, value: str) -> str:
+        value = value.strip()
+        if not value or len(value) > 200 or any(character.isspace() for character in value):
+            raise ValueError("Apify actor IDs must be non-empty and contain no spaces")
+        return value
+
+    @field_validator("apify_run_timeout_seconds")
+    @classmethod
+    def validate_apify_timeout(cls, value: int) -> int:
+        if value < 10 or value > 300:
+            raise ValueError("apify_run_timeout_seconds must be between 10 and 300")
+        return value
+
+    @field_validator("apify_max_posts")
+    @classmethod
+    def validate_apify_max_posts(cls, value: int) -> int:
+        if value < 1 or value > 100:
+            raise ValueError("apify_max_posts must be between 1 and 100")
+        return value
+
+    @field_validator("apify_sync_cooldown_seconds")
+    @classmethod
+    def validate_apify_cooldown(cls, value: int) -> int:
+        if value < 0 or value > 86_400:
+            raise ValueError("apify_sync_cooldown_seconds must be between 0 and 86400")
+        return value
+
     @field_validator("evidence_storage_path")
     @classmethod
     def validate_evidence_storage_path(cls, value: str) -> str:
@@ -268,6 +309,16 @@ class Settings(BaseSettings):
             self.google_client_id
             and self.google_client_secret
             and self.google_client_secret.get_secret_value().strip()
+        )
+
+    @property
+    def apify_configured(self) -> bool:
+        """Whether an explicit, server-side Apify integration is available."""
+
+        return bool(
+            self.apify_enabled
+            and self.apify_api_token
+            and self.apify_api_token.get_secret_value().strip()
         )
 
     @property

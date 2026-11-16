@@ -47,6 +47,17 @@ from ...certifications.service import (
 )
 from ...db.models import Issuer
 from ...learning.models import LearningCourse
+from ...integrations.apify import ApifyIntegrationError
+from ...linkedin.schemas import (
+    LinkedInProfileResponse,
+    LinkedInProfileUpdate,
+    LinkedInSyncResponse,
+)
+from ...linkedin.service import (
+    LinkedInServiceProtocol,
+    LinkedInServiceUnavailable,
+    LinkedInSyncCooldown,
+)
 
 
 router = APIRouter(prefix="/certifications", tags=["certifications"])
@@ -92,11 +103,28 @@ def _certification_response(item) -> CertificationResponse:
         updated_at=item.updated_at,
         correction_allowed=item.correction_allowed,
         latest_comment=item.latest_comment,
+        source_kind=item.source_kind,
+        source_external_id=item.source_external_id,
     )
 
 
 def _service(request: Request) -> CertificationServiceProtocol:
     return request.app.state.certification_service
+
+
+def _linkedin_service(request: Request) -> LinkedInServiceProtocol:
+    return request.app.state.linkedin_service
+
+
+def _linkedin_response(item) -> LinkedInProfileResponse:
+    return LinkedInProfileResponse(
+        linkedin_url=item.linkedin_url,
+        consent_at=item.consent_at,
+        last_sync_at=item.last_sync_at,
+        sync_status=item.sync_status,
+        sync_error=item.sync_error,
+        pending_candidates=item.pending_candidates,
+    )
 
 
 def _changes(payload: CertificationUpdateRequest) -> dict[str, object]:
@@ -240,6 +268,114 @@ def list_certifications(
             status.HTTP_503_SERVICE_UNAVAILABLE,
             "CERTIFICATION_UNAVAILABLE",
             "The certification service is unavailable",
+        ) from exc
+
+
+@router.get(
+    "/linkedin/profile",
+    response_model=LinkedInProfileResponse,
+    dependencies=[Depends(_CERTIFICATION_READ)],
+    summary="Read the signed-in student's LinkedIn consent and sync state",
+)
+def get_linkedin_profile(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(_CERTIFICATION_READ),
+) -> LinkedInProfileResponse:
+    try:
+        return _linkedin_response(_linkedin_service(request).get_profile(current_user.id))
+    except StudentNotProvisioned as exc:
+        raise _http_error(
+            status.HTTP_403_FORBIDDEN,
+            "STUDENT_NOT_PROVISIONED",
+            "The account is not linked to an authorized student",
+        ) from exc
+    except LinkedInServiceUnavailable as exc:
+        raise _http_error(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "LINKEDIN_UNAVAILABLE",
+            str(exc),
+        ) from exc
+
+
+@router.put(
+    "/linkedin/profile",
+    response_model=LinkedInProfileResponse,
+    dependencies=[Depends(_CERTIFICATION_WRITE)],
+    summary="Save or replace the signed-in student's LinkedIn URL",
+)
+def update_linkedin_profile(
+    payload: LinkedInProfileUpdate,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(_CERTIFICATION_WRITE),
+) -> LinkedInProfileResponse:
+    try:
+        return _linkedin_response(
+            _linkedin_service(request).update_profile(current_user.id, payload.linkedin_url)
+        )
+    except ValueError as exc:
+        raise _http_error(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "INVALID_LINKEDIN_URL",
+            str(exc),
+        ) from exc
+    except StudentNotProvisioned as exc:
+        raise _http_error(
+            status.HTTP_403_FORBIDDEN,
+            "STUDENT_NOT_PROVISIONED",
+            "The account is not linked to an authorized student",
+        ) from exc
+    except LinkedInServiceUnavailable as exc:
+        raise _http_error(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "LINKEDIN_UNAVAILABLE",
+            str(exc),
+        ) from exc
+
+
+@router.post(
+    "/linkedin/sync",
+    response_model=LinkedInSyncResponse,
+    dependencies=[Depends(_CERTIFICATION_WRITE)],
+    summary="Extract public LinkedIn evidence and queue it for validation",
+)
+def sync_linkedin_profile(
+    request: Request,
+    force: bool = Query(default=False),
+    current_user: AuthenticatedUser = Depends(_CERTIFICATION_WRITE),
+) -> LinkedInSyncResponse:
+    try:
+        report = _linkedin_service(request).sync_profile(current_user.id, force=force)
+        return LinkedInSyncResponse(
+            profile_candidates=report.profile_candidates,
+            publication_candidates=report.publication_candidates,
+            created=report.created,
+            duplicates=report.duplicates,
+            status=report.status,
+            message=report.message,
+        )
+    except (ValueError, LinkedInSyncCooldown) as exc:
+        raise _http_error(
+            status.HTTP_409_CONFLICT if isinstance(exc, LinkedInSyncCooldown) else status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "SYNC_COOLDOWN" if isinstance(exc, LinkedInSyncCooldown) else "LINKEDIN_URL_REQUIRED",
+            str(exc),
+        ) from exc
+    except StudentNotProvisioned as exc:
+        raise _http_error(
+            status.HTTP_403_FORBIDDEN,
+            "STUDENT_NOT_PROVISIONED",
+            "The account is not linked to an authorized student",
+        ) from exc
+    except ApifyIntegrationError as exc:
+        raise _http_error(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "APIFY_UNAVAILABLE",
+            str(exc),
+        ) from exc
+    except LinkedInServiceUnavailable as exc:
+        raise _http_error(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "LINKEDIN_UNAVAILABLE",
+            str(exc),
         ) from exc
 
 

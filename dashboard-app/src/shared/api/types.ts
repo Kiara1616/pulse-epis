@@ -117,6 +117,17 @@ export type Certification = {
   updated_at: string;
   correction_allowed: boolean;
   latest_comment?: string | null;
+  source_kind?: "MANUAL" | "LINKEDIN_PROFILE" | "LINKEDIN_PUBLICATION" | string;
+  source_external_id?: string | null;
+};
+
+export type LinkedInProfile = {
+  linkedin_url: string | null;
+  consent_at: string | null;
+  last_sync_at: string | null;
+  sync_status: "NEVER" | "RUNNING" | "SUCCEEDED" | "PARTIAL" | "FAILED";
+  sync_error: string | null;
+  pending_candidates: number;
 };
 
 export type IssuerOption = {

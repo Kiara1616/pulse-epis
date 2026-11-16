@@ -190,6 +190,8 @@ class CertificationResponse(BaseModel):
     updated_at: datetime
     correction_allowed: bool
     latest_comment: str | None = None
+    source_kind: str = "MANUAL"
+    source_external_id: str | None = None
 
 
 class EvidenceAccessResponse(BaseModel):

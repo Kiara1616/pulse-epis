@@ -45,6 +45,8 @@ type ValidationRecord = {
   external_id?: string | null;
   issuer_url?: string | null;
   skills?: Array<{ name: string; level: string | null }>;
+  source_kind?: "MANUAL" | "LINKEDIN_PROFILE" | "LINKEDIN_PUBLICATION" | string;
+  source_external_id?: string | null;
 };
 
 const statusOptions: Array<{ value: Status | "ALL"; label: string }> = [
@@ -129,6 +131,12 @@ function caseType(record: ValidationRecord): Exclude<CaseFilter, "ALL"> {
 
 function caseTypeLabel(record: ValidationRecord) {
   return caseOptions.find((option) => option.value === caseType(record))?.label ?? "Caso";
+}
+
+function sourceLabel(record: ValidationRecord) {
+  if (record.source_kind === "LINKEDIN_PROFILE") return "LinkedIn · perfil";
+  if (record.source_kind === "LINKEDIN_PUBLICATION") return "LinkedIn · publicación";
+  return "Registro manual";
 }
 
 function priorityFor(record: ValidationRecord, now: number): Priority {
@@ -473,6 +481,9 @@ function ValidationsContent() {
               Enlace de verificación declarado
             </a>
           )}
+          <p className="text-sm text-slate-500">
+            Origen: <span className="font-semibold text-slate-700">{sourceLabel(selected)}</span>
+          </p>
           {selected.latest_comment && (
             <p className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-slate-700">
               <strong>Último comentario:</strong> {selected.latest_comment}
@@ -645,7 +656,7 @@ function ValidationsContent() {
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-gray-500">
-                    {record.student_name || record.student_key} · {record.issuer_name} · {caseTypeLabel(record)} · Actualizado {formatDateTime(record.updated_at)}
+                    {record.student_name || record.student_key} · {record.issuer_name} · {sourceLabel(record)} · {caseTypeLabel(record)} · Actualizado {formatDateTime(record.updated_at)}
                   </p>
                 </div>
                 <span className="shrink-0 text-sm font-semibold text-blue-600 group-hover:underline">

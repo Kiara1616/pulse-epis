@@ -58,6 +58,10 @@ class Student(Base):
         ),
         Index("ix_students_status", "status"),
         Index("ix_students_entry_year", "entry_year"),
+        CheckConstraint(
+            "linkedin_sync_status IN ('NEVER', 'RUNNING', 'SUCCEEDED', 'PARTIAL', 'FAILED')",
+            name="ck_students_linkedin_sync_status",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
@@ -70,6 +74,17 @@ class Student(Base):
     student_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     student_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     full_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    linkedin_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    linkedin_consent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    linkedin_last_sync_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    linkedin_sync_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="NEVER", server_default="NEVER"
+    )
+    linkedin_sync_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
     entry_year: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     created_at: Mapped[datetime] = mapped_column(
@@ -369,6 +384,11 @@ class Certification(Base):
         ),
         Index("ix_certifications_student_status", "student_id", "status"),
         Index("ix_certifications_issuer", "issuer_id"),
+        CheckConstraint(
+            "source_kind IN ('MANUAL', 'LINKEDIN_PROFILE', 'LINKEDIN_PUBLICATION')",
+            name="ck_certifications_source_kind",
+        ),
+        Index("ix_certifications_source_kind", "source_kind"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
@@ -384,6 +404,10 @@ class Certification(Base):
     expires_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
     source_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    source_kind: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="MANUAL", server_default="MANUAL"
+    )
+    source_external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

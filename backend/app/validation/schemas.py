@@ -63,6 +63,8 @@ class ValidationQueueResponse(BaseModel):
     issuer_url: str | None = None
     skills: list[ValidationSkillResponse] = Field(default_factory=list)
     updated_at: datetime
+    source_kind: str = "MANUAL"
+    source_external_id: str | None = None
 
 
 class ValidationHistoryResponse(BaseModel):

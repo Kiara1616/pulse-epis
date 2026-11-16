@@ -99,6 +99,8 @@ class ValidationQueueItem:
     external_id: str | None = None
     issuer_url: str | None = None
     skills: tuple[dict, ...] = ()
+    source_kind: str = "MANUAL"
+    source_external_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -266,6 +268,8 @@ class ValidationService:
                     CertificationSkill, CertificationSkill.skill_id == Skill.id
                 ).where(CertificationSkill.certification_id == certification.id)
             )),
+            source_kind=certification.source_kind,
+            source_external_id=certification.source_external_id,
         )
 
     def list_queue(
