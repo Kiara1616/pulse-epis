@@ -32,7 +32,6 @@ type ValidationRecord = {
   id: string;
   student_name?: string;
   student_key: string;
-  student_name?: string | null;
   credential_name: string;
   issuer_name: string;
   issued_on: string;
