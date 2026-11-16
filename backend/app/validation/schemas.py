@@ -50,7 +50,6 @@ class ValidationQueueResponse(BaseModel):
     id: UUID
     student_name: str
     student_key: str
-    student_name: str | None = None
     credential_name: str
     issuer_name: str
     issued_on: date

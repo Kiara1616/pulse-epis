@@ -86,7 +86,6 @@ class ValidationQueueItem:
     id: UUID
     student_name: str
     student_key: str
-    student_name: str | None
     credential_name: str
     issuer_name: str
     issued_on: date
@@ -244,7 +243,6 @@ class ValidationService:
             # expose the institutional email from this queue.
             student_name=student.full_name or student.student_code or student.student_key,
             student_key=student.student_key,
-            student_name=student.full_name,
             credential_name=certification.credential_name,
             issuer_name=issuer.name,
             issued_on=certification.issued_on,
