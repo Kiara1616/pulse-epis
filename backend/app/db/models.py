@@ -337,12 +337,19 @@ class EtlRejection(Base):
 
 class Issuer(Base):
     __tablename__ = "issuers"
-    __table_args__ = (Index("ix_issuers_name", "name"),)
+    __table_args__ = (
+        Index("ix_issuers_name", "name"),
+        Index("ix_issuers_active_name", "is_active", "name"),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     website_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     logo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="1")
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -39,6 +39,8 @@ class IssuerCatalogResponse(BaseModel):
     name: str
     website_url: str | None
     logo_url: str | None
+    is_active: bool
+    archived_at: datetime | None
     created_at: datetime
 
 

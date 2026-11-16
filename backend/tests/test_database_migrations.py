@@ -91,6 +91,7 @@ def test_migration_creates_synthetic_schema_rejects_duplicates_and_reverses(data
         "cutoff_date",
         "changed_at",
     }.issubset(set(status_history.c.keys()))
+    assert {"is_active", "archived_at"}.issubset(set(issuers.c.keys()))
 
     user_id = _database_id(database_url)
     student_id = _database_id(database_url)

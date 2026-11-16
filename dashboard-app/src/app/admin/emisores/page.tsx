@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Building2, Check, ExternalLink, Plus, X } from "lucide-react";
+import { Archive, Building2, Check, ExternalLink, Pencil, Plus, RotateCcw, Save, X } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
 import { apiFetch } from "@/shared/api/client";
 import type { IssuerCatalogItem, IssuerRequest } from "@/shared/api/types";
@@ -20,13 +20,17 @@ function AdminIssuersContent() {
   const [name, setName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [editingIssuerId, setEditingIssuerId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editWebsiteUrl, setEditWebsiteUrl] = useState("");
+  const [editLogoUrl, setEditLogoUrl] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [issuerRows, requestRows] = await Promise.all([
-        apiFetch<IssuerCatalogItem[]>("/issuers"),
+        apiFetch<IssuerCatalogItem[]>("/issuers?include_inactive=true"),
         apiFetch<IssuerRequest[]>("/issuers/requests?status=PENDING"),
       ]);
       setIssuers(issuerRows);
@@ -61,6 +65,61 @@ function AdminIssuersContent() {
       await load();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "No se pudo crear la entidad.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function beginEdit(issuer: IssuerCatalogItem) {
+    setEditingIssuerId(issuer.id);
+    setEditName(issuer.name);
+    setEditWebsiteUrl(issuer.website_url ?? "");
+    setEditLogoUrl(issuer.logo_url ?? "");
+    setError(null);
+  }
+
+  function cancelEdit() {
+    setEditingIssuerId(null);
+    setEditName("");
+    setEditWebsiteUrl("");
+    setEditLogoUrl("");
+  }
+
+  async function saveEdit() {
+    if (!editingIssuerId || !editName.trim()) {
+      setError("Indica el nombre de la entidad emisora.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await apiFetch<IssuerCatalogItem>(`/issuers/${editingIssuerId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: editName.trim(),
+          website_url: editWebsiteUrl.trim() || null,
+          logo_url: editLogoUrl.trim() || null,
+        }),
+      });
+      cancelEdit();
+      await load();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "No se pudo actualizar la entidad.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changeIssuerState(issuer: IssuerCatalogItem) {
+    const action = issuer.is_active ? "retirar del catálogo" : "restaurar en el catálogo";
+    if (!window.confirm(`¿Deseas ${action} “${issuer.name}”? Las certificaciones e indicadores históricos conservarán su relación.`)) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await apiFetch<IssuerCatalogItem>(`/issuers/${issuer.id}/${issuer.is_active ? "archive" : "restore"}`, { method: "POST" });
+      await load();
+    } catch (stateError) {
+      setError(stateError instanceof Error ? stateError.message : "No se pudo cambiar el estado de la entidad.");
     } finally {
       setSaving(false);
     }
@@ -157,18 +216,35 @@ function AdminIssuersContent() {
 
       <section className="surface-card space-y-4 p-6" aria-label="Entidades registradas">
         <div className="flex items-center gap-2"><Building2 size={18} className="text-blue-600" /><h2 className="font-bold text-slate-900">Entidades registradas</h2></div>
+        <p className="text-sm text-slate-500">Editar conserva el mismo identificador y todas sus certificaciones. Retirar la oculta de nuevas selecciones, pero mantiene el historial y permite restaurarla después.</p>
         {loading ? <p className="text-sm text-slate-500">Cargando catálogo…</p> : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {issuers.map((issuer) => (
-              <article key={issuer.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="flex items-center gap-3">
+              <article key={issuer.id} className={`rounded-xl border p-4 ${issuer.is_active ? "border-slate-200 bg-white" : "border-amber-200 bg-amber-50/50"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                   {issuer.logo_url ? (
                     // External issuer logos are intentionally not passed through Next's image optimizer.
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={issuer.logo_url} alt="" className="h-10 w-10 rounded-lg object-contain" />
                   ) : <div className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-700"><Building2 size={19} /></div>}
                   <div className="min-w-0"><h3 className="truncate font-semibold text-slate-900">{issuer.name}</h3>{issuer.website_url && <a href={issuer.website_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-700 underline">Sitio oficial</a>}</div>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${issuer.is_active ? "bg-emerald-50 text-emerald-700" : "bg-amber-100 text-amber-800"}`}>{issuer.is_active ? "Activa" : "Retirada"}</span>
                 </div>
+                {editingIssuerId === issuer.id ? (
+                  <div className="mt-4 space-y-2 border-t border-slate-200 pt-3">
+                    <input value={editName} onChange={(event) => setEditName(event.target.value)} maxLength={150} className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500" aria-label="Nombre del emisor" />
+                    <input value={editWebsiteUrl} onChange={(event) => setEditWebsiteUrl(event.target.value)} maxLength={2048} className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500" placeholder="Sitio web (opcional)" aria-label="Sitio web del emisor" />
+                    <input value={editLogoUrl} onChange={(event) => setEditLogoUrl(event.target.value)} maxLength={2048} className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500" placeholder="Logo (URL opcional)" aria-label="Logo del emisor" />
+                    <div className="flex gap-2 pt-1"><button type="button" onClick={() => void saveEdit()} disabled={saving} className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><Save size={14} />Guardar</button><button type="button" onClick={cancelEdit} disabled={saving} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700">Cancelar</button></div>
+                  </div>
+                ) : (
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-200 pt-3">
+                    <button type="button" onClick={() => beginEdit(issuer)} disabled={saving} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50"><Pencil size={14} />Editar</button>
+                    <button type="button" onClick={() => void changeIssuerState(issuer)} disabled={saving} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50">{issuer.is_active ? <Archive size={14} /> : <RotateCcw size={14} />}{issuer.is_active ? "Retirar del catálogo" : "Restaurar"}</button>
+                  </div>
+                )}
               </article>
             ))}
           </div>

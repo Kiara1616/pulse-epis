@@ -229,7 +229,13 @@ def list_issuer_options(
                 .order_by(LearningCourse.provider, LearningCourse.title)
             )
         )
-        issuer_rows = list(session.scalars(select(Issuer).order_by(Issuer.name)))
+        issuer_rows = list(
+            session.scalars(
+                select(Issuer)
+                .where(Issuer.is_active.is_(True))
+                .order_by(Issuer.name)
+            )
+        )
         existing = {item.name.casefold(): item for item in issuer_rows}
         options: dict[str, IssuerOption] = {}
         for course in published_courses:

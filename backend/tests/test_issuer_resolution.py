@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.db.models import Certification, Issuer
-from backend.app.issuer_catalog.service import IssuerCatalogService
+from backend.app.issuer_catalog.service import IssuerCatalogConflict, IssuerCatalogInvalid, IssuerCatalogService
 from backend.app.validation.service import ValidationInvalid, ValidationService
 from backend.tests.test_validation import make_context
 
@@ -78,4 +78,51 @@ def test_unknown_issuer_requires_request_and_admin_resolution_before_approval(tm
 
     with Session(engine) as session:
         assert session.scalar(select(Issuer).where(Issuer.name == "Linux Foundation")) is not None
+    engine.dispose()
+
+
+def test_admin_can_edit_archive_and_restore_issuer_without_breaking_history(tmp_path):
+    engine, session_factory, settings, _, validator_user_id, admin_user_id, certification_id = make_context(tmp_path)
+    catalog = IssuerCatalogService(session_factory, settings)
+    created = catalog.create_issuer(admin_user_id, name="Issuer Original", website_url="https://issuer.example")
+
+    updated = catalog.update_issuer(admin_user_id, created.id, name="Issuer Oficial")
+    assert updated.id == created.id
+    assert updated.name == "Issuer Oficial"
+
+    archived = catalog.archive_issuer(admin_user_id, created.id)
+    assert archived.id == created.id
+    assert archived.is_active is False
+    assert all(item.id != created.id for item in catalog.list_issuers())
+    assert catalog.list_issuers(include_inactive=True)[0].name == "Issuer Oficial"
+
+    with pytest.raises(IssuerCatalogInvalid, match="retirada"):
+        catalog.assign_issuer(validator_user_id, certification_id, created.id)
+
+    restored = catalog.restore_issuer(admin_user_id, created.id)
+    assert restored.is_active is True
+    assigned = catalog.assign_issuer(validator_user_id, certification_id, created.id)
+    assert assigned.issuer.id == created.id
+    with Session(engine) as session:
+        certification = session.get(Certification, certification_id)
+        assert certification is not None and certification.issuer_id == created.id
+    engine.dispose()
+
+
+def test_retired_issuer_cannot_be_selected_for_new_request_approval(tmp_path):
+    engine, session_factory, settings, _, validator_user_id, admin_user_id, certification_id = make_context(tmp_path)
+    catalog = IssuerCatalogService(session_factory, settings)
+    created = catalog.create_issuer(admin_user_id, name="Issuer Retirable")
+    catalog.archive_issuer(admin_user_id, created.id)
+    request = catalog.create_request(
+        validator_user_id,
+        certification_id,
+        raw_name="Issuer Retirable",
+        website_url=None,
+        note="El emisor debe revisarse.",
+    )
+    with pytest.raises(IssuerCatalogInvalid, match="retirada"):
+        catalog.approve_request(admin_user_id, request.id, issuer_id=created.id)
+    with pytest.raises(IssuerCatalogConflict):
+        catalog.archive_issuer(admin_user_id, created.id)
     engine.dispose()

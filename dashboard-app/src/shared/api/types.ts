@@ -142,6 +142,8 @@ export type IssuerCatalogItem = {
   name: string;
   website_url: string | null;
   logo_url: string | null;
+  is_active: boolean;
+  archived_at: string | null;
   created_at: string;
 };
 
