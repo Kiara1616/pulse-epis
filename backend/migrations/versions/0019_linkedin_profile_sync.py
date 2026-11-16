@@ -4,8 +4,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "0016_linkedin_profile_sync"
-down_revision = "0015_database_evidence_content"
+revision = "0019_linkedin_profile_sync"
+down_revision = "0018_roster_reconcile"
 branch_labels = None
 depends_on = None
 
