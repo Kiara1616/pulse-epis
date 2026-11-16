@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Protocol
 from uuid import UUID
 
@@ -293,7 +293,14 @@ class LinkedInSyncService:
         try:
             profile_result = self._apify.run_actor(
                 self._settings.apify_profile_actor_id,
-                {"urls": [profile_url], "profileScraperMode": "Profile details"},
+                {
+                    # These names match the public input schema of
+                    # harvestapi/linkedin-profile-scraper.  The actor accepts
+                    # profile URLs in ``queries`` and requires the complete
+                    # mode label, not a shorthand value.
+                    "profileScraperMode": "Profile details no email ($4 per 1k)",
+                    "queries": [profile_url],
+                },
             )
             if profile_result.items:
                 profile_candidates = normalize_profile_certifications(
@@ -308,7 +315,7 @@ class LinkedInSyncService:
                 {
                     "targetUrls": [profile_url],
                     "maxPosts": self._settings.apify_max_posts,
-                    "postedLimit": "year",
+                    "postedLimitDate": (date.today() - timedelta(days=365)).isoformat(),
                     "includeQuotePosts": True,
                     "includeReposts": True,
                 },
