@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
+  Link2,
   Loader2,
   MessageCircleWarning,
   Plus,
@@ -19,7 +20,7 @@ import { statusLabel, statusClass } from "@/shared/ui/status";
 import { AsyncState } from "@/shared/ui/AsyncState";
 import { RoleGate } from "@/features/access/RoleGate";
 import { ApiError, apiFetch } from "@/shared/api/client";
-import type { Certification, IssuerOption } from "@/shared/api/types";
+import type { Certification, IssuerOption, LinkedInProfile } from "@/shared/api/types";
 import {
   certificationStatuses,
   type StudentSummary,
@@ -59,6 +60,16 @@ function formatDate(value: string) {
       }).format(date);
 }
 
+function formatDateTime(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("es-PE", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(date);
+}
+
 function StudentProfileContent() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [issuerOptions, setIssuerOptions] = useState<IssuerOption[]>([]);
@@ -79,6 +90,12 @@ function StudentProfileContent() {
   const [skillNames, setSkillNames] = useState("");
   const level = "Other";
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [linkedinProfile, setLinkedinProfile] = useState<LinkedInProfile | null>(null);
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [linkedinSaving, setLinkedinSaving] = useState(false);
+  const [linkedinSyncing, setLinkedinSyncing] = useState(false);
+  const [linkedinMessage, setLinkedinMessage] = useState<string | null>(null);
+  const [linkedinError, setLinkedinError] = useState<string | null>(null);
   const [form, setForm] = useState({
     issuer_id: "",
     credential_name: "",
@@ -139,6 +156,109 @@ function StudentProfileContent() {
     const timer = window.setTimeout(() => void loadIssuerOptions(), 0);
     return () => window.clearTimeout(timer);
   }, [loadIssuerOptions]);
+
+  const loadLinkedInProfile = useCallback(async () => {
+    try {
+      const profile = await apiFetch<LinkedInProfile>("/certifications/linkedin/profile");
+      setLinkedinProfile(profile);
+      setLinkedinUrl(profile.linkedin_url ?? "");
+      setLinkedinError(null);
+    } catch (loadError) {
+      // A student can still use manual certification registration if the
+      // optional Apify integration is not configured yet.
+      if (loadError instanceof ApiError && loadError.status === 404) return;
+      setLinkedinError(
+        loadError instanceof Error
+          ? loadError.message
+          : "No se pudo cargar el perfil de LinkedIn.",
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadLinkedInProfile(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadLinkedInProfile]);
+
+  async function saveLinkedInProfile() {
+    setLinkedinSaving(true);
+    setLinkedinMessage(null);
+    setLinkedinError(null);
+    try {
+      const profile = await apiFetch<LinkedInProfile>("/certifications/linkedin/profile", {
+        method: "PUT",
+        body: JSON.stringify({ linkedin_url: linkedinUrl.trim() || null }),
+      });
+      setLinkedinProfile(profile);
+      setLinkedinUrl(profile.linkedin_url ?? "");
+      if (!profile.linkedin_url) {
+        setLinkedinMessage("Se quitó el enlace de LinkedIn del perfil.");
+        return;
+      }
+      setLinkedinSyncing(true);
+      try {
+        const report = await apiFetch<{
+          created: number;
+          duplicates: number;
+          profile_candidates: number;
+          publication_candidates: number;
+          message: string;
+        }>("/certifications/linkedin/sync", { method: "POST" });
+        setLinkedinMessage(
+          `${report.message} Nuevos: ${report.created}; repetidos: ${report.duplicates}.`,
+        );
+        await loadCertifications();
+        await loadLinkedInProfile();
+      } catch (syncError) {
+        // Keep the URL saved even when the deployment has not received the
+        // Apify token yet; the student can retry later without retyping it.
+        setLinkedinError(
+          syncError instanceof Error
+            ? `Enlace guardado, pero no se pudo sincronizar: ${syncError.message}`
+            : "Enlace guardado, pero no se pudo sincronizar todavía.",
+        );
+        await loadLinkedInProfile();
+      } finally {
+        setLinkedinSyncing(false);
+      }
+    } catch (saveError) {
+      setLinkedinError(
+        saveError instanceof Error
+          ? saveError.message
+          : "No se pudo guardar el enlace de LinkedIn.",
+      );
+    } finally {
+      setLinkedinSaving(false);
+    }
+  }
+
+  async function syncLinkedIn(force = false) {
+    if (!linkedinProfile?.linkedin_url) return;
+    setLinkedinSyncing(true);
+    setLinkedinMessage(null);
+    setLinkedinError(null);
+    try {
+      const report = await apiFetch<{
+        created: number;
+        duplicates: number;
+        message: string;
+      }>(`/certifications/linkedin/sync${force ? "?force=true" : ""}`, { method: "POST" });
+      setLinkedinMessage(
+        `${report.message} Nuevos: ${report.created}; repetidos: ${report.duplicates}.`,
+      );
+      await loadCertifications();
+      await loadLinkedInProfile();
+    } catch (syncError) {
+      setLinkedinError(
+        syncError instanceof Error
+          ? syncError.message
+          : "No se pudo sincronizar el perfil.",
+      );
+      await loadLinkedInProfile();
+    } finally {
+      setLinkedinSyncing(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -393,6 +513,90 @@ function StudentProfileContent() {
         <SessionExpiredState />
       ) : (
         <>
+          <section
+            aria-labelledby="linkedin-profile-heading"
+            className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm md:p-6"
+          >
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+              <div className="flex items-start gap-3">
+                <span className="rounded-xl bg-blue-50 p-3 text-blue-700">
+                  <Link2 aria-hidden="true" size={20} />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-600">
+                    Importación opcional
+                  </p>
+                  <h2 id="linkedin-profile-heading" className="mt-1 font-bold text-slate-950">
+                    Perfil de LinkedIn
+                  </h2>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+                    Guarda tu perfil público para detectar certificaciones y publicaciones. Todo queda pendiente de validación; Pulse no aprueba automáticamente.
+                  </p>
+                </div>
+              </div>
+              {linkedinProfile && linkedinProfile.sync_status !== "NEVER" && (
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                  {linkedinProfile.sync_status === "SUCCEEDED"
+                    ? "Sincronizado"
+                    : linkedinProfile.sync_status === "RUNNING"
+                      ? "Sincronizando"
+                      : linkedinProfile.sync_status === "PARTIAL"
+                        ? "Sincronización parcial"
+                        : "Requiere revisión"}
+                </span>
+              )}
+            </div>
+            <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-end">
+              <label className="flex-1 text-sm font-semibold text-slate-700">
+                URL del perfil público
+                <input
+                  type="url"
+                  value={linkedinUrl}
+                  onChange={(event) => setLinkedinUrl(event.target.value)}
+                  placeholder="https://www.linkedin.com/in/tu-perfil"
+                  className="mt-2 block w-full rounded-lg border border-slate-200 px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void saveLinkedInProfile()}
+                  disabled={linkedinSaving || linkedinSyncing}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {(linkedinSaving || linkedinSyncing) && <Loader2 size={16} className="animate-spin" />}
+                  Guardar y sincronizar
+                </button>
+                {linkedinProfile?.linkedin_url && (
+                  <button
+                    type="button"
+                    onClick={() => void syncLinkedIn(true)}
+                    disabled={linkedinSaving || linkedinSyncing}
+                    className="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                  >
+                    <RefreshCw size={16} className={linkedinSyncing ? "animate-spin" : ""} />
+                    Actualizar datos
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+              <span>Certificaciones pendientes: {linkedinProfile?.pending_candidates ?? 0}</span>
+              {linkedinProfile?.last_sync_at && (
+                <span>Última consulta: {formatDateTime(linkedinProfile.last_sync_at)}</span>
+              )}
+            </div>
+            {(linkedinError || linkedinProfile?.sync_error) && (
+              <p role="alert" className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {linkedinError ?? linkedinProfile?.sync_error}
+              </p>
+            )}
+            {linkedinMessage && (
+              <p role="status" className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
+                {linkedinMessage}
+              </p>
+            )}
+          </section>
           {summary && nextAction && (
             <StudentOverview
               summary={summary}

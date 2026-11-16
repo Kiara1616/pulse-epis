@@ -9,6 +9,7 @@ import unicodedata
 import zipfile
 from dataclasses import dataclass
 from pathlib import PurePosixPath
+from urllib.parse import urlsplit
 
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
@@ -18,7 +19,7 @@ from ..auth.models import STUDENT_EMAIL_DOMAIN
 
 
 ROSTER_COLUMNS = ("code", "email", "school", "plan", "cycle", "status", "period")
-OPTIONAL_COLUMNS = ("name",)
+OPTIONAL_COLUMNS = ("name", "linkedin_url")
 _CODE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$")
 _EMAIL_PATTERN = re.compile(r"^[^@\s]{1,254}@[^@\s]{1,253}$")
 _STATUS_ALIASES = {
@@ -45,6 +46,7 @@ class RosterRecord:
     period: str
     row_number: int
     name: str = ""
+    linkedin_url: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -350,6 +352,29 @@ def normalize_text(value: str) -> str:
     return " ".join(value.strip().split())
 
 
+def normalize_linkedin_url(value: str) -> str | None:
+    """Normalize an optional public LinkedIn profile URL from the padrón."""
+
+    normalized = normalize_text(value)
+    if not normalized:
+        return None
+    parsed = urlsplit(normalized)
+    host = (parsed.hostname or "").casefold()
+    if (
+        parsed.scheme.casefold() not in {"http", "https"}
+        or host not in {"linkedin.com", "www.linkedin.com"}
+        or parsed.username is not None
+        or parsed.password is not None
+        or not parsed.path.casefold().startswith("/in/")
+        or len(normalized) > 2048
+    ):
+        return None
+    slug = "/".join(part for part in parsed.path.split("/") if part)
+    if len(slug.split("/")) < 2 or not slug.split("/", 1)[1]:
+        return None
+    return f"https://www.linkedin.com/{slug.rstrip('/')}"
+
+
 def _rejection(row_number: int, field_name: str, reason_code: str, message: str) -> RosterRejection:
     return RosterRejection(row_number, field_name, reason_code, message)
 
@@ -434,6 +459,11 @@ def parse_roster_csv(
             for field in ROSTER_COLUMNS
         }
         name = normalize_text(str(raw_row.get(header_map["name"]) or "")) if "name" in header_map else ""
+        linkedin_raw = (
+            normalize_text(str(raw_row.get(header_map["linkedin_url"]) or ""))
+            if "linkedin_url" in header_map
+            else ""
+        )
         if not any(row.values()):
             continue
         source_rows += 1
@@ -466,6 +496,16 @@ def parse_roster_csv(
         row_rejections: list[RosterRejection] = []
         if len(name) > 200:
             row_rejections.append(_rejection(row_number, "name", "INVALID_NAME", "Student name exceeds 200 characters."))
+        linkedin_url = normalize_linkedin_url(linkedin_raw)
+        if linkedin_raw and linkedin_url is None:
+            row_rejections.append(
+                _rejection(
+                    row_number,
+                    "linkedin_url",
+                    "INVALID_LINKEDIN_URL",
+                    "LinkedIn URL must point to a public /in/ profile.",
+                )
+            )
         code = row["code"].casefold()
         if not code:
             row_rejections.append(
@@ -559,6 +599,7 @@ def parse_roster_csv(
                 period=row["period"],
                 row_number=row_number,
                 name=name,
+                linkedin_url=linkedin_url,
             )
         )
 

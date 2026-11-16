@@ -52,6 +52,7 @@ def _queue_response(item: ValidationQueueItem) -> ValidationQueueResponse:
         id=item.id,
         student_name=item.student_name,
         student_key=item.student_key,
+        student_name=item.student_name,
         credential_name=item.credential_name,
         issuer_name=item.issuer_name,
         issued_on=item.issued_on,
@@ -73,6 +74,8 @@ def _queue_response(item: ValidationQueueItem) -> ValidationQueueResponse:
         external_id=item.external_id,
         issuer_url=item.issuer_url,
         skills=list(item.skills),
+        source_kind=item.source_kind,
+        source_external_id=item.source_external_id,
     )
 
 

@@ -49,6 +49,11 @@ from .certifications.service import (
 from .core.config import Settings, get_settings
 from .core.logging import configure_logging
 from .db.session import create_session_factory
+from .linkedin.service import (
+    LinkedInServiceProtocol,
+    LinkedInSyncService,
+    UnavailableLinkedInService,
+)
 from .repositories.readiness import ApplicationReadinessRepository, ReadinessRepository
 from .roster.service import (
     RosterImportService,
@@ -73,6 +78,7 @@ def create_app(
     oidc_client: OidcClient | None = None,
     roster_import_service: RosterImportServiceProtocol | None = None,
     certification_service: CertificationServiceProtocol | None = None,
+    linkedin_service: LinkedInServiceProtocol | None = None,
     validation_service: ValidationServiceProtocol | None = None,
     analytics_service: AnalyticsServiceProtocol | None = None,
 ) -> FastAPI:
@@ -105,6 +111,15 @@ def create_app(
             validation_service = ValidationService(session_factory, settings)
         else:
             validation_service = UnavailableValidationService()
+    if linkedin_service is None:
+        if session_factory is not None:
+            linkedin_service = LinkedInSyncService(
+                session_factory,
+                settings,
+                certification_service,
+            )
+        else:
+            linkedin_service = UnavailableLinkedInService()
     if analytics_service is None:
         analytics_service = (
             AnalyticsService(session_factory)
@@ -145,6 +160,7 @@ def create_app(
     app.state.auth_service = AuthService(settings, user_directory)
     app.state.roster_import_service = roster_import_service
     app.state.certification_service = certification_service
+    app.state.linkedin_service = linkedin_service
     app.state.validation_service = validation_service
     app.state.analytics_service = analytics_service
 

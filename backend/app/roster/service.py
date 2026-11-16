@@ -308,6 +308,10 @@ class RosterImportService:
         student.student_code = record.code
         if record.name:
             student.full_name = record.name
+        # An empty optional column never erases a link that a student already
+        # confirmed in Pulse; a valid imported URL refreshes the roster value.
+        if record.linkedin_url:
+            student.linkedin_url = record.linkedin_url
         session.flush()
         enrollment = session.scalar(
             select(Enrollment).where(

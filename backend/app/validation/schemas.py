@@ -50,6 +50,7 @@ class ValidationQueueResponse(BaseModel):
     id: UUID
     student_name: str
     student_key: str
+    student_name: str | None = None
     credential_name: str
     issuer_name: str
     issued_on: date
@@ -63,6 +64,8 @@ class ValidationQueueResponse(BaseModel):
     issuer_url: str | None = None
     skills: list[ValidationSkillResponse] = Field(default_factory=list)
     updated_at: datetime
+    source_kind: str = "MANUAL"
+    source_external_id: str | None = None
 
 
 class ValidationHistoryResponse(BaseModel):

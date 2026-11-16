@@ -130,6 +130,7 @@ def roster_students(request: Request, period_code: str | None = None,
                 )
         return {"period_code": period_code, "total": total, "items": [
             {"id": str(s.id), "code": s.student_code, "name": s.full_name, "email": u.email if u else None,
+             "linkedin_url": s.linkedin_url,
              "cycle": e.cycle, "cohort": e.cohort, "school": e.school, "plan": e.study_plan, "status": e.status,
              "certifications": certification_by_student.get(s.id, [])}
             for s, u, e in rows]}
