@@ -186,8 +186,6 @@ function ValidationsContent() {
   const [requestIssuerNote, setRequestIssuerNote] = useState("");
   const [requestIssuerOpen, setRequestIssuerOpen] = useState(false);
 
-  const selected = records.find((record) => record.id === selectedId);
-
   const loadRecords = useCallback(async () => {
     setLoading(true);
     try {
@@ -379,6 +377,279 @@ function ValidationsContent() {
     setCaseFilter("ALL");
   }
 
+  function renderSelectedDetail() {
+    const selected = records.find((record) => record.id === selectedId);
+    if (!selected) return null;
+
+    return (
+      <section
+        className="mt-4 space-y-5 rounded-2xl border border-blue-200 bg-white p-6 shadow-sm"
+        aria-label="Detalle del envío"
+        id={`validation-detail-${selected.id}`}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-xl font-bold text-slate-900">{selected.credential_name}</h3>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass(selected.status)}`}>
+                {statusLabel(selected.status)}
+              </span>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${priorityClass(priorityFor(selected, currentTime ?? 0))}`}>
+                Prioridad {priorityLabel(priorityFor(selected, currentTime ?? 0))}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-slate-500">{caseTypeLabel(selected)}</p>
+          </div>
+          <button
+            type="button"
+            disabled={actingId !== null}
+            onClick={closeDetail}
+            className="text-sm font-semibold text-blue-600 disabled:opacity-50"
+          >
+            Cerrar detalle
+          </button>
+        </div>
+
+        <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            ["Estudiante", selected.student_name || selected.student_key],
+            ["Emisor", selected.issuer_name],
+            ["Identificador de la credencial", selected.external_id || "No registrado"],
+            ["Fecha de emisión", formatDate(selected.issued_on)],
+            [
+              "Fecha de vencimiento",
+              selected.expires_on ? formatDate(selected.expires_on) : "Sin vencimiento registrado",
+            ],
+            ["Última actualización", formatDateTime(selected.updated_at)],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-sm text-gray-500">{label}</dt>
+              <dd className="break-words font-semibold text-slate-900">{value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div>
+          <h4 className="font-semibold text-slate-900">Habilidades declaradas</h4>
+          <p className="text-sm text-gray-600">
+            {selected.skills?.map((skill) => `${skill.name}${skill.level ? ` (${skill.level})` : ""}`).join(", ") ||
+              "Sin habilidades registradas"}
+          </p>
+        </div>
+
+        {(selected.status === "PENDING" || selected.status === "RESUBMITTED" || selected.status === "UNDER_REVIEW") && (
+          <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4" aria-label="Resolver entidad emisora">
+            <div>
+              <h4 className="font-semibold text-slate-900">Entidad emisora</h4>
+              <p className="text-sm text-slate-600">
+                Selecciona una entidad del catálogo. Si no existe, solicita su alta al administrador; la certificación no se aprobará con “Por confirmar”.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="min-w-[260px] flex-1 text-sm font-semibold text-slate-700">
+                Entidad registrada
+                <select
+                  value={issuerId}
+                  onChange={(event) => setIssuerId(event.target.value)}
+                  disabled={actingId !== null}
+                  className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
+                >
+                  <option value="">Seleccionar entidad…</option>
+                  {issuerOptions.map((issuer) => (
+                    <option key={issuer.id} value={issuer.id}>{issuer.name}</option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                disabled={actingId !== null || !issuerId}
+                onClick={() => void assignIssuer(selected)}
+                className="rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white disabled:opacity-50"
+              >
+                Guardar emisor
+              </button>
+              <button
+                type="button"
+                disabled={actingId !== null}
+                onClick={() => setRequestIssuerOpen((open) => !open)}
+                className="rounded-lg border border-blue-200 bg-white px-4 py-2.5 font-semibold text-blue-700 disabled:opacity-50"
+              >
+                Solicitar nueva entidad
+              </button>
+            </div>
+            {requestIssuerOpen && (
+              <div className="grid gap-3 border-t border-blue-100 pt-3 md:grid-cols-2">
+                <label className="text-sm font-semibold text-slate-700">
+                  Nombre detectado o propuesto
+                  <input value={requestIssuerName} onChange={(event) => setRequestIssuerName(event.target.value)} maxLength={150} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="Ej. Linux Foundation" />
+                </label>
+                <label className="text-sm font-semibold text-slate-700">
+                  Sitio oficial (opcional)
+                  <input value={requestIssuerUrl} onChange={(event) => setRequestIssuerUrl(event.target.value)} maxLength={2048} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="https://…" />
+                </label>
+                <label className="text-sm font-semibold text-slate-700 md:col-span-2">
+                  Motivo y evidencia de la solicitud
+                  <textarea value={requestIssuerNote} onChange={(event) => setRequestIssuerNote(event.target.value)} maxLength={2000} rows={2} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="Explica por qué el emisor no coincide con el catálogo." />
+                </label>
+                <div className="md:col-span-2">
+                  <button type="button" disabled={actingId !== null} onClick={() => void requestIssuer(selected)} className="rounded-lg bg-slate-900 px-4 py-2.5 font-semibold text-white disabled:opacity-50">
+                    Enviar solicitud al administrador
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {selected.issuer_url && (
+          <a href={selected.issuer_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">
+            Sitio del emisor
+          </a>
+        )}
+        {selected.source_url && (
+          <a href={selected.source_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">
+            Enlace de verificación declarado
+          </a>
+        )}
+        <p className="text-sm text-slate-500">
+          Origen: <span className="font-semibold text-slate-700">{sourceLabel(selected)}</span>
+        </p>
+        {selected.latest_comment && (
+          <p className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-slate-700">
+            <strong>Último comentario:</strong> {selected.latest_comment}
+          </p>
+        )}
+
+        <div>
+          <h4 className="mb-2 font-semibold text-slate-900">Evidencia adjunta</h4>
+          <div className="flex flex-wrap gap-2">
+            {selected.evidences.map((evidence) => (
+              <button
+                key={evidence.id}
+                type="button"
+                disabled={actingId !== null}
+                onClick={() => void openEvidence(selected, evidence)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-blue-700 disabled:opacity-50"
+              >
+                {evidence.original_filename || "Abrir enlace de evidencia"}
+              </button>
+            ))}
+          </div>
+          {selected.evidences.length === 0 && (
+            <p className="text-sm text-gray-500">No hay evidencia adjunta.</p>
+          )}
+        </div>
+
+        {preview && (
+          <div className="space-y-3 rounded-xl border bg-slate-50 p-3" aria-live="polite">
+            <a
+              href={preview.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-blue-600 underline"
+            >
+              <ExternalLink size={16} aria-hidden="true" />
+              Abrir evidencia en otra pestaña
+            </a>
+            {evidencePreviewKind(preview.evidence) === "image" && !previewError && (
+              // Temporary signed URLs must be rendered directly, without Next image caching.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={preview.url}
+                src={preview.url}
+                alt="Certificado adjunto por el estudiante"
+                decoding="async"
+                onError={() => setPreviewError(true)}
+                className="max-h-[650px] w-full rounded-lg border border-slate-200 bg-white object-contain"
+              />
+            )}
+            {evidencePreviewKind(preview.evidence) === "pdf" && (
+              <iframe
+                src={preview.url}
+                title="Certificado PDF adjunto"
+                className="h-[650px] w-full rounded-lg border border-slate-200 bg-white"
+              />
+            )}
+            {evidencePreviewKind(preview.evidence) === "link" && (
+              <p className="text-sm text-slate-600">Esta evidencia se abrirá mediante el enlace de verificación.</p>
+            )}
+            {previewError && (
+              <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-rose-700">
+                <p>No se pudo cargar la imagen. El acceso temporal puede haber vencido.</p>
+                <button
+                  type="button"
+                  onClick={() => void openEvidence(selected, preview.evidence)}
+                  className="rounded-md border border-rose-200 bg-white px-3 py-1.5 font-semibold text-rose-700"
+                >
+                  Renovar vista previa
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(selected.status === "PENDING" || selected.status === "RESUBMITTED") && (
+          <button
+            type="button"
+            disabled={actingId !== null}
+            onClick={() => void decide(selected, "START_REVIEW")}
+            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
+          >
+            Tomar revisión
+          </button>
+        )}
+
+        {selected.status === "UNDER_REVIEW" && (
+          <div className="space-y-3 border-t pt-4">
+            <label htmlFor="review-comment" className="block font-semibold text-slate-900">
+              Comentario para el estudiante
+            </label>
+            <textarea
+              id="review-comment"
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              maxLength={2000}
+              disabled={actingId !== null}
+              rows={3}
+              placeholder="Indica el motivo del rechazo o las correcciones necesarias."
+              className="w-full rounded-lg border border-slate-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
+            />
+            <p className="text-sm text-gray-500">
+              Obligatorio al observar o rechazar. El comentario quedará visible para el estudiante.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {(
+                [
+                  ["APPROVE", "Aprobar", "bg-blue-600 text-white hover:bg-blue-700"],
+                  ["OBSERVE", "Observar", "bg-blue-50 text-blue-800 hover:bg-blue-100"],
+                  ["REJECT", "Rechazar", "bg-slate-100 text-slate-700 hover:bg-slate-200"],
+                ] as const
+              ).map(([action, label, color]) => (
+                <button
+                  key={action}
+                  type="button"
+                  disabled={actingId !== null}
+                  onClick={() => void decide(selected, action)}
+                  className={`rounded-lg px-4 py-2 font-semibold disabled:opacity-50 ${color}`}
+                >
+                  {actingId === selected.id ? "Guardando…" : label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setHistoryId(selected.id)}
+          className="text-sm font-semibold text-blue-600"
+        >
+          Ver historial de decisiones
+        </button>
+      </section>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -492,273 +763,6 @@ function ValidationsContent() {
         </div>
       </section>
 
-      {selected && (
-        <section
-          className="space-y-5 rounded-2xl border border-blue-200 bg-white p-6 shadow-sm"
-          aria-label="Detalle del envío"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-xl font-bold text-slate-900">{selected.credential_name}</h3>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClass(selected.status)}`}>
-                  {statusLabel(selected.status)}
-                </span>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${priorityClass(priorityFor(selected, currentTime ?? 0))}`}>
-                  Prioridad {priorityLabel(priorityFor(selected, currentTime ?? 0))}
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-slate-500">{caseTypeLabel(selected)}</p>
-            </div>
-            <button
-              type="button"
-              disabled={actingId !== null}
-              onClick={closeDetail}
-              className="text-sm font-semibold text-blue-600 disabled:opacity-50"
-            >
-              Cerrar detalle
-            </button>
-          </div>
-
-          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              ["Estudiante", selected.student_name || selected.student_key],
-              ["Emisor", selected.issuer_name],
-              ["Identificador de la credencial", selected.external_id || "No registrado"],
-              ["Fecha de emisión", formatDate(selected.issued_on)],
-              [
-                "Fecha de vencimiento",
-                selected.expires_on ? formatDate(selected.expires_on) : "Sin vencimiento registrado",
-              ],
-              ["Última actualización", formatDateTime(selected.updated_at)],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-sm text-gray-500">{label}</dt>
-                <dd className="break-words font-semibold text-slate-900">{value}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <div>
-            <h4 className="font-semibold text-slate-900">Habilidades declaradas</h4>
-            <p className="text-sm text-gray-600">
-              {selected.skills?.map((skill) => `${skill.name}${skill.level ? ` (${skill.level})` : ""}`).join(", ") ||
-                "Sin habilidades registradas"}
-            </p>
-          </div>
-
-          {(selected.status === "PENDING" || selected.status === "RESUBMITTED" || selected.status === "UNDER_REVIEW") && (
-            <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4" aria-label="Resolver entidad emisora">
-              <div>
-                <h4 className="font-semibold text-slate-900">Entidad emisora</h4>
-                <p className="text-sm text-slate-600">
-                  Selecciona una entidad del catálogo. Si no existe, solicita su alta al administrador; la certificación no se aprobará con “Por confirmar”.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-end gap-3">
-                <label className="min-w-[260px] flex-1 text-sm font-semibold text-slate-700">
-                  Entidad registrada
-                  <select
-                    value={issuerId}
-                    onChange={(event) => setIssuerId(event.target.value)}
-                    disabled={actingId !== null}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
-                  >
-                    <option value="">Seleccionar entidad…</option>
-                    {issuerOptions.map((issuer) => (
-                      <option key={issuer.id} value={issuer.id}>{issuer.name}</option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  disabled={actingId !== null || !issuerId}
-                  onClick={() => void assignIssuer(selected)}
-                  className="rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white disabled:opacity-50"
-                >
-                  Guardar emisor
-                </button>
-                <button
-                  type="button"
-                  disabled={actingId !== null}
-                  onClick={() => setRequestIssuerOpen((open) => !open)}
-                  className="rounded-lg border border-blue-200 bg-white px-4 py-2.5 font-semibold text-blue-700 disabled:opacity-50"
-                >
-                  Solicitar nueva entidad
-                </button>
-              </div>
-              {requestIssuerOpen && (
-                <div className="grid gap-3 border-t border-blue-100 pt-3 md:grid-cols-2">
-                  <label className="text-sm font-semibold text-slate-700">
-                    Nombre detectado o propuesto
-                    <input value={requestIssuerName} onChange={(event) => setRequestIssuerName(event.target.value)} maxLength={150} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="Ej. Linux Foundation" />
-                  </label>
-                  <label className="text-sm font-semibold text-slate-700">
-                    Sitio oficial (opcional)
-                    <input value={requestIssuerUrl} onChange={(event) => setRequestIssuerUrl(event.target.value)} maxLength={2048} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="https://…" />
-                  </label>
-                  <label className="text-sm font-semibold text-slate-700 md:col-span-2">
-                    Motivo y evidencia de la solicitud
-                    <textarea value={requestIssuerNote} onChange={(event) => setRequestIssuerNote(event.target.value)} maxLength={2000} rows={2} className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="Explica por qué el emisor no coincide con el catálogo." />
-                  </label>
-                  <div className="md:col-span-2">
-                    <button type="button" disabled={actingId !== null} onClick={() => void requestIssuer(selected)} className="rounded-lg bg-slate-900 px-4 py-2.5 font-semibold text-white disabled:opacity-50">
-                      Enviar solicitud al administrador
-                    </button>
-                  </div>
-                </div>
-              )}
-            </section>
-          )}
-
-          {selected.issuer_url && (
-            <a href={selected.issuer_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">
-              Sitio del emisor
-            </a>
-          )}
-          {selected.source_url && (
-            <a href={selected.source_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">
-              Enlace de verificación declarado
-            </a>
-          )}
-          <p className="text-sm text-slate-500">
-            Origen: <span className="font-semibold text-slate-700">{sourceLabel(selected)}</span>
-          </p>
-          {selected.latest_comment && (
-            <p className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-slate-700">
-              <strong>Último comentario:</strong> {selected.latest_comment}
-            </p>
-          )}
-
-          <div>
-            <h4 className="mb-2 font-semibold text-slate-900">Evidencia adjunta</h4>
-            <div className="flex flex-wrap gap-2">
-              {selected.evidences.map((evidence) => (
-                <button
-                  key={evidence.id}
-                  type="button"
-                  disabled={actingId !== null}
-                  onClick={() => void openEvidence(selected, evidence)}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-blue-700 disabled:opacity-50"
-                >
-                  {evidence.original_filename || "Abrir enlace de evidencia"}
-                </button>
-              ))}
-            </div>
-            {selected.evidences.length === 0 && (
-              <p className="text-sm text-gray-500">No hay evidencia adjunta.</p>
-            )}
-          </div>
-
-          {preview && (
-            <div className="space-y-3 rounded-xl border bg-slate-50 p-3" aria-live="polite">
-              <a
-                href={preview.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-blue-600 underline"
-              >
-                <ExternalLink size={16} aria-hidden="true" />
-                Abrir evidencia en otra pestaña
-              </a>
-              {evidencePreviewKind(preview.evidence) === "image" && !previewError && (
-                // Temporary signed URLs must be rendered directly, without Next image caching.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={preview.url}
-                  src={preview.url}
-                  alt="Certificado adjunto por el estudiante"
-                  decoding="async"
-                  onError={() => setPreviewError(true)}
-                  className="max-h-[650px] w-full rounded-lg border border-slate-200 bg-white object-contain"
-                />
-              )}
-              {evidencePreviewKind(preview.evidence) === "pdf" && (
-                <iframe
-                  src={preview.url}
-                  title="Certificado PDF adjunto"
-                  className="h-[650px] w-full rounded-lg border border-slate-200 bg-white"
-                />
-              )}
-              {evidencePreviewKind(preview.evidence) === "link" && (
-                <p className="text-sm text-slate-600">Esta evidencia se abrirá mediante el enlace de verificación.</p>
-              )}
-              {previewError && (
-                <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-rose-700">
-                  <p>No se pudo cargar la imagen. El acceso temporal puede haber vencido.</p>
-                  <button
-                    type="button"
-                    onClick={() => void openEvidence(selected, preview.evidence)}
-                    className="rounded-md border border-rose-200 bg-white px-3 py-1.5 font-semibold text-rose-700"
-                  >
-                    Renovar vista previa
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {(selected.status === "PENDING" || selected.status === "RESUBMITTED") && (
-            <button
-              type="button"
-              disabled={actingId !== null}
-              onClick={() => void decide(selected, "START_REVIEW")}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
-            >
-              Tomar revisión
-            </button>
-          )}
-
-          {selected.status === "UNDER_REVIEW" && (
-            <div className="space-y-3 border-t pt-4">
-              <label htmlFor="review-comment" className="block font-semibold text-slate-900">
-                Comentario para el estudiante
-              </label>
-              <textarea
-                id="review-comment"
-                value={comment}
-                onChange={(event) => setComment(event.target.value)}
-                maxLength={2000}
-                disabled={actingId !== null}
-                rows={3}
-                placeholder="Indica el motivo del rechazo o las correcciones necesarias."
-                className="w-full rounded-lg border border-slate-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
-              />
-              <p className="text-sm text-gray-500">
-                Obligatorio al observar o rechazar. El comentario quedará visible para el estudiante.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {(
-                  [
-                    ["APPROVE", "Aprobar", "bg-blue-600 text-white hover:bg-blue-700"],
-                    ["OBSERVE", "Observar", "bg-blue-50 text-blue-800 hover:bg-blue-100"],
-                    ["REJECT", "Rechazar", "bg-slate-100 text-slate-700 hover:bg-slate-200"],
-                  ] as const
-                ).map(([action, label, color]) => (
-                  <button
-                    key={action}
-                    type="button"
-                    disabled={actingId !== null}
-                    onClick={() => void decide(selected, action)}
-                    className={`rounded-lg px-4 py-2 font-semibold disabled:opacity-50 ${color}`}
-                  >
-                    {actingId === selected.id ? "Guardando…" : label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setHistoryId(selected.id)}
-            className="text-sm font-semibold text-blue-600"
-          >
-            Ver historial de decisiones
-          </button>
-        </section>
-      )}
-
       <AsyncState
         loading={loading}
         error={records.length ? null : error}
@@ -775,34 +779,38 @@ function ValidationsContent() {
           {visibleRecords.map((record) => {
             const priority = priorityFor(record, currentTime ?? 0);
             return (
-              <button
-                key={record.id}
-                type="button"
-                disabled={actingId !== null}
-                onClick={() => selectRecord(record)}
-                className="group flex w-full items-center gap-5 rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition hover:border-blue-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50"
-              >
-                <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
-                  <Clock3 aria-hidden="true" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-bold text-gray-900">{record.credential_name}</h3>
-                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${statusClass(record.status)}`}>
-                      {statusLabel(record.status)}
-                    </span>
-                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${priorityClass(priority)}`}>
-                      Prioridad {priorityLabel(priority)}
-                    </span>
+              <div key={record.id}>
+                <button
+                  type="button"
+                  aria-expanded={selectedId === record.id}
+                  aria-controls={selectedId === record.id ? `validation-detail-${record.id}` : undefined}
+                  disabled={actingId !== null}
+                  onClick={() => selectRecord(record)}
+                  className="group flex w-full items-center gap-5 rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition hover:border-blue-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50"
+                >
+                  <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
+                    <Clock3 aria-hidden="true" />
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {record.student_name || record.student_key} · {record.issuer_name} · {sourceLabel(record)} · {caseTypeLabel(record)} · Actualizado {formatDateTime(record.updated_at)}
-                  </p>
-                </div>
-                <span className="shrink-0 text-sm font-semibold text-blue-600 group-hover:underline">
-                  Ver envío
-                </span>
-              </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-bold text-gray-900">{record.credential_name}</h3>
+                      <span className={`rounded-full px-2 py-1 text-xs font-bold ${statusClass(record.status)}`}>
+                        {statusLabel(record.status)}
+                      </span>
+                      <span className={`rounded-full px-2 py-1 text-xs font-bold ${priorityClass(priority)}`}>
+                        Prioridad {priorityLabel(priority)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {record.student_name || record.student_key} · {record.issuer_name} · {sourceLabel(record)} · {caseTypeLabel(record)} · Actualizado {formatDateTime(record.updated_at)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-blue-600 group-hover:underline">
+                    {selectedId === record.id ? "Ocultar detalle" : "Ver envío"}
+                  </span>
+                </button>
+                {selectedId === record.id && renderSelectedDetail()}
+              </div>
             );
           })}
         </section>

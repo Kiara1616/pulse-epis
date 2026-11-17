@@ -528,9 +528,14 @@ test("validador abre el envío, revisa imagen y observa con correcciones", async
     await route.fulfill({ json: { status: "OBSERVED" } });
   });
   await page.goto("/validaciones");
-  await page.getByRole("button", { name: /Power BI.*Ver envío/ }).click();
+  const validationCard = page.getByRole("button", { name: /Power BI/ }).first();
+  await validationCard.click();
   const detail = page.getByRole("region", { name: "Detalle del envío" });
   await expect(detail.getByText("DC-123")).toBeVisible();
+  await expect(validationCard.locator("xpath=following-sibling::*[1]")).toHaveAttribute(
+    "aria-label",
+    "Detalle del envío",
+  );
   await expect(detail.getByText("Modelado (Intermedio)")).toBeVisible();
   await expect(detail.getByRole("img", { name: "Certificado adjunto por el estudiante" })).toBeVisible();
   await detail.getByRole("button", { name: "Observar", exact: true }).click();
