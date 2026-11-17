@@ -95,3 +95,40 @@ test("expiration, critical severity, and invalid reports remain blocking", () =>
     /informe de vulnerabilidades válido/,
   );
 });
+
+test("known development-only glob advisories are temporary and explicit", () => {
+  const report = {
+    vulnerabilities: {
+      picomatch: {
+        severity: "high",
+        nodes: ["node_modules/picomatch"],
+        via: [{
+          url: "https://github.com/advisories/GHSA-fc5q-39xc-vjpf",
+          name: "picomatch",
+        }],
+      },
+    },
+  };
+  const lockfile = {
+    packages: {
+      "node_modules/picomatch": { dev: true, version: "4.0.7" },
+    },
+  };
+
+  assert.deepEqual(
+    evaluateAudit(report, lockfile, "2026-11-17"),
+    { allowlisted: ["picomatch"], unapproved: [] },
+  );
+  assert.deepEqual(
+    evaluateAudit(report, { packages: { "node_modules/picomatch": { dev: false, version: "4.0.7" } } }, "2026-11-17").unapproved.map(
+      ({ packageName }) => packageName,
+    ),
+    ["picomatch"],
+  );
+  assert.deepEqual(
+    evaluateAudit(report, lockfile, "2027-01-01").unapproved.map(
+      ({ packageName }) => packageName,
+    ),
+    ["picomatch"],
+  );
+});

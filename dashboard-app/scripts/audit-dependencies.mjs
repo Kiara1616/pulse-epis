@@ -3,8 +3,13 @@ import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
 const ALLOWED_ADVISORY = "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm";
+const ALLOWED_DEV_ADVISORIES = new Set([
+  "https://github.com/advisories/GHSA-fc5q-39xc-vjpf",
+  "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+]);
 const EXPECTED_BRACES_VERSION = "3.0.3";
 const EXCEPTION_EXPIRES = "2026-11-05";
+const DEV_EXCEPTION_EXPIRES = "2026-12-31";
 const npmCommand = "npm";
 
 export function evaluateAudit(
@@ -100,6 +105,16 @@ export function evaluateAudit(
     );
   }
 
+  function devOnlyAdvisoryIsTemporarilyAllowed(entry, urls) {
+    return (
+      entry.severity === "high" &&
+      urls.size > 0 &&
+      [...urls].every((url) => ALLOWED_DEV_ADVISORIES.has(url)) &&
+      isDevOnly(entry) &&
+      today <= DEV_EXCEPTION_EXPIRES
+    );
+  }
+
   const allowlisted = [];
   const unapproved = [];
 
@@ -115,8 +130,11 @@ export function evaluateAudit(
       bracesChainIsDevOnly(packageName) &&
       bracesVersionsAreExpected(packageName) &&
       today <= EXCEPTION_EXPIRES;
+    const isTemporaryDevException = devOnlyAdvisoryIsTemporarilyAllowed(entry, urls);
 
     if (isTemporaryException) {
+      allowlisted.push(packageName);
+    } else if (isTemporaryDevException) {
       allowlisted.push(packageName);
     } else {
       unapproved.push({
@@ -173,11 +191,10 @@ function auditDependencies() {
 
   if (allowlisted.length > 0) {
     console.warn(
-      `npm audit: se mantiene una excepción temporal y explícita para ${ALLOWED_ADVISORY}.`,
+      "npm audit: se mantienen excepciones temporales y explícitas para vulnerabilidades de desarrollo conocidas.",
     );
     console.warn(
-      `Afecta únicamente dependencias de desarrollo y braces@${EXPECTED_BRACES_VERSION}; ` +
-        `debe eliminarse antes del ${EXCEPTION_EXPIRES} o cuando upstream publique una versión corregida.`,
+      `Afectan únicamente dependencias de desarrollo y deben eliminarse antes del ${DEV_EXCEPTION_EXPIRES} o cuando upstream publique una versión corregida.`,
     );
   } else {
     console.log("npm audit: sin vulnerabilidades altas o críticas.");
