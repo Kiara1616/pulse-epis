@@ -38,6 +38,7 @@ class LinkedInSyncResponse(BaseModel):
     profile_candidates: int
     publication_candidates: int
     created: int
+    updated: int = 0
     duplicates: int
     status: Literal["SUCCEEDED", "PARTIAL", "FAILED"]
     message: str

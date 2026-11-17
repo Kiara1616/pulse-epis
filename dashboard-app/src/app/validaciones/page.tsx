@@ -140,6 +140,22 @@ function sourceLabel(record: ValidationRecord) {
   return "Registro manual";
 }
 
+function sourceLinkLabel(record: ValidationRecord) {
+  if (record.source_kind === "LINKEDIN_PUBLICATION") return "Abrir publicación de LinkedIn";
+  if (record.source_kind === "LINKEDIN_PROFILE") {
+    try {
+      const parsed = record.source_url ? new URL(record.source_url) : null;
+      if (parsed?.hostname.toLowerCase().endsWith("linkedin.com") && parsed.pathname.toLowerCase().startsWith("/in/")) {
+        return "Abrir perfil de LinkedIn (referencia)";
+      }
+    } catch {
+      // Keep the generic label when a legacy record contains an invalid URL.
+    }
+    return "Abrir credencial enlazada";
+  }
+  return "Enlace de verificación declarado";
+}
+
 function priorityFor(record: ValidationRecord, now: number): Priority {
   if (record.status === "OBSERVED" || record.status === "RESUBMITTED") return "HIGH";
   if (
@@ -508,8 +524,13 @@ function ValidationsContent() {
         )}
         {selected.source_url && (
           <a href={selected.source_url} target="_blank" rel="noopener noreferrer" className="block text-blue-600 underline">
-            Enlace de verificación declarado
+            {sourceLinkLabel(selected)}
           </a>
+        )}
+        {selected.source_kind === "LINKEDIN_PROFILE" && sourceLinkLabel(selected) === "Abrir perfil de LinkedIn (referencia)" && (
+          <p className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-slate-600">
+            Apify solo encontró el perfil de LinkedIn. Para validar esta certificación se necesita el enlace específico de la publicación o de la credencial.
+          </p>
         )}
         <p className="text-sm text-slate-500">
           Origen: <span className="font-semibold text-slate-700">{sourceLabel(selected)}</span>

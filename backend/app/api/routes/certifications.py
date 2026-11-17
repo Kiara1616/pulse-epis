@@ -362,6 +362,7 @@ def sync_linkedin_profile(
             profile_candidates=report.profile_candidates,
             publication_candidates=report.publication_candidates,
             created=report.created,
+            updated=report.updated,
             duplicates=report.duplicates,
             status=report.status,
             message=report.message,

@@ -199,13 +199,14 @@ function StudentProfileContent() {
       try {
         const report = await apiFetch<{
           created: number;
+          updated?: number;
           duplicates: number;
           profile_candidates: number;
           publication_candidates: number;
           message: string;
         }>("/certifications/linkedin/sync", { method: "POST" });
         setLinkedinMessage(
-          `${report.message} Nuevos: ${report.created}; repetidos: ${report.duplicates}.`,
+          `${report.message} Nuevos: ${report.created}; enlaces actualizados: ${report.updated ?? 0}; repetidos: ${report.duplicates}.`,
         );
         await loadCertifications();
         await loadLinkedInProfile();
@@ -240,11 +241,12 @@ function StudentProfileContent() {
     try {
       const report = await apiFetch<{
         created: number;
+        updated?: number;
         duplicates: number;
         message: string;
       }>(`/certifications/linkedin/sync${force ? "?force=true" : ""}`, { method: "POST" });
       setLinkedinMessage(
-        `${report.message} Nuevos: ${report.created}; repetidos: ${report.duplicates}.`,
+        `${report.message} Nuevos: ${report.created}; enlaces actualizados: ${report.updated ?? 0}; repetidos: ${report.duplicates}.`,
       );
       await loadCertifications();
       await loadLinkedInProfile();

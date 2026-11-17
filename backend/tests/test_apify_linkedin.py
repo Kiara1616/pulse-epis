@@ -47,6 +47,49 @@ def test_profile_certifications_are_normalized_for_validation():
     assert "AWS" in candidate.skills
 
 
+def test_profile_url_does_not_override_a_specific_credential_link():
+    candidates = normalize_profile_certifications(
+        {
+            "certifications": [
+                {
+                    "name": "AWS Academy Graduate",
+                    # Some Apify actor versions expose the profile in ``url``.
+                    "url": "https://www.linkedin.com/in/kiara-zapana",
+                    "credentialUrl": "https://www.credly.com/badges/aws-002",
+                }
+            ]
+        },
+        profile_url="https://www.linkedin.com/in/kiara-zapana",
+        today=date(2026, 11, 15),
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].source_url == "https://www.credly.com/badges/aws-002"
+
+
+def test_publication_profile_url_is_not_used_as_post_evidence():
+    candidates = normalize_publication_candidates(
+        [
+            {
+                "id": "activity-profile-only",
+                "text": "I completed a new certification.",
+                "url": "https://www.linkedin.com/in/kiara-zapana",
+            },
+            {
+                "id": "activity-direct",
+                "text": "I completed a new certification.",
+                "url": "https://www.linkedin.com/in/kiara-zapana",
+                "postUrl": "https://www.linkedin.com/posts/kiara-zapana_activity-direct",
+            },
+        ],
+        profile_url="https://www.linkedin.com/in/kiara-zapana",
+        today=date(2026, 11, 15),
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].source_url.endswith("activity-direct")
+
+
 def test_publications_only_create_candidates_for_credential_announcements():
     candidates = normalize_publication_candidates(
         [

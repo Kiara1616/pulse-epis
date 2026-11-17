@@ -270,6 +270,105 @@ def _url(value: Any) -> str | None:
     return text
 
 
+def _same_url(left: str | None, right: str | None) -> bool:
+    """Compare links without query strings or a trailing slash."""
+
+    left_url = _url(left)
+    right_url = _url(right)
+    if left_url is None or right_url is None:
+        return False
+    left_parts = urlsplit(left_url)
+    right_parts = urlsplit(right_url)
+    return (
+        left_parts.scheme.casefold(),
+        (left_parts.hostname or "").casefold(),
+        left_parts.path.rstrip("/").casefold(),
+    ) == (
+        right_parts.scheme.casefold(),
+        (right_parts.hostname or "").casefold(),
+        right_parts.path.rstrip("/").casefold(),
+    )
+
+
+def _nested_mappings(item: Mapping[str, Any], *keys: str) -> tuple[Mapping[str, Any], ...]:
+    """Return the item plus common nested credential objects used by actors."""
+
+    nested: list[Mapping[str, Any]] = [item]
+    for key in keys:
+        value = item.get(key)
+        if isinstance(value, Mapping):
+            nested.append(value)
+    return tuple(nested)
+
+
+def _specific_source_url(item: Mapping[str, Any], *, profile_url: str) -> str:
+    """Prefer a credential/post permalink over the actor's generic profile URL."""
+
+    containers = _nested_mappings(
+        item,
+        "credential",
+        "certificate",
+        "certification",
+        "badge",
+        "license",
+        "details",
+    )
+    # These fields identify the credential itself.  They must be checked before
+    # generic ``url`` fields because some actors expose the profile URL there.
+    direct_keys = (
+        "credentialUrl",
+        "credentialURL",
+        "credential_url",
+        "verificationUrl",
+        "verificationURL",
+        "verification_url",
+        "certificateUrl",
+        "certificateURL",
+        "certificate_url",
+        "badgeUrl",
+        "badgeURL",
+        "badge_url",
+        "licenseUrl",
+        "licenseURL",
+        "license_url",
+        "verificationLink",
+        "verification_link",
+        "permalink",
+        "permalinkUrl",
+        "permalink_url",
+        "shareUrl",
+        "share_url",
+    )
+    for key in direct_keys:
+        for container in containers:
+            candidate = _url(container.get(key))
+            if candidate is not None and not _same_url(candidate, profile_url):
+                return candidate
+
+    # ``url`` is useful for actors that return the direct badge/post URL, but a
+    # profile URL is only a reference and must not replace a specific link.
+    generic_keys = (
+        "url",
+        "linkedinUrl",
+        "linkedinURL",
+        "linkedin_url",
+        "activityUrl",
+        "activityURL",
+        "activity_url",
+        "postUrl",
+        "postURL",
+        "post_url",
+        "link",
+        "href",
+    )
+    for key in generic_keys:
+        for container in containers:
+            candidate = _url(container.get(key))
+            if candidate is not None and not _same_url(candidate, profile_url):
+                return candidate
+    return profile_url
+
+
 def _fingerprint(*parts: str) -> str:
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:40]
 
@@ -315,9 +414,11 @@ def normalize_profile_certifications(
         if not name:
             continue
         issuer = _clean(_first(item, "authority", "issuer", "organization", "organizationName"), 150) or "Por confirmar"
-        source_url = _url(_first(item, "url", "credentialUrl", "verificationUrl", "linkedinUrl")) or profile_url
+        source_url = _specific_source_url(item, profile_url=profile_url)
         external = _clean(_first(item, "licenseNumber", "credentialId", "id"), 200)
-        external = f"linkedin-profile:{_fingerprint(profile_url, external or name, source_url)}"
+        # Keep the identity stable when a later sync enriches the same profile
+        # record with a direct Credly/issuer verification URL.
+        external = f"linkedin-profile:{_fingerprint(profile_url, external or name)}"
         full_text = " ".join((_clean(name), _clean(issuer), _clean(_first(item, "description", "skills"))))
         issued_on = _parse_date(_first(item, "issueDate", "issuedOn", "date"), today)
         expires_on = (
@@ -361,8 +462,8 @@ def normalize_publication_candidates(
         content = _clean(_first(post, "content", "text", "commentary"), 2000)
         if not content or not any(term in content.casefold() for term in _CREDENTIAL_TERMS):
             continue
-        source_url = _url(_first(post, "linkedinUrl", "url", "postUrl"))
-        if source_url is None:
+        source_url = _specific_source_url(post, profile_url=profile_url)
+        if source_url is None or _same_url(source_url, profile_url):
             continue
         external = _clean(_first(post, "id", "activityId"), 200)
         external = f"linkedin-post:{_fingerprint(profile_url, external or source_url)}"
