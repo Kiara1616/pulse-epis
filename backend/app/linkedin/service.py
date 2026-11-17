@@ -11,6 +11,7 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from typing import Protocol
+from urllib.parse import urlsplit
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -62,6 +63,7 @@ class LinkedInSyncReport:
     profile_candidates: int
     publication_candidates: int
     created: int
+    updated: int
     duplicates: int
     status: str
     message: str
@@ -95,6 +97,24 @@ def _safe_error(exc: Exception) -> str:
 
     message = " ".join(str(exc).split())
     return message[:500] or "No se pudo sincronizar el perfil."
+
+
+def _same_url(left: str | None, right: str | None) -> bool:
+    """Compare URLs while ignoring query strings and trailing slashes."""
+
+    if not left or not right:
+        return False
+    left_parts = urlsplit(left)
+    right_parts = urlsplit(right)
+    return (
+        left_parts.scheme.casefold(),
+        (left_parts.hostname or "").casefold(),
+        left_parts.path.rstrip("/").casefold(),
+    ) == (
+        right_parts.scheme.casefold(),
+        (right_parts.hostname or "").casefold(),
+        right_parts.path.rstrip("/").casefold(),
+    )
 
 
 class LinkedInSyncService:
@@ -212,15 +232,92 @@ class LinkedInSyncService:
         finally:
             session.close()
 
-    def _already_imported(self, candidate: LinkedInCandidate, student_id: UUID) -> bool:
+    def _find_imported(
+        self,
+        candidate: LinkedInCandidate,
+        student_id: UUID,
+    ) -> Certification | None:
         session = self._session_factory()
         try:
-            return session.scalar(
-                select(Certification.id).where(
+            existing = session.scalar(
+                select(Certification).where(
                     Certification.student_id == student_id,
                     Certification.source_external_id == candidate.source_external_id,
                 )
-            ) is not None
+            )
+            if existing is not None:
+                return existing
+            # Older syncs included the source URL in source_external_id.  If a
+            # later Apify run discovers a direct Credly/issuer URL, match the
+            # same pending profile certificate by its stable name/date identity
+            # so the evidence is enriched instead of duplicated.
+            if candidate.source_kind != "LINKEDIN_PROFILE":
+                return None
+            return session.scalar(
+                select(Certification)
+                .where(
+                    Certification.student_id == student_id,
+                    Certification.source_kind == "LINKEDIN_PROFILE",
+                    Certification.credential_name == candidate.credential_name,
+                    Certification.issued_on == candidate.issued_on,
+                    Certification.status.in_(
+                        ("PENDING", "UNDER_REVIEW", "OBSERVED", "RESUBMITTED")
+                    ),
+                )
+                .order_by(Certification.created_at.desc())
+                .limit(1)
+            )
+        finally:
+            session.close()
+
+    def _refresh_source_url(
+        self,
+        actor_user_id: UUID,
+        existing: Certification,
+        candidate: LinkedInCandidate,
+        *,
+        profile_url: str,
+    ) -> bool:
+        """Replace a profile-only reference with a direct credential link."""
+
+        if existing.status not in {"PENDING", "UNDER_REVIEW", "OBSERVED", "RESUBMITTED"}:
+            return False
+        if _same_url(existing.source_url, candidate.source_url):
+            return False
+        # Do not overwrite a direct link that a student or validator already
+        # supplied.  Only the generic LinkedIn profile fallback is replaceable.
+        if existing.source_url and not _same_url(existing.source_url, profile_url):
+            return False
+        if _same_url(candidate.source_url, profile_url):
+            return False
+
+        session = self._session_factory()
+        try:
+            with session.begin():
+                certification = session.get(Certification, existing.id)
+                if certification is None:
+                    return False
+                before = {
+                    "source_url": certification.source_url,
+                    "source_external_id": certification.source_external_id,
+                }
+                certification.source_url = candidate.source_url
+                certification.source_external_id = candidate.source_external_id
+                certification.updated_at = _utc_now()
+                _audit(
+                    session,
+                    actor_user_id=actor_user_id,
+                    action="LINKEDIN_EVIDENCE_URL_REFRESHED",
+                    entity_type="CERTIFICATION",
+                    entity_id=certification.id,
+                    before=before,
+                    after={
+                        "source_url": certification.source_url,
+                        "source_external_id": certification.source_external_id,
+                    },
+                )
+                session.flush()
+                return True
         finally:
             session.close()
 
@@ -229,9 +326,30 @@ class LinkedInSyncService:
         actor_user_id: UUID,
         student_id: UUID,
         candidate: LinkedInCandidate,
-    ) -> bool:
-        if self._already_imported(candidate, student_id):
-            return False
+        *,
+        profile_url: str,
+    ) -> str:
+        existing = self._find_imported(candidate, student_id)
+        if existing is not None:
+            if self._refresh_source_url(
+                actor_user_id,
+                existing,
+                candidate,
+                profile_url=profile_url,
+            ):
+                try:
+                    self._certification_service.add_url_evidence(
+                        actor_user_id,
+                        existing.id,
+                        candidate.source_url,
+                    )
+                except Exception:
+                    logger.warning(
+                        "LinkedIn refreshed evidence could not be attached candidate=%s",
+                        candidate.source_external_id,
+                    )
+                return "updated"
+            return "duplicate"
         draft = CertificationDraft(
             issuer_name=candidate.issuer_name,
             issuer_url=candidate.issuer_url,
@@ -247,7 +365,7 @@ class LinkedInSyncService:
         try:
             created = self._certification_service.create_certification(actor_user_id, draft)
         except CertificationDuplicate:
-            return False
+            return "duplicate"
         # A public source link is evidence for review, not proof of approval.
         # The validator still has to inspect it and make the decision.
         try:
@@ -258,7 +376,7 @@ class LinkedInSyncService:
             )
         except Exception:
             logger.warning("LinkedIn evidence could not be attached candidate=%s", candidate.source_external_id)
-        return True
+        return "created"
 
     def sync_profile(self, actor_user_id: UUID, *, force: bool = False) -> LinkedInSyncReport:
         if not self._settings.apify_configured:
@@ -327,11 +445,20 @@ class LinkedInSyncService:
             errors.append(f"publicaciones: {_safe_error(exc)}")
 
         created = 0
+        updated = 0
         duplicates = 0
         for candidate in (*profile_candidates, *publication_candidates):
             try:
-                if self._create_candidate(actor_user_id, student_id, candidate):
+                outcome = self._create_candidate(
+                    actor_user_id,
+                    student_id,
+                    candidate,
+                    profile_url=profile_url,
+                )
+                if outcome == "created":
                     created += 1
+                elif outcome == "updated":
+                    updated += 1
                 else:
                     duplicates += 1
             except Exception as exc:
@@ -363,6 +490,7 @@ class LinkedInSyncService:
             profile_candidates=len(profile_candidates),
             publication_candidates=len(publication_candidates),
             created=created,
+            updated=updated,
             duplicates=duplicates,
             status=final_status,
             message=message,
