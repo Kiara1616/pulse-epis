@@ -135,22 +135,28 @@ function caseTypeLabel(record: ValidationRecord) {
 }
 
 function sourceLabel(record: ValidationRecord) {
+  if (isLinkedInProfileUrl(record.source_url)) return "LinkedIn · perfil (referencia)";
   if (record.source_kind === "LINKEDIN_PROFILE") return "LinkedIn · perfil";
   if (record.source_kind === "LINKEDIN_PUBLICATION") return "LinkedIn · publicación";
   return "Registro manual";
 }
 
+function isLinkedInProfileUrl(sourceUrl: string | null | undefined) {
+  try {
+    const parsed = sourceUrl ? new URL(sourceUrl) : null;
+    return Boolean(
+      parsed?.hostname.toLowerCase().endsWith("linkedin.com") &&
+        parsed.pathname.toLowerCase().startsWith("/in/"),
+    );
+  } catch {
+    return false;
+  }
+}
+
 function sourceLinkLabel(record: ValidationRecord) {
+  if (isLinkedInProfileUrl(record.source_url)) return "Abrir perfil de LinkedIn (referencia)";
   if (record.source_kind === "LINKEDIN_PUBLICATION") return "Abrir publicación de LinkedIn";
   if (record.source_kind === "LINKEDIN_PROFILE") {
-    try {
-      const parsed = record.source_url ? new URL(record.source_url) : null;
-      if (parsed?.hostname.toLowerCase().endsWith("linkedin.com") && parsed.pathname.toLowerCase().startsWith("/in/")) {
-        return "Abrir perfil de LinkedIn (referencia)";
-      }
-    } catch {
-      // Keep the generic label when a legacy record contains an invalid URL.
-    }
     return "Abrir credencial enlazada";
   }
   return "Enlace de verificación declarado";
@@ -527,7 +533,7 @@ function ValidationsContent() {
             {sourceLinkLabel(selected)}
           </a>
         )}
-        {selected.source_kind === "LINKEDIN_PROFILE" && sourceLinkLabel(selected) === "Abrir perfil de LinkedIn (referencia)" && (
+        {sourceLinkLabel(selected) === "Abrir perfil de LinkedIn (referencia)" && (
           <p className="rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-sm text-slate-600">
             Apify solo encontró el perfil de LinkedIn. Para validar esta certificación se necesita el enlace específico de la publicación o de la credencial.
           </p>
