@@ -3,6 +3,7 @@
 from .service import (
     LinkedInProfileView,
     LinkedInSyncReport,
+    LinkedInBatchItemReport,
     LinkedInSyncService,
     LinkedInServiceUnavailable,
     LinkedInSyncCooldown,
@@ -12,6 +13,7 @@ from .service import (
 __all__ = [
     "LinkedInProfileView",
     "LinkedInSyncReport",
+    "LinkedInBatchItemReport",
     "LinkedInSyncService",
     "LinkedInServiceUnavailable",
     "LinkedInSyncCooldown",

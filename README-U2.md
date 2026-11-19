@@ -6,7 +6,9 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 
 **Repositorio:** [Kiara1616/pulse-epis](https://github.com/Kiara1616/pulse-epis)
 
-**Regla de presentación:** la interfaz desplegada consulta únicamente datos publicados del padrón y certificaciones validadas. No se muestra un selector ni una sección de demostración; los fixtures sintéticos quedan restringidos a pruebas automatizadas y no se presentan como resultados institucionales.
+**Regla de presentación:** la interfaz desplegada consulta únicamente datos publicados del padrón y certificaciones validadas. No se muestra un selector de datos demostrativos ni una sección de demostración; el único selector adicional es el lote operativo controlado de LinkedIn descrito abajo. Los fixtures sintéticos quedan restringidos a pruebas automatizadas y no se presentan como resultados institucionales.
+
+**Adenda operativa 19/11/2026:** el flujo de LinkedIn es una captura externa controlada, no un padrón paralelo. El archivo actualizado tiene 39 estudiantes de VII y 30 de VIII; 30 de cada ciclo tienen URL pública. El estudiante confirma su URL en Pulse y administración/validación selecciona hasta cinco perfiles por lote. Apify devuelve metadatos y, si se solicita, publicaciones; cada hallazgo queda `PENDING` con su procedencia. Solo el validador puede convertirlo en `APPROVED`, y solo las aprobaciones llegan a Silver/Gold y a los seis reportes. Los perfiles ya sincronizados se excluyen de la selección normal; una actualización requiere acción explícita. No se muestra una sección de costo en la interfaz. El primer lote productivo aún requiere token server-side y revisión de resultados.
 
 **Estado verificado el 15/11/2026 (hora de Lima):** Render está operativo y `/ready` responde HTTP 200 con el merge `d9f8ff5` desplegado. El ETL productivo `43237986208` terminó `APPLIED` para `2026-II` (corte `2026-11-11`): reporta 310 matrículas activas y cero filas de certificación. Los registros de importación reportan 309 filas aceptadas y cero rechazadas; la migración `0018_roster_reconcile` y la opción **Conciliar ausentes** ya están disponibles para resolver la diferencia sin borrar historia, pero esa carga explícita aún debe ejecutarse. El gráfico de matrícula fue verificado en producción con los ocho periodos UPT/GPAD y el padrón vigente de Pulse resaltado para `2026-II`. El catálogo Radar quedó conectado al feed JSON curado y versionado en Git; el primer `SYNC` productivo se registró con 14 filas omitidas porque ya existían en el catálogo publicado. Las tarjetas se agrupan por proveedor canónico: DataCamp aparece una sola vez con 5 cursos y 4 publicados, y sus enlaces fueron comprobados contra el dominio oficial. Los seis reportes cargan sin errores y aceptan los agrupamientos Año/Mes/Día. Las tres cuentas autorizadas también fueron comprobadas en producción: el administrador conserva su menú de gestión, el validador solo ve validación/reportes y el estudiante solo ve Credenciales/Mi ruta/Talleres. Los datos sintéticos de referencia permanecen deshabilitados en Render.
 
@@ -15,7 +17,7 @@ Este README es el guion técnico de demostración de la segunda unidad. Distingu
 | Requisito de la unidad | Evidencia disponible | Estado real |
 |---|---|---|
 | Arquitectura Data Warehouse / Data Lake | [Diseño DW](docs/proyecto/26-Arquitectura-Data-Warehouse.md), [diagrama](docs/recursos/diagramas/data-warehouse.svg) | Warehouse lógico y ETL funcionan sobre PostgreSQL privado en Render. El Data Lake GCP está definido en Terraform, no desplegado. |
-| ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [workflow semanal Radar](.github/workflows/course-radar-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | ETL productivo aplicado para `2026-II`: 310 matrículas activas y cero certificaciones al corte. La página de publicación coteja el último padrón y ETL, y avisa si el corte está desactualizado o los conteos difieren, sin modificar registros. Radar consulta el feed autorizado versionado en `backend/data/course-catalog-feed.json`; las detecciones no se publican automáticamente. |
+| ETL automatizado en nube | [Reglas ETL](docs/proyecto/14-ETL-y-calidad.md), [workflow diario](.github/workflows/etl-scheduled.yml), [workflow semanal Radar](.github/workflows/course-radar-scheduled.yml), [diagrama](docs/recursos/diagramas/etl-periodico.svg) | ETL productivo aplicado para `2026-II`; la captura LinkedIn es una entrada controlada previa, con candidatos pendientes y sin publicación automática. La página de publicación coteja el último padrón y ETL, y avisa si el corte está desactualizado o los conteos difieren, sin modificar registros. Radar consulta el feed autorizado versionado en `backend/data/course-catalog-feed.json`; las detecciones no se publican automáticamente. |
 | IaC y costos | [Terraform](infra/environments/demo), [estimación](infra/costs/estimate.md), [workflow](.github/workflows/infrastructure.yml) | Terraform valida; `apply`, Cloud Billing e Infracost oficial siguen pendientes para evitar gasto no autorizado. |
 | Diagramas de procesos e infraestructura | [ETL](docs/recursos/diagramas/etl-periodico.svg), [GCP](docs/recursos/diagramas/infraestructura-gcp.svg) | Listos en Mermaid y SVG para exposición. |
 | Seis reportes y filtros temporales | [Rutas de reportes](dashboard-app/src/app/reportes) | Implementados con periodo académico, fecha de corte, cohorte, ciclo y proveedor. El resumen incluye el histórico agregado UPT/GPAD y resalta el padrón vigente de Pulse. |
@@ -50,11 +52,11 @@ El flujo de operación es:
 
 1. Administrador importa el padrón autorizado en Excel o CSV por periodo. Pulse procesa la hoja visible cuyos encabezados coinciden con el contrato; no carga las hojas resumen.
 2. Filas completas pasan validación atómica. Filas incompletas quedan en conciliación: el administrador completa datos con la fuente oficial, confirma una por una o excluye con motivo. No se crean cuentas automáticamente desde un nombre público.
-3. Estudiante declara una certificación y adjunta evidencia.
-4. Validador aprueba, observa o rechaza.
-5. El ETL valida, calcula el hash de fuente y publica un snapshot atómico.
-6. Los seis reportes leen únicamente el snapshot Gold publicado.
-7. Si la fuente no cambia, la corrida es idempotente; si falla calidad, se conserva el último corte válido.
+3. El estudiante declara una certificación y adjunta evidencia, o confirma su URL pública de LinkedIn.
+4. Administración/validación selecciona un lote controlado; Apify devuelve metadatos candidatos, nunca una aprobación.
+5. El validador aprueba, observa o rechaza cada evidencia.
+6. El ETL valida, calcula el hash de fuente y publica un snapshot atómico con aprobaciones.
+7. Los seis reportes leen únicamente el snapshot Gold publicado. Si la fuente no cambia, la corrida es idempotente; si falla calidad, se conserva el último corte válido.
 
 ### Matrícula histórica y padrón vigente
 

@@ -4,6 +4,7 @@ flowchart TB
   BE -->|Unix socket| SQL[(Cloud SQL PostgreSQL 16)]
   BE -->|Cloud Storage FUSE| EV[(Bucket evidencias privadas)]
   BE --> SM[Secret Manager]
+  BE -->|HTTPS con token server-side| AP[Apify<br/>perfil público consentido]
   CS[Cloud Scheduler] -->|OAuth| ETL[Cloud Run Job ETL]
   ETL --> SQL
   ETL --> SM
@@ -15,6 +16,7 @@ flowchart TB
   BE --> MON
   ETL --> MON
   MON --> ALERT[Alertas ETL y presupuesto 50/80/100]
+  NOTE[Actualidad: Render ejecuta el MVP.<br/>GCP es la arquitectura objetivo versionada en Terraform.] -.-> FE
   TF[Terraform + estado remoto GCS] --> FE
   TF --> BE
   TF --> SQL

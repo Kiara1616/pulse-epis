@@ -1,6 +1,6 @@
 # Obtención de datos y trazabilidad para Pulse EPIS
 
-**Estado al 12/11/2026:** este documento distingue las fuentes que ya alimentan Pulse EPIS de las integraciones propuestas. Los indicadores académicos nacen de datos institucionales y decisiones verificadas; los catálogos externos sirven para recomendar cursos, no para afirmar que un estudiante obtuvo una certificación.
+**Estado al 19/11/2026:** este documento distingue las fuentes que ya alimentan Pulse EPIS de las integraciones propuestas. Los indicadores académicos nacen de datos institucionales y decisiones verificadas. Los catálogos externos sirven para recomendar cursos; LinkedIn solo puede aportar candidatos de certificación cuando el estudiante confirmó su URL y el administrador/validador seleccionó el perfil.
 
 ## Fuentes y responsables
 
@@ -12,6 +12,7 @@
 | Oferta de cursos y talleres | El administrador revisa el curso, asigna audiencia/ciclos y publica; puede crear un taller asociado | Administración EPIS | Al cambiar la oferta | Catálogo, estado, proveedor, URL, audiencia y solicitudes con cupo | Flujo implementado |
 | Cursos externos de Cisco, DataCamp u otros | Feed JSON/RSS público autorizado; DataCamp también puede conectarse mediante su API oficial de catálogo con una clave organizacional | Administración EPIS | Workflow semanal y sincronización manual | URL canónica, título, proveedor, fecha consultada, auditoría y estado `DETECTED`; el admin revisa antes de publicar | El adaptador DataCamp usa un secreto de entorno; falta obtener la clave organizacional y registrar la fuente en producción. No hay scraping HTML. |
 | Lista pública de alumnos EPIS | Puede usarse como referencia de nombres/ciclos; una fila incompleta se carga en la bandeja y el administrador la completa con el padrón interno | Administración EPIS | Por periodo | No crear usuario ni matrícula por coincidencia de nombre; exigir correo institucional y código confirmados | Conciliación individual implementada localmente; requiere verificación de administración |
+| Metadatos públicos de LinkedIn | El estudiante guarda/autoriza su URL; administración o validación selecciona un lote de hasta cinco perfiles con cuenta Pulse vinculada. Apify devuelve certificaciones del perfil y publicaciones identificables cuando el actor las expone | Estudiante + administración/validador | Bajo demanda; actualización explícita o corte programado controlado | URL normalizada, estado de sincronización, hash/identificador de origen, deduplicación y candidatos `PENDING`; no crea identidades ni aprueba credenciales | Integración implementada en código; ejecución productiva pendiente de configurar el token server-side y seleccionar el primer lote |
 
 El **Excel no se convierte directamente en un dashboard**: primero se previsualiza; las filas completas pasan importación atómica y las incompletas se guardan en una bandeja. El administrador confirma cada pendiente antes de incorporarlo. El correo identifica la cuenta institucional; el código identifica el registro académico. Una persona fuera del padrón activo no debe aparecer como estudiante autenticado ni incrementar la población activa.
 
@@ -43,6 +44,12 @@ flowchart LR
 ```
 
 El ETL lee la base operacional: estudiantes matriculados, certificaciones, emisores, habilidades y decisiones. Genera un **snapshot** identificado por periodo, fecha de corte y hash de fuente. Repetir la misma entrada debe devolver la misma corrida; un error no reemplaza el último corte válido. Los seis reportes deben leer hechos publicados del corte seleccionado y mostrar si la fuente es demostrativa o institucional. Véanse [reglas ETL](14-ETL-y-calidad.md) y [diccionario de indicadores](09-Diccionario-indicadores.md).
+
+### Sincronización controlada de LinkedIn
+
+La sincronización no recorre automáticamente los 328 estudiantes. El padrón de trabajo identifica 39 estudiantes de VII y 30 de VIII; 30 de VII y 30 de VIII tienen URL en el archivo actualizado. La interfaz permite filtrar por ciclo y estado, muestra nombre, código, correo, URL y última sincronización, y solo habilita filas con URL y cuenta Pulse vinculada. Una selección contiene como máximo cinco perfiles; los ya sincronizados no se repiten salvo que el operador elija **Actualizar seleccionados**. El modo normal consulta el perfil; la lectura de publicaciones es opcional porque implica una consulta adicional.
+
+Apify no es una fuente institucional ni una autoridad de validación. Cada resultado se guarda como candidato con enlace de evidencia y origen `LINKEDIN_PROFILE` o `LINKEDIN_PUBLICATION`, queda `PENDING` y debe ser revisado por el validador. Solo una decisión `APPROVED` puede entrar en Silver/Gold y modificar los indicadores. Si el actor no entrega un enlace directo a la publicación o certificado, el candidato conserva el perfil como referencia y el validador solicita al estudiante una URL de verificación o archivo.
 
 ## Obtención externa: qué aporta y qué no
 

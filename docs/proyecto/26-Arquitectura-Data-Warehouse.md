@@ -1,6 +1,6 @@
 # Arquitectura Data Warehouse de Pulse EPIS
 
-**Alcance físico actual:** PostgreSQL privado en Render conserva tablas operativas y dos tablas de hechos analíticos que publica el ETL. La exportación JSONL seudonimizada con manifiesto existe en el comando ETL cuando se configura `PULSE_DATA_LAKE_PATH`; el endpoint programado de Render no la ejecuta ni conserva un Data Lake persistente. Terraform define la alternativa GCP con Cloud Storage, pero no se ha aplicado porque el proyecto no tiene facturación. BigQuery Sandbox contiene solo datos sintéticos. Las dimensiones lógicas se obtienen de tablas canónicas y atributos de los hechos.
+**Alcance físico actual:** PostgreSQL privado en Render conserva tablas operativas y dos tablas de hechos analíticos que publica el ETL. La exportación JSONL seudonimizada con manifiesto existe en el comando ETL cuando se configura `PULSE_DATA_LAKE_PATH`; el endpoint programado de Render no la ejecuta ni conserva un Data Lake persistente. Terraform define la alternativa GCP con Cloud Storage, pero no se ha aplicado porque el proyecto no tiene facturación. BigQuery Sandbox contiene solo datos sintéticos. Las dimensiones lógicas se obtienen de tablas canónicas y atributos de los hechos. La integración de LinkedIn/Apify es una fuente externa opcional: solo genera candidatos con procedencia y estado `PENDING`; no sustituye el padrón ni llega a Gold sin una decisión del validador.
 
 ## Lectura en capas Bronze, Silver y Gold
 
@@ -25,6 +25,8 @@ Estos son **niveles de transformación**, no tres servicios que deban comprarse.
 flowchart LR
     R[Padrón EPIS por periodo] --> O[(PostgreSQL operacional)]
     C[Declaración y evidencia de estudiante] --> O
+    LI[URL LinkedIn confirmada] --> AP[Apify controlado<br/>hasta 5 perfiles]
+    AP --> PC[Candidatos PENDING] --> O
     V[Decisión del validador] --> O
     O --> E[ETL: extracción, calidad y hash]
     E --> L[(etl_runs y etl_rejections)]
@@ -71,7 +73,7 @@ flowchart TD
     S[Programador semanal] --> T[Determinar ayer en America/Lima]
     T --> P{Un periodo OPEN contiene la fecha}
     P -->|No| X[Error y alerta; conservar último corte]
-    P -->|Sí| E[Extraer fuente operacional]
+    P -->|Sí| E[Extraer fuente operacional y candidatos]
     E --> Q[Validar, normalizar y calcular hash]
     Q --> I{Mismo hash y corte publicados}
     I -->|Sí| R[Retornar corrida idempotente]

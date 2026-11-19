@@ -4,18 +4,26 @@
 **Plataforma elegida:** Google Cloud Platform
 **Regla de cierre:** una configuración local no equivale a un recurso desplegado. Los estados distinguen implementación, validación local y evidencia cloud.
 
+**Adenda 19/11/2026 — flujo mixto:** Render continúa siendo el MVP operativo, PostgreSQL la zona operacional y GCP la arquitectura objetivo declarada en Terraform. LinkedIn/Apify es una fuente externa opcional para candidatos: el padrón conserva la identidad, la URL se confirma en Pulse, se seleccionan hasta cinco perfiles por lote y el validador debe aprobar antes de que el ETL los lleve a Gold. En el archivo actualizado se identificaron 39 estudiantes de VII y 30 de VIII, con 30 URLs de cada ciclo. La primera ejecución productiva queda pendiente de configurar el token server-side y revisar sus resultados; no se inventan certificaciones ni se expone una sección de costo en la interfaz.
+
 El proyecto separado [BigQuery Sandbox](../../infra/bigquery/README.md) demuestra sin facturación dos tablas de hechos con datos sintéticos y una consulta por fecha de corte. No está conectado a la base de Render y no sustituye Cloud SQL, Cloud Storage ni el ETL programado de esta arquitectura objetivo.
 
 El workflow diario a las 03:00 de Lima (08:00 UTC; GitHub Actions puede iniciar con retraso) `.github/workflows/etl-scheduled.yml` llama por HTTPS a un endpoint ETL de Render. GitHub conserva la credencial del programador y Pulse accede a PostgreSQL por la red privada de Render. El workflow productivo `43237986208` terminó `APPLIED` para `2026-II`, corte `2026-11-11`; publicó 310 matrículas activas y cero filas de certificación. Las importaciones vigentes del padrón registran 309 filas aceptadas y 0 rechazadas; la diferencia corresponde al código legado `98018499`, que debe confirmarse antes de conciliarse. El workflow semanal `.github/workflows/course-radar-scheduled.yml` consulta el feed JSON autorizado y versionado por administración. El primer `SYNC` productivo registró 0 candidatos nuevos, 0 actualizados, 0 archivados y 14 omitidos por duplicidad; no extrae HTML ni publica detecciones sin revisión.
 
 ```mermaid
-flowchart LR
-    G[GitHub Actions diario 03:00 Lima] -->|HTTPS y secreto| R[Pulse EPIS en Render]
-    R -->|red interna| P[(PostgreSQL Render)]
-    P --> E[ETL por periodo y corte]
-    E --> F[(Hechos analíticos)]
-    F --> D[Seis reportes BI]
-    E --> A[Resultado y artefacto de la corrida]
+flowchart TD
+    U[Perfiles seleccionados] --> A[Apify]
+    A --> C[Candidatos pendientes]
+    C --> V[Validación institucional]
+    V --> G[Gold aprobado]
+```
+
+```mermaid
+flowchart TD
+    S[GitHub Actions diario] --> R[Pulse en Render]
+    R --> P[(PostgreSQL)]
+    P --> E[ETL por corte]
+    E --> D[Reportes BI]
 ```
 
 ## Matriz de cumplimiento
@@ -23,7 +31,7 @@ flowchart LR
 | Requisito | Implementación disponible | Evidencia local | Brecha para cierre total | Estado |
 |---|---|---|---|---|
 | Arquitectura Data Warehouse o Data Lake | PostgreSQL de Render como warehouse operacional/analítico lógico; GCP Cloud SQL y Cloud Storage como diseño futuro de DW/Data Lake | Mermaid, SVG, modelo de hechos y exportación JSONL probada | Captura de buckets, Cloud SQL y una partición creada en GCP | Diseño local listo; GCP no desplegado |
-| ETL automatizado en nube | ETL diario por GitHub Actions dentro de Render; futuro Cloud Run Job/Cloud Scheduler en Terraform; Radar con workflow semanal para el feed autorizado | API, workflows versionados, suites locales, corrida `43237986208` aplicada y sincronización Radar registrada | Conciliar 309 filas aceptadas contra 310 hechos activos y completar evidencia de certificación | Workflows productivos conectados; conciliación y certificación institucional pendientes |
+| ETL automatizado en nube | ETL diario por GitHub Actions dentro de Render; futuro Cloud Run Job/Cloud Scheduler en Terraform; captura LinkedIn/Apify controlada antes del ETL; Radar con workflow semanal para el feed autorizado | API, workflows versionados, suites locales, corrida `43237986208` aplicada y sincronización Radar registrada | Configurar token, ejecutar lote VII/VIII, validar candidatos y conciliar 309 filas aceptadas contra 310 hechos activos | Workflows productivos conectados; sincronización y certificación institucional pendientes |
 | Infraestructura como código y costos | Terraform para Cloud Run, Cloud SQL, Storage, IAM, secretos, monitoreo, presupuesto y Scheduler | `terraform validate` correcto; USD 11.36 demo y USD 155.69 piloto | `terraform plan`, `apply`, Infracost ligado al plan y factura/Billing Export del piloto | Completo local; cloud pendiente |
 | Diagramas de proceso e infraestructura | Data Warehouse/Data Lake, ETL periódico e infraestructura GCP | Tres fuentes Mermaid y tres SVG renderizados | Comparación visual contra recursos desplegados | Completo local |
 | Seis reportes con tiempo | Panorama, Evolución, Certificaciones, Habilidades, Cohortes y Calidad | Rutas, API día/mes/año, filtros temporales y revisión conectada en Render | Registrar certificación real aprobada para poblar los indicadores de credenciales | Implementado y verificado; certificación institucional pendiente |
@@ -40,6 +48,7 @@ flowchart LR
 - Costos: escenario demo USD 11.36/mes y piloto USD 155.69/mes, antes de impuestos y egreso no previsto.
 - Aplicación desplegada: `https://pulse-epis-rirr.onrender.com/`; frontend y API responden en el mismo origen.
 - Indicadores: los seis reportes y el histórico de matrícula fueron abiertos en producción; los datos sintéticos permanecen deshabilitados en Render.
+- Captura LinkedIn: el backend y la interfaz de lote están implementados y probados localmente; no se llamó a Apify desde esta revisión porque el token server-side aún no está configurado. Los perfiles ya sincronizados se omiten salvo actualización explícita.
 
 ## Plan de cierre de nube
 

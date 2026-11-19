@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     apify_run_timeout_seconds: int = 90
     apify_max_posts: int = 10
     apify_sync_cooldown_seconds: int = 900
+    # Keep administrator/validator batch extraction bounded.  A batch is
+    # deliberately small so a mistaken selection cannot consume the whole
+    # Apify allowance in one request.
+    apify_batch_max_profiles: int = 5
     local_auth_seed: bool = False
     local_auth_password: SecretStr = SecretStr("pulse-local-demo")
     demo_data_seed: bool = False
@@ -213,6 +217,13 @@ class Settings(BaseSettings):
     def validate_apify_cooldown(cls, value: int) -> int:
         if value < 0 or value > 86_400:
             raise ValueError("apify_sync_cooldown_seconds must be between 0 and 86400")
+        return value
+
+    @field_validator("apify_batch_max_profiles")
+    @classmethod
+    def validate_apify_batch_max_profiles(cls, value: int) -> int:
+        if value < 1 or value > 20:
+            raise ValueError("apify_batch_max_profiles must be between 1 and 20")
         return value
 
     @field_validator("evidence_storage_path")

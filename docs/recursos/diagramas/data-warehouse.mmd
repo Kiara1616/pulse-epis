@@ -4,9 +4,12 @@ flowchart LR
     C[Certificaciones y evidencias]
     V[Validaciones]
     L[Catálogo y oportunidades]
+    LI[URL pública LinkedIn + consentimiento]
   end
+  AP[Apify: extracción controlada de metadatos]
+  PC[Candidatos de certificación PENDING]
   subgraph Operational[Zona operacional]
-    PG[(Cloud SQL PostgreSQL)]
+    PG[(PostgreSQL operacional<br/>Render MVP / Cloud SQL objetivo)]
   end
   subgraph Pipeline[Procesamiento]
     JOB[Cloud Run Job ETL]
@@ -35,6 +38,7 @@ flowchart LR
   C --> PG
   V --> PG
   L --> PG
+  LI --> AP --> PC --> PG
   PG --> JOB --> Q
   Q --> P1 --> P2
   P2 --> J1
