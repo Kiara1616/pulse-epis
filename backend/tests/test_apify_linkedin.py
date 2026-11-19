@@ -124,3 +124,49 @@ def test_apify_is_disabled_without_explicit_token():
         apify_enabled=True,
     )
     assert enabled_without_token.apify_configured is False
+
+
+def test_harvestapi_profile_schema_maps_issued_by_and_issued_at():
+    """Use the field names returned by harvestapi/linkedin-profile-scraper."""
+
+    candidates = normalize_profile_certifications(
+        {
+            "certifications": [
+                {
+                    "title": "AWS Academy Graduate - Cloud Data Pipeline Builder",
+                    "issuedAt": "Issued Oct 2026",
+                    "issuedBy": "Amazon Web Services",
+                    "issuedByLink": "https://www.linkedin.com/company/amazon-web-services/",
+                }
+            ]
+        },
+        profile_url="https://www.linkedin.com/in/andre-carbajal",
+        today=date(2026, 11, 19),
+    )
+
+    assert len(candidates) == 1
+    candidate = candidates[0]
+    assert candidate.issuer_name == "Amazon Web Services"
+    assert candidate.issuer_url == "https://www.linkedin.com/company/amazon-web-services/"
+    assert candidate.issued_on == date(2026, 10, 1)
+    assert candidate.source_url == "https://www.linkedin.com/in/andre-carbajal"
+
+
+def test_harvestapi_publication_schema_keeps_direct_post_link():
+    candidates = normalize_publication_candidates(
+        [
+            {
+                "id": "activity-harvestapi",
+                "content": "I earned a new DataCamp certification in Python.",
+                "linkedinUrl": "https://www.linkedin.com/posts/andre-carbajal_activity-harvestapi",
+                "postedAt": "2026-10-20T12:00:00Z",
+            }
+        ],
+        profile_url="https://www.linkedin.com/in/andre-carbajal",
+        today=date(2026, 11, 19),
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].source_url.endswith("activity-harvestapi")
+    assert candidates[0].issuer_name == "DataCamp"
+    assert candidates[0].issued_on == date(2026, 10, 20)

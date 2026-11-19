@@ -50,7 +50,7 @@ class LinkedInBatchRequest(BaseModel):
 
     student_ids: list[UUID] = Field(min_length=1, max_length=20)
     force: bool = False
-    include_publications: bool = False
+    include_publications: bool = True
 
 
 class LinkedInBatchItemResponse(BaseModel):
