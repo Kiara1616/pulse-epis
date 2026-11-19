@@ -70,7 +70,9 @@ export function LinkedInBatchPanel() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
-  const [includePublications, setIncludePublications] = useState(false);
+  // A batch must inspect both the profile's certifications section and its
+  // public posts unless the operator explicitly opts out.
+  const [includePublications, setIncludePublications] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 

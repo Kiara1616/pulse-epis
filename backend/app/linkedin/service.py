@@ -8,8 +8,9 @@ that a validator still makes the official decision.
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Protocol, Sequence
 from urllib.parse import urlsplit
 from uuid import UUID, uuid4
@@ -103,7 +104,7 @@ class LinkedInServiceProtocol(Protocol):
         student_ids: Sequence[UUID],
         *,
         force: bool = False,
-        include_publications: bool = False,
+        include_publications: bool = True,
     ) -> tuple[LinkedInBatchItemReport, ...]:
         """Synchronize an explicit, bounded staff-selected list of students."""
 
@@ -468,7 +469,6 @@ class LinkedInSyncService:
                     {
                         "targetUrls": [profile_url],
                         "maxPosts": self._settings.apify_max_posts,
-                        "postedLimitDate": (date.today() - timedelta(days=365)).isoformat(),
                         "includeQuotePosts": True,
                         "includeReposts": True,
                     },
@@ -537,7 +537,7 @@ class LinkedInSyncService:
         student_ids: Sequence[UUID],
         *,
         force: bool = False,
-        include_publications: bool = False,
+        include_publications: bool = True,
     ) -> tuple[LinkedInBatchItemReport, ...]:
         """Run only an explicit, bounded list selected by staff.
 
@@ -586,11 +586,16 @@ class LinkedInSyncService:
         finally:
             session.close()
 
-        results: list[LinkedInBatchItemReport] = []
+        # Keep deterministic output order, but do not make the HTTP request
+        # wait for five complete profile+posts actor runs one after another.
+        # Each sync_profile call creates its own SQLAlchemy sessions, so these
+        # independent students can safely be processed concurrently.
+        results_by_id: dict[UUID, LinkedInBatchItemReport] = {}
+        eligible: list[tuple[UUID, UUID]] = []
         for student_id in unique_ids:
             student = students.get(student_id)
             if student is None:
-                results.append(
+                results_by_id[student_id] = (
                     LinkedInBatchItemReport(
                         student_id=student_id,
                         status="SKIPPED",
@@ -599,7 +604,7 @@ class LinkedInSyncService:
                 )
                 continue
             if not student.linkedin_url:
-                results.append(
+                results_by_id[student_id] = (
                     LinkedInBatchItemReport(
                         student_id=student_id,
                         status="SKIPPED",
@@ -608,7 +613,7 @@ class LinkedInSyncService:
                 )
                 continue
             if student.linkedin_sync_status == "SUCCEEDED" and not force:
-                results.append(
+                results_by_id[student_id] = (
                     LinkedInBatchItemReport(
                         student_id=student_id,
                         status="SKIPPED",
@@ -617,7 +622,7 @@ class LinkedInSyncService:
                 )
                 continue
             if student.user_id is None:
-                results.append(
+                results_by_id[student_id] = (
                     LinkedInBatchItemReport(
                         student_id=student_id,
                         status="SKIPPED",
@@ -625,50 +630,67 @@ class LinkedInSyncService:
                     )
                 )
                 continue
+            eligible.append((student_id, student.user_id))
+
+        def sync_one(student_id: UUID, user_id: UUID) -> LinkedInBatchItemReport:
             try:
                 report = self.sync_profile(
-                    student.user_id,
+                    user_id,
                     force=force,
                     include_publications=include_publications,
                 )
-                results.append(
-                    LinkedInBatchItemReport(
-                        student_id=student_id,
-                        status=report.status,
-                        message=report.message,
-                        profile_candidates=report.profile_candidates,
-                        publication_candidates=report.publication_candidates,
-                        created=report.created,
-                        updated=report.updated,
-                        duplicates=report.duplicates,
-                    )
+                return LinkedInBatchItemReport(
+                    student_id=student_id,
+                    status=report.status,
+                    message=report.message,
+                    profile_candidates=report.profile_candidates,
+                    publication_candidates=report.publication_candidates,
+                    created=report.created,
+                    updated=report.updated,
+                    duplicates=report.duplicates,
                 )
             except LinkedInSyncCooldown as exc:
-                results.append(
-                    LinkedInBatchItemReport(
-                        student_id=student_id,
-                        status="SKIPPED",
-                        message=str(exc),
-                    )
+                return LinkedInBatchItemReport(
+                    student_id=student_id,
+                    status="SKIPPED",
+                    message=str(exc),
                 )
             except (ValueError, StudentNotProvisioned) as exc:
-                results.append(
-                    LinkedInBatchItemReport(
-                        student_id=student_id,
-                        status="SKIPPED",
-                        message=_safe_error(exc),
-                    )
+                return LinkedInBatchItemReport(
+                    student_id=student_id,
+                    status="SKIPPED",
+                    message=_safe_error(exc),
                 )
             except Exception as exc:
                 logger.warning("LinkedIn batch item failed student=%s", student_id)
-                results.append(
-                    LinkedInBatchItemReport(
-                        student_id=student_id,
-                        status="FAILED",
-                        message=_safe_error(exc),
-                    )
+                return LinkedInBatchItemReport(
+                    student_id=student_id,
+                    status="FAILED",
+                    message=_safe_error(exc),
                 )
-        return tuple(results)
+
+        if eligible:
+            with ThreadPoolExecutor(max_workers=min(len(eligible), self._settings.apify_batch_max_profiles)) as executor:
+                futures = {
+                    executor.submit(sync_one, student_id, user_id): student_id
+                    for student_id, user_id in eligible
+                }
+                for future in as_completed(futures):
+                    student_id = futures[future]
+                    # sync_one converts expected failures into a report.  The
+                    # guard keeps an unexpected executor failure visible as a
+                    # single item instead of losing the whole batch response.
+                    try:
+                        results_by_id[student_id] = future.result()
+                    except Exception as exc:  # pragma: no cover - defensive
+                        logger.warning("LinkedIn batch worker failed student=%s", student_id)
+                        results_by_id[student_id] = LinkedInBatchItemReport(
+                            student_id=student_id,
+                            status="FAILED",
+                            message=_safe_error(exc),
+                        )
+
+        return tuple(results_by_id[student_id] for student_id in unique_ids)
 
 
 class UnavailableLinkedInService:
@@ -693,7 +715,7 @@ class UnavailableLinkedInService:
         student_ids: Sequence[UUID],
         *,
         force: bool = False,
-        include_publications: bool = False,
+        include_publications: bool = True,
     ) -> tuple[LinkedInBatchItemReport, ...]:
         raise LinkedInServiceUnavailable("El servicio de LinkedIn no está disponible.")
 

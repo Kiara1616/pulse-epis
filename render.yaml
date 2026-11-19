@@ -49,7 +49,7 @@ services:
         sync: false
       # LinkedIn import is opt-in; keep the token server-side in Render.
       - key: PULSE_APIFY_ENABLED
-        value: 'false'
+        value: 'true'
       - key: PULSE_APIFY_API_TOKEN
         sync: false
       - key: PULSE_APIFY_PROFILE_ACTOR_ID
@@ -59,7 +59,7 @@ services:
       - key: PULSE_APIFY_RUN_TIMEOUT_SECONDS
         value: '90'
       - key: PULSE_APIFY_MAX_POSTS
-        value: '10'
+        value: '50'
       - key: PULSE_APIFY_SYNC_COOLDOWN_SECONDS
         value: '900'
       - key: PULSE_APIFY_BATCH_MAX_PROFILES
