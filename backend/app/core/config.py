@@ -40,7 +40,10 @@ class Settings(BaseSettings):
     apify_profile_actor_id: str = "harvestapi~linkedin-profile-scraper"
     apify_posts_actor_id: str = "harvestapi~linkedin-profile-posts"
     apify_run_timeout_seconds: int = 90
-    apify_max_posts: int = 10
+    # Harvest up to 50 recent public posts per selected profile. This keeps
+    # the VIII-cycle refresh below the configured Apify allowance while still
+    # covering certificates that are absent from the profile section.
+    apify_max_posts: int = 50
     apify_sync_cooldown_seconds: int = 900
     # Keep administrator/validator batch extraction bounded.  A batch is
     # deliberately small so a mistaken selection cannot consume the whole

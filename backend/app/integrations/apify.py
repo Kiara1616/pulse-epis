@@ -27,6 +27,7 @@ _TERMINAL_STATUSES = {"SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"}
 _CREDENTIAL_TERMS = (
     "certificat",
     "certificad",
+    "certificaci",
     "credential",
     "credencial",
     "badge",
@@ -36,6 +37,18 @@ _CREDENTIAL_TERMS = (
     "acreditad",
     "completé el curso",
     "completed the course",
+    "curso completado",
+    "finalicé",
+    "finalizado",
+    "obtuv",
+    "obten",
+    "obtained",
+    "earned",
+    "achievement",
+    "logro",
+    "aprobé",
+    "aprobado",
+    "passed",
 )
 _ISSUER_ALIASES = (
     ("AWS Skill Builder", ("aws skill builder", "amazon web services", "aws academy", "aws")),
@@ -223,6 +236,23 @@ def _clean(value: Any, maximum: int = 200) -> str:
     return " ".join(str(value or "").strip().split())[:maximum]
 
 
+
+_MONTH_ALIASES = {
+    "jan": 1, "january": 1, "ene": 1, "enero": 1,
+    "feb": 2, "february": 2, "febrero": 2,
+    "mar": 3, "march": 3, "marzo": 3,
+    "apr": 4, "april": 4, "abr": 4, "abril": 4,
+    "may": 5, "mayo": 5,
+    "jun": 6, "june": 6, "junio": 6,
+    "jul": 7, "july": 7, "julio": 7,
+    "aug": 8, "august": 8, "ago": 8, "agosto": 8,
+    "sep": 9, "sept": 9, "september": 9,
+    "set": 9, "septiembre": 9, "setiembre": 9,
+    "oct": 10, "october": 10, "octubre": 10,
+    "nov": 11, "november": 11, "noviembre": 11,
+    "dec": 12, "december": 12, "dic": 12, "diciembre": 12,
+}
+
 def _parse_date(value: Any, fallback: date) -> date:
     if isinstance(value, Mapping):
         direct = _first(value, "date", "text", "iso", "value")
@@ -245,6 +275,19 @@ def _parse_date(value: Any, fallback: date) -> date:
     text = _clean(value, 40)
     if not text:
         return fallback
+    month_names = "|".join(sorted(_MONTH_ALIASES, key=len, reverse=True))
+    named_month = re.search(
+        rf"\b(?:(?P<month>{month_names})[\s,./-]+(?P<year>20\d{{2}})|(?P<year2>20\d{{2}})[\s,./-]+(?P<month2>{month_names}))\b",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if named_month:
+        month_name = (named_month.group("month") or named_month.group("month2")).casefold()
+        year = int(named_month.group("year") or named_month.group("year2"))
+        try:
+            return date(year, _MONTH_ALIASES[month_name], 1)
+        except (KeyError, ValueError):
+            return fallback
     match = re.search(r"(20\d{2})(?:[-/](\d{1,2}))?(?:[-/](\d{1,2}))?", text)
     if match:
         year = int(match.group(1))
@@ -413,14 +456,28 @@ def normalize_profile_certifications(
         name = _clean(_first(item, "name", "title", "credentialName", "certificateName"))
         if not name:
             continue
-        issuer = _clean(_first(item, "authority", "issuer", "organization", "organizationName"), 150) or "Por confirmar"
+        issuer = _clean(
+            _first(
+                item,
+                # HarvestAPI's current actor schema uses issuedBy.
+                "issuedBy",
+                "authority",
+                "issuer",
+                "organization",
+                "organizationName",
+            ),
+            150,
+        ) or "Por confirmar"
         source_url = _specific_source_url(item, profile_url=profile_url)
         external = _clean(_first(item, "licenseNumber", "credentialId", "id"), 200)
         # Keep the identity stable when a later sync enriches the same profile
         # record with a direct Credly/issuer verification URL.
         external = f"linkedin-profile:{_fingerprint(profile_url, external or name)}"
         full_text = " ".join((_clean(name), _clean(issuer), _clean(_first(item, "description", "skills"))))
-        issued_on = _parse_date(_first(item, "issueDate", "issuedOn", "date"), today)
+        issued_on = _parse_date(
+            _first(item, "issuedAt", "issueDate", "issuedOn", "date"),
+            today,
+        )
         expires_on = (
             _parse_date(_first(item, "expirationDate", "expiresOn"), today)
             if _first(item, "expirationDate", "expiresOn")
@@ -434,7 +491,16 @@ def normalize_profile_certifications(
             LinkedInCandidate(
                 credential_name=name,
                 issuer_name=issuer,
-                issuer_url=_url(_first(item, "authorityUrl", "issuerUrl", "website")),
+                issuer_url=_url(
+                    _first(
+                        item,
+                        # HarvestAPI exposes the issuer's LinkedIn page here.
+                        "issuedByLink",
+                        "authorityUrl",
+                        "issuerUrl",
+                        "website",
+                    )
+                ),
                 issued_on=issued_on,
                 expires_on=expires_on,
                 source_url=source_url,
