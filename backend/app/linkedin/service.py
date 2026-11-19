@@ -587,7 +587,7 @@ class LinkedInSyncService:
             session.close()
 
         # Keep deterministic output order, but do not make the HTTP request
-        # wait for five complete profile+posts actor runs one after another.
+        # wait for twenty complete profile+posts actor runs one after another.
         # Each sync_profile call creates its own SQLAlchemy sessions, so these
         # independent students can safely be processed concurrently.
         results_by_id: dict[UUID, LinkedInBatchItemReport] = {}

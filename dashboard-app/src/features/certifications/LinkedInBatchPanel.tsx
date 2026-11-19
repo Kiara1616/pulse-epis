@@ -34,7 +34,7 @@ type BatchRunResponse = {
 
 type Period = { code: string; starts_on: string; ends_on: string };
 
-const MAX_BATCH = 5;
+const MAX_BATCH = 20;
 
 function syncLabel(student: BatchStudent) {
   if (!student.linkedin_url) return "Sin enlace";

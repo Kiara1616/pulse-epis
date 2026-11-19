@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # Keep administrator/validator batch extraction bounded.  A batch is
     # deliberately small so a mistaken selection cannot consume the whole
     # Apify allowance in one request.
-    apify_batch_max_profiles: int = 5
+    apify_batch_max_profiles: int = 20
     local_auth_seed: bool = False
     local_auth_password: SecretStr = SecretStr("pulse-local-demo")
     demo_data_seed: bool = False
