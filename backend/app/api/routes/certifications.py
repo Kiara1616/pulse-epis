@@ -17,7 +17,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse, RedirectResponse, Response
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 
 from ...auth.dependencies import require_permissions
 from ...auth.models import AuthenticatedUser, Permission, Role
@@ -45,11 +45,14 @@ from ...certifications.service import (
     SkillInput,
     StudentNotProvisioned,
 )
-from ...db.models import Issuer
+from ...db.models import AcademicPeriod, Certification, Enrollment, Issuer, Student, User
 from ...issuer_catalog.service import is_unresolved_issuer
 from ...learning.models import LearningCourse
 from ...integrations.apify import ApifyIntegrationError
 from ...linkedin.schemas import (
+    LinkedInBatchItemResponse,
+    LinkedInBatchRequest,
+    LinkedInBatchResponse,
     LinkedInProfileResponse,
     LinkedInProfileUpdate,
     LinkedInSyncResponse,
@@ -64,6 +67,7 @@ from ...linkedin.service import (
 router = APIRouter(prefix="/certifications", tags=["certifications"])
 _CERTIFICATION_READ = require_permissions(Permission.CERTIFICATION_READ_OWN)
 _CERTIFICATION_WRITE = require_permissions(Permission.CERTIFICATION_WRITE_OWN)
+_LINKEDIN_BATCH = require_permissions(Permission.CERTIFICATION_VALIDATE)
 
 
 def _http_error(status_code: int, code: str, message: str) -> HTTPException:
@@ -391,6 +395,156 @@ def sync_linkedin_profile(
             "LINKEDIN_UNAVAILABLE",
             str(exc),
         ) from exc
+
+
+@router.get(
+    "/linkedin/batch/students",
+    dependencies=[Depends(_LINKEDIN_BATCH)],
+    summary="List roster students and their LinkedIn synchronization state",
+)
+def list_linkedin_batch_students(
+    request: Request,
+    period_code: str | None = Query(default=None, max_length=32),
+    cycle: str | None = Query(default=None, max_length=32),
+    sync_status: str = Query(default="ALL", pattern="^(ALL|NO_URL|NEVER|RUNNING|SUCCEEDED|PARTIAL|FAILED)$"),
+    q: str = Query(default="", max_length=120),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=100),
+) -> dict[str, object]:
+    """Expose only the metadata needed to select a controlled extraction batch."""
+
+    factory = request.app.state.session_factory
+    if factory is None:
+        raise _http_error(503, "LINKEDIN_UNAVAILABLE", "El padrón no está disponible.")
+    with factory() as session:
+        if not period_code:
+            period_code = session.scalar(
+                select(AcademicPeriod.code)
+                .join(Enrollment, Enrollment.period_id == AcademicPeriod.id)
+                .order_by(AcademicPeriod.starts_on.desc())
+                .limit(1)
+            )
+        if not period_code:
+            return {"period_code": None, "total": 0, "items": []}
+
+        query = (
+            select(Student, User, Enrollment, AcademicPeriod)
+            .join(Enrollment, Enrollment.student_id == Student.id)
+            .join(AcademicPeriod, AcademicPeriod.id == Enrollment.period_id)
+            .outerjoin(User, User.id == Student.user_id)
+            .where(AcademicPeriod.code == period_code.strip().upper())
+        )
+        if cycle:
+            query = query.where(Enrollment.cycle == cycle.strip())
+        if sync_status == "NO_URL":
+            query = query.where(Student.linkedin_url.is_(None))
+        elif sync_status != "ALL":
+            query = query.where(Student.linkedin_sync_status == sync_status)
+        if q.strip():
+            term = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            query = query.where(
+                or_(
+                    Student.student_code.ilike(term, escape="\\"),
+                    Student.full_name.ilike(term, escape="\\"),
+                    User.email.ilike(term, escape="\\"),
+                )
+            )
+        total = session.scalar(select(func.count()).select_from(query.subquery())) or 0
+        rows = session.execute(
+            query.order_by(Student.full_name, Student.student_code, Student.id)
+            .offset(offset)
+            .limit(limit)
+        ).all()
+        student_ids = [student.id for student, _, _, _ in rows]
+        pending_by_student: dict[UUID, int] = {}
+        if student_ids:
+            pending_rows = session.execute(
+                select(Certification.student_id, func.count(Certification.id))
+                .where(
+                    Certification.student_id.in_(student_ids),
+                    Certification.source_kind.in_(
+                        ("LINKEDIN_PROFILE", "LINKEDIN_PUBLICATION")
+                    ),
+                    Certification.status.in_(
+                        ("PENDING", "UNDER_REVIEW", "OBSERVED", "RESUBMITTED")
+                    ),
+                )
+                .group_by(Certification.student_id)
+            ).all()
+            pending_by_student = {student_id: int(count) for student_id, count in pending_rows}
+        return {
+            "period_code": period_code.strip().upper(),
+            "total": int(total),
+            "items": [
+                {
+                    "id": str(student.id),
+                    "code": student.student_code,
+                    "name": student.full_name,
+                    "email": user.email if user else None,
+                    "cycle": enrollment.cycle,
+                    "cohort": enrollment.cohort,
+                    "status": enrollment.status,
+                    "linkedin_url": student.linkedin_url,
+                    "linkedin_sync_status": student.linkedin_sync_status,
+                    "linkedin_last_sync_at": student.linkedin_last_sync_at,
+                    "linkedin_sync_error": student.linkedin_sync_error,
+                    "pending_candidates": pending_by_student.get(student.id, 0),
+                    "selectable": bool(student.linkedin_url and student.user_id),
+                }
+                for student, user, enrollment, _ in rows
+            ],
+        }
+
+
+@router.post(
+    "/linkedin/batch/sync",
+    response_model=LinkedInBatchResponse,
+    dependencies=[Depends(_LINKEDIN_BATCH)],
+    summary="Synchronize an explicitly selected, bounded student batch",
+)
+def sync_linkedin_batch(
+    payload: LinkedInBatchRequest,
+    request: Request,
+    current_user: AuthenticatedUser = Depends(_LINKEDIN_BATCH),
+) -> LinkedInBatchResponse:
+    try:
+        items = request.app.state.linkedin_service.sync_students(
+            current_user.id,
+            payload.student_ids,
+            force=payload.force,
+            include_publications=payload.include_publications,
+        )
+    except ValueError as exc:
+        raise _http_error(status.HTTP_422_UNPROCESSABLE_ENTITY, "LINKEDIN_BATCH_LIMIT", str(exc)) from exc
+    except LinkedInServiceUnavailable as exc:
+        raise _http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "LINKEDIN_UNAVAILABLE", str(exc)) from exc
+    except ApifyIntegrationError as exc:
+        raise _http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "APIFY_UNAVAILABLE", str(exc)) from exc
+
+    response_items = [
+        LinkedInBatchItemResponse(
+            student_id=item.student_id,
+            status=item.status,
+            message=item.message,
+            profile_candidates=item.profile_candidates,
+            publication_candidates=item.publication_candidates,
+            created=item.created,
+            updated=item.updated,
+            duplicates=item.duplicates,
+        )
+        for item in items
+    ]
+    processed = sum(item.status in {"SUCCEEDED", "PARTIAL"} for item in items)
+    skipped = sum(item.status == "SKIPPED" for item in items)
+    failed = sum(item.status == "FAILED" for item in items)
+    return LinkedInBatchResponse(
+        requested=len(items),
+        processed=processed,
+        skipped=skipped,
+        failed=failed,
+        items=response_items,
+        message="Lote completado. Los resultados nuevos quedaron pendientes de validación.",
+    )
 
 
 @router.get(

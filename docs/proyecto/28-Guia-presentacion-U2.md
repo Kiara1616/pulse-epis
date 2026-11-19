@@ -4,6 +4,8 @@
 
 Demostrar que Pulse EPIS transforma el padrón autorizado y fuentes institucionales agregadas en indicadores temporales reproducibles. La interfaz desplegada no presenta fixtures sintéticos: el histórico de matrícula proviene de totales UPT/GPAD y el periodo vigente proviene del snapshot ETL publicado en Pulse.
 
+Para la demostración de certificaciones, presenta LinkedIn como **fuente auxiliar controlada**: el padrón sigue siendo la fuente de identidad; el estudiante confirma su URL y el personal autorizado selecciona hasta cinco perfiles. Apify solo propone candidatos `PENDING`; el validador revisa el enlace directo, corrige el emisor si corresponde y decide. No presentes una extracción pendiente como aprobación ni como dato Gold.
+
 ## Preparación rápida
 
 Con backend y frontend activos, ejecutar desde la raíz:
@@ -25,9 +27,10 @@ La revisión rápida comprueba salud de API, dashboard, formato y validez de Ter
 3. Explicar la diferencia visible entre el total GPAD y el padrón ETL de Pulse como conciliación institucional pendiente; no se infieren identidades históricas.
 4. Cambiar la granularidad entre día, mes y año. Explicar que el mes y el año toman el último snapshot válido para métricas de estado.
 5. Recorrer Panorama, Evolución, Certificaciones, Habilidades, Cohortes y Calidad.
-6. Mostrar los diagramas de Data Lake, proceso ETL e infraestructura GCP.
-7. Ejecutar `terraform validate` y mostrar el reporte de costos reproducible.
-8. Cerrar aclarando que el código está preparado para GCP, mientras `terraform apply` y las corridas cloud necesitan proyecto, facturación y autenticación configurados.
+6. Si el primer lote LinkedIn ya fue revisado, mostrar la bandeja del validador y explicar el estado `PENDING` → `APPROVED`; después ejecutar el corte ETL. Si aún no hay lote aprobado, indicar que la cobertura permanece en cero por regla de calidad.
+7. Mostrar los diagramas de Data Lake, proceso ETL e infraestructura GCP, incluyendo la llamada controlada a Apify.
+8. Ejecutar `terraform validate` y mostrar el reporte de costos reproducible.
+9. Cerrar aclarando que el código está preparado para GCP, mientras `terraform apply` y las corridas cloud necesitan proyecto, facturación y autenticación configurados.
 
 ## Respuestas breves para la sustentación
 
@@ -67,3 +70,4 @@ Terraform limita instancias y configura alertas presupuestarias. La estimación 
 - Configurar Google Cloud CLI, proyecto, facturación y autenticación.
 - Ejecutar `terraform plan` y `apply`, luego conservar dos corridas ETL cloud y una prueba de fallo.
 - Revisar la conciliación del padrón vigente antes de presentar el conteo de `2026-II` como definitivo; el histórico agregado UPT/GPAD ya se muestra con su fuente y no habilita accesos.
+- Configurar el token server-side de Apify y ejecutar, como máximo, un lote explícito de cinco perfiles de VII/VIII para la demostración; revisar los candidatos antes de publicar el corte. No se requiere una sección de costos en la interfaz.

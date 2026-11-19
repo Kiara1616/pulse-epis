@@ -62,6 +62,8 @@ services:
         value: '10'
       - key: PULSE_APIFY_SYNC_COOLDOWN_SECONDS
         value: '900'
+      - key: PULSE_APIFY_BATCH_MAX_PROFILES
+        value: '5'
 databases:
   - name: pulse-epis-db
     plan: free

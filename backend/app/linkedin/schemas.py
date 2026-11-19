@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -44,9 +45,40 @@ class LinkedInSyncResponse(BaseModel):
     message: str
 
 
+class LinkedInBatchRequest(BaseModel):
+    """A bounded, explicitly selected batch started by staff."""
+
+    student_ids: list[UUID] = Field(min_length=1, max_length=20)
+    force: bool = False
+    include_publications: bool = False
+
+
+class LinkedInBatchItemResponse(BaseModel):
+    student_id: UUID
+    status: Literal["SUCCEEDED", "PARTIAL", "FAILED", "SKIPPED"]
+    message: str
+    profile_candidates: int = 0
+    publication_candidates: int = 0
+    created: int = 0
+    updated: int = 0
+    duplicates: int = 0
+
+
+class LinkedInBatchResponse(BaseModel):
+    requested: int
+    processed: int
+    skipped: int
+    failed: int
+    items: list[LinkedInBatchItemResponse]
+    message: str
+
+
 __all__ = [
     "LinkedInProfileResponse",
     "LinkedInProfileUpdate",
     "LinkedInSyncResponse",
+    "LinkedInBatchRequest",
+    "LinkedInBatchItemResponse",
+    "LinkedInBatchResponse",
     "LinkedInSyncStatus",
 ]

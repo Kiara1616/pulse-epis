@@ -8,9 +8,10 @@ import { AsyncState } from "@/shared/ui/AsyncState";
 import { ExportButton } from "@/shared/ui/ExportButton";
 import { useRole } from "@/features/access/RoleProvider";
 import { StudentDirectory } from "@/features/certifications/StudentDirectory";
+import { LinkedInBatchPanel } from "@/features/certifications/LinkedInBatchPanel";
 
 function AdminStudentsContent() {
-  return <div className="space-y-6"><StudentDirectory/></div>;
+  return <div className="space-y-6"><LinkedInBatchPanel/><StudentDirectory/></div>;
 }
 
 function StudentsContent() {
@@ -20,6 +21,7 @@ function StudentsContent() {
   const rows = data?.by_cohort.map((item) => ({ anio_ingreso: item.name, certificaciones: item.value })) ?? [];
 
   return <div className="flex w-full flex-col gap-6">
+    <LinkedInBatchPanel />
     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-bold uppercase tracking-wider text-blue-600">Cifras agregadas</p><h1 className="mt-1 text-3xl font-bold text-gray-900">Certificaciones por año de ingreso</h1><p className="mt-1 text-gray-500">El dashboard no muestra rankings nominales; protege la identidad y consulta hechos agregados del ETL.</p></div>{data && <ExportButton dataset={data.dataset} filters={data.filters} filename={`pulse-epis-cohortes-${data.filters.period_code}.csv`} rows={rows} metadata={["Fuente: GET /api/v1/indicators/overview", `Corte: ${data.filters.cutoff_date}`]}/>}</div>
     <AnalyticsFilters periods={analytics.periods} filters={analytics.filters} options={options} onChange={analytics.setFilter}/>
     <AsyncState loading={analytics.loading} error={analytics.error} empty={!data && !analytics.loading && !analytics.error} onRetry={analytics.retry}>

@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Clock3, FileUp, Loader2, RefreshCw } from "lucide-react";
 import { RoleGate } from "@/features/access/RoleGate";
+import { LinkedInBatchPanel } from "@/features/certifications/LinkedInBatchPanel";
 import { ApiError, apiFetch } from "@/shared/api/client";
 import type { RosterImport } from "@/shared/api/types";
 
@@ -209,6 +210,7 @@ function RosterPageContent() {
   const selectedRows = groups.find((group) => group.code === periodCode)?.rows ?? 0;
   return <div className="space-y-6">
     <div><p className="eyebrow">Fuente maestra</p><h1 className="page-title mt-1">Padrón de estudiantes EPIS</h1><p className="page-intro mt-2">Importa el padrón autorizado en Excel o CSV y consulta el resultado por periodo.</p></div>
+    <LinkedInBatchPanel />
     {error && <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800"><AlertCircle size={18} className="mt-0.5 shrink-0"/><p className="text-sm">{error}</p><button onClick={() => { void loadPeriods(); void loadHistory(); }} className="ml-auto inline-flex items-center gap-1 text-sm font-bold"><RefreshCw size={15}/>Reintentar</button></div>}
     <section className="surface-card p-6">
       <div className="flex items-center justify-between gap-3"><h2 className="font-semibold text-slate-900">Importar padrón</h2><button type="button" disabled={uploading} onClick={() => setShowPeriodForm((value) => !value)} className="text-sm font-semibold text-blue-600">{showPeriodForm ? "Cancelar nuevo periodo" : "Registrar periodo"}</button></div>

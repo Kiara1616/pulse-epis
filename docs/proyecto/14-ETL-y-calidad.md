@@ -2,7 +2,7 @@
 
 ## Entrada salida y ejecución
 
-El ETL lee estudiantes, matrículas, certificaciones, emisores, habilidades y decisiones de la base operacional autorizada. No consulta personas por correo en Credly ni realiza scraping. Se ejecuta desde la raíz con base migrada y periodo existente.
+El ETL lee estudiantes, matrículas, certificaciones, emisores, habilidades y decisiones de la base operacional autorizada. La captura opcional de LinkedIn ocurre antes del ETL, mediante una selección explícita de perfiles con URL y consentimiento: Apify devuelve metadatos públicos y candidatos con procedencia, pero nunca decide una certificación ni crea una identidad. Pulse tampoco consulta personas por correo en Credly. Se ejecuta desde la raíz con base migrada y periodo existente.
 
 ```bash
 python -m backend.scripts_etl.main --period-code 2026-II --cutoff-date 2026-10-02
@@ -13,12 +13,15 @@ La fecha del comando es ilustrativa; el operador debe sustituirla por el corte a
 ```mermaid
 flowchart TD
     A[Extraer base operacional] --> H[Hash por periodo y corte]
+    L[URL confirmada + selección explícita de hasta 5 perfiles] --> AP[Apify perfil público]
+    AP --> P[Candidatos LINKEDIN PENDING]
+    P --> A
     H --> D{Fuente ya procesada}
     D -->|Sí| R[Retornar corrida existente]
     D -->|No| V[Validar y normalizar]
     V --> Q{Lote válido}
     Q -->|No| X[Registrar rechazos y preservar snapshot]
-    Q -->|Sí| T[Transacción de publicación]
+    Q -->|Sí| T[Transacción de publicación: solo aprobados]
     T --> F[Hechos estudiantiles y certificaciones]
     F --> I[API de indicadores]
 ```

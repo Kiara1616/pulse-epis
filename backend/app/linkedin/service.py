@@ -10,9 +10,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
-from typing import Protocol
+from typing import Protocol, Sequence
 from urllib.parse import urlsplit
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -26,7 +26,7 @@ from ..certifications.service import (
     _audit,
 )
 from ..core.config import Settings
-from ..db.models import Certification, Student
+from ..db.models import AuditLog, Certification, Student
 from ..integrations.apify import (
     ApifyClient,
     ApifyIntegrationError,
@@ -69,6 +69,18 @@ class LinkedInSyncReport:
     message: str
 
 
+@dataclass(frozen=True, slots=True)
+class LinkedInBatchItemReport:
+    student_id: UUID
+    status: str
+    message: str
+    profile_candidates: int = 0
+    publication_candidates: int = 0
+    created: int = 0
+    updated: int = 0
+    duplicates: int = 0
+
+
 class LinkedInServiceProtocol(Protocol):
     def get_profile(self, actor_user_id: UUID) -> LinkedInProfileView:
         """Return the consent and synchronization state for the signed-in student."""
@@ -76,8 +88,24 @@ class LinkedInServiceProtocol(Protocol):
     def update_profile(self, actor_user_id: UUID, linkedin_url: str | None) -> LinkedInProfileView:
         """Store or clear the signed-in student's LinkedIn profile URL."""
 
-    def sync_profile(self, actor_user_id: UUID, *, force: bool = False) -> LinkedInSyncReport:
+    def sync_profile(
+        self,
+        actor_user_id: UUID,
+        *,
+        force: bool = False,
+        include_publications: bool = True,
+    ) -> LinkedInSyncReport:
         """Extract public profile data and queue normalized candidates for validation."""
+
+    def sync_students(
+        self,
+        requester_user_id: UUID,
+        student_ids: Sequence[UUID],
+        *,
+        force: bool = False,
+        include_publications: bool = False,
+    ) -> tuple[LinkedInBatchItemReport, ...]:
+        """Synchronize an explicit, bounded staff-selected list of students."""
 
 
 def _utc_now() -> datetime:
@@ -378,7 +406,13 @@ class LinkedInSyncService:
             logger.warning("LinkedIn evidence could not be attached candidate=%s", candidate.source_external_id)
         return "created"
 
-    def sync_profile(self, actor_user_id: UUID, *, force: bool = False) -> LinkedInSyncReport:
+    def sync_profile(
+        self,
+        actor_user_id: UUID,
+        *,
+        force: bool = False,
+        include_publications: bool = True,
+    ) -> LinkedInSyncReport:
         if not self._settings.apify_configured:
             raise ApifyIntegrationError("La integración de Apify no está configurada en el servidor.")
 
@@ -427,22 +461,23 @@ class LinkedInSyncService:
         except (ApifyIntegrationError, ValueError) as exc:
             errors.append(f"perfil: {_safe_error(exc)}")
 
-        try:
-            posts_result = self._apify.run_actor(
-                self._settings.apify_posts_actor_id,
-                {
-                    "targetUrls": [profile_url],
-                    "maxPosts": self._settings.apify_max_posts,
-                    "postedLimitDate": (date.today() - timedelta(days=365)).isoformat(),
-                    "includeQuotePosts": True,
-                    "includeReposts": True,
-                },
-            )
-            publication_candidates = normalize_publication_candidates(
-                posts_result.items, profile_url=profile_url
-            )
-        except (ApifyIntegrationError, ValueError) as exc:
-            errors.append(f"publicaciones: {_safe_error(exc)}")
+        if include_publications:
+            try:
+                posts_result = self._apify.run_actor(
+                    self._settings.apify_posts_actor_id,
+                    {
+                        "targetUrls": [profile_url],
+                        "maxPosts": self._settings.apify_max_posts,
+                        "postedLimitDate": (date.today() - timedelta(days=365)).isoformat(),
+                        "includeQuotePosts": True,
+                        "includeReposts": True,
+                    },
+                )
+                publication_candidates = normalize_publication_candidates(
+                    posts_result.items, profile_url=profile_url
+                )
+            except (ApifyIntegrationError, ValueError) as exc:
+                errors.append(f"publicaciones: {_safe_error(exc)}")
 
         created = 0
         updated = 0
@@ -496,6 +531,145 @@ class LinkedInSyncService:
             message=message,
         )
 
+    def sync_students(
+        self,
+        requester_user_id: UUID,
+        student_ids: Sequence[UUID],
+        *,
+        force: bool = False,
+        include_publications: bool = False,
+    ) -> tuple[LinkedInBatchItemReport, ...]:
+        """Run only an explicit, bounded list selected by staff.
+
+        The roster may contain students who have not authenticated yet. Those
+        rows are reported as skipped before Apify is called, so a batch cannot
+        spend credits for an unusable account or a missing URL.
+        """
+
+        unique_ids = list(dict.fromkeys(student_ids))
+        if not unique_ids:
+            return ()
+        if len(unique_ids) > self._settings.apify_batch_max_profiles:
+            raise ValueError(
+                f"Selecciona como máximo {self._settings.apify_batch_max_profiles} estudiantes por lote."
+            )
+
+        batch_id = uuid4()
+        audit_session = self._session_factory()
+        try:
+            with audit_session.begin():
+                audit_session.add(
+                    AuditLog(
+                        actor_user_id=requester_user_id,
+                        action="LINKEDIN_BATCH_REQUESTED",
+                        entity_type="LINKEDIN_BATCH",
+                        entity_id=str(batch_id),
+                        after_data={
+                            "student_count": len(unique_ids),
+                            "student_ids": [str(item) for item in unique_ids],
+                            "force": force,
+                            "include_publications": include_publications,
+                        },
+                    )
+                )
+        finally:
+            audit_session.close()
+
+        session = self._session_factory()
+        try:
+            students = {
+                student.id: student
+                for student in session.scalars(
+                    select(Student).where(Student.id.in_(unique_ids))
+                ).all()
+            }
+        finally:
+            session.close()
+
+        results: list[LinkedInBatchItemReport] = []
+        for student_id in unique_ids:
+            student = students.get(student_id)
+            if student is None:
+                results.append(
+                    LinkedInBatchItemReport(
+                        student_id=student_id,
+                        status="SKIPPED",
+                        message="El estudiante ya no pertenece al padrón disponible.",
+                    )
+                )
+                continue
+            if not student.linkedin_url:
+                results.append(
+                    LinkedInBatchItemReport(
+                        student_id=student_id,
+                        status="SKIPPED",
+                        message="El estudiante no tiene un enlace de LinkedIn registrado.",
+                    )
+                )
+                continue
+            if student.linkedin_sync_status == "SUCCEEDED" and not force:
+                results.append(
+                    LinkedInBatchItemReport(
+                        student_id=student_id,
+                        status="SKIPPED",
+                        message="El perfil ya fue sincronizado; solicita una actualización explícita para volver a consultarlo.",
+                    )
+                )
+                continue
+            if student.user_id is None:
+                results.append(
+                    LinkedInBatchItemReport(
+                        student_id=student_id,
+                        status="SKIPPED",
+                        message="La cuenta institucional todavía no está vinculada al estudiante.",
+                    )
+                )
+                continue
+            try:
+                report = self.sync_profile(
+                    student.user_id,
+                    force=force,
+                    include_publications=include_publications,
+                )
+                results.append(
+                    LinkedInBatchItemReport(
+                        student_id=student_id,
+                        status=report.status,
+                        message=report.message,
+                        profile_candidates=report.profile_candidates,
+                        publication_candidates=report.publication_candidates,
+                        created=report.created,
+                        updated=report.updated,
+                        duplicates=report.duplicates,
+                    )
+                )
+            except LinkedInSyncCooldown as exc:
+                results.append(
+                    LinkedInBatchItemReport(
+                        student_id=student_id,
+                        status="SKIPPED",
+                        message=str(exc),
+                    )
+                )
+            except (ValueError, StudentNotProvisioned) as exc:
+                results.append(
+                    LinkedInBatchItemReport(
+                        student_id=student_id,
+                        status="SKIPPED",
+                        message=_safe_error(exc),
+                    )
+                )
+            except Exception as exc:
+                logger.warning("LinkedIn batch item failed student=%s", student_id)
+                results.append(
+                    LinkedInBatchItemReport(
+                        student_id=student_id,
+                        status="FAILED",
+                        message=_safe_error(exc),
+                    )
+                )
+        return tuple(results)
+
 
 class UnavailableLinkedInService:
     def get_profile(self, actor_user_id: UUID) -> LinkedInProfileView:
@@ -504,7 +678,23 @@ class UnavailableLinkedInService:
     def update_profile(self, actor_user_id: UUID, linkedin_url: str | None) -> LinkedInProfileView:
         raise LinkedInServiceUnavailable("El servicio de LinkedIn no está disponible.")
 
-    def sync_profile(self, actor_user_id: UUID, *, force: bool = False) -> LinkedInSyncReport:
+    def sync_profile(
+        self,
+        actor_user_id: UUID,
+        *,
+        force: bool = False,
+        include_publications: bool = True,
+    ) -> LinkedInSyncReport:
+        raise LinkedInServiceUnavailable("El servicio de LinkedIn no está disponible.")
+
+    def sync_students(
+        self,
+        requester_user_id: UUID,
+        student_ids: Sequence[UUID],
+        *,
+        force: bool = False,
+        include_publications: bool = False,
+    ) -> tuple[LinkedInBatchItemReport, ...]:
         raise LinkedInServiceUnavailable("El servicio de LinkedIn no está disponible.")
 
 
@@ -514,6 +704,7 @@ __all__ = [
     "LinkedInServiceUnavailable",
     "LinkedInSyncCooldown",
     "LinkedInSyncReport",
+    "LinkedInBatchItemReport",
     "LinkedInSyncService",
     "UnavailableLinkedInService",
 ]
