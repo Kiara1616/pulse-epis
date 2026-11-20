@@ -31,6 +31,7 @@ from ..db.models import (
     User,
 )
 from ..evidence.storage import EvidenceStorageError, LocalEvidenceStorage
+from ..issuer_catalog.service import is_student_name
 
 
 logger = logging.getLogger(__name__)
@@ -405,6 +406,10 @@ class CertificationService:
         allow_inactive_existing: bool = False,
     ) -> Issuer:
         normalized_name = _clean_text(name, field="issuer_name", maximum=150)
+        if is_student_name(session, normalized_name):
+            raise CertificationInvalid(
+                "El nombre del emisor coincide con un estudiante; selecciona la entidad emisora oficial"
+            )
         if issuer_id is not None:
             issuer = session.get(Issuer, issuer_id)
             if issuer is None:

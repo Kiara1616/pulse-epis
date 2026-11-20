@@ -170,3 +170,21 @@ def test_harvestapi_publication_schema_keeps_direct_post_link():
     assert candidates[0].source_url.endswith("activity-harvestapi")
     assert candidates[0].issuer_name == "DataCamp"
     assert candidates[0].issued_on == date(2026, 10, 20)
+
+
+def test_publication_author_is_not_used_as_issuer_fallback():
+    candidates = normalize_publication_candidates(
+        [
+            {
+                "id": "activity-unknown-issuer",
+                "text": "I completed a new certification.",
+                "url": "https://www.linkedin.com/posts/andre-carbajal_activity-unknown-issuer",
+                "author": {"name": "Andre Alejandro Carbajal Vargas"},
+            }
+        ],
+        profile_url="https://www.linkedin.com/in/andre-carbajal",
+        today=date(2026, 11, 19),
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].issuer_name == "Por confirmar"
