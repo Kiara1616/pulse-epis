@@ -222,8 +222,13 @@ def test_evidence_migration_refuses_to_drop_stored_bytes(monkeypatch):
     engine.dispose()
 
 
-def test_student_name_issuer_migration_archives_and_requeues_certifications(tmp_path):
+def test_student_name_issuer_migration_archives_and_requeues_certifications(tmp_path, monkeypatch):
     database_url = f"sqlite+pysqlite:///{(tmp_path / 'issuer-cleanup.db').as_posix()}"
+    # The CI backend job exports PULSE_DATABASE_URL for the integration suite.
+    # This focused migration test intentionally uses its isolated SQLite file;
+    # clear the process-level override so Alembic honors the URL above.
+    monkeypatch.delenv("PULSE_DATABASE_URL", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
     config = _alembic_config(database_url)
     command.upgrade(config, "0021_issuer_lifecycle")
     engine = create_engine(database_url)
