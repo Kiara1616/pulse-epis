@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Protocol
@@ -189,6 +190,44 @@ def is_unresolved_issuer(name: str | None) -> bool:
     return (name or "").strip().casefold() in UNRESOLVED_ISSUER_NAMES
 
 
+def normalize_person_name(value: str | None) -> str:
+    """Return a comparison key for names without accents or punctuation noise."""
+
+    if not value:
+        return ""
+    decomposed = unicodedata.normalize("NFKD", value)
+    ascii_value = "".join(char for char in decomposed if not unicodedata.combining(char))
+    return " ".join("".join(char if char.isalnum() else " " for char in ascii_value).casefold().split())
+
+
+def is_same_person_name(left: str | None, right: str | None) -> bool:
+    """Compare a candidate issuer with a student name defensively."""
+
+    left_key = normalize_person_name(left)
+    right_key = normalize_person_name(right)
+    return bool(left_key and right_key and left_key == right_key)
+
+
+def _student_name_keys(session: Session) -> set[str]:
+    return {
+        key
+        for key in (normalize_person_name(value) for value in session.scalars(select(Student.full_name)).all())
+        if key
+    }
+
+
+def is_student_name(session: Session, value: str | None) -> bool:
+    """Return whether *value* is the full name of a student in the roster.
+
+    Issuers are shared catalog entities, while students are roster people.  A
+    student name must therefore never be accepted as an issuer, even when an
+    upstream scraper incorrectly places the post author in an issuer field.
+    """
+
+    key = normalize_person_name(value)
+    return bool(key and key in _student_name_keys(session))
+
+
 def _audit(
     session: Session,
     *,
@@ -263,7 +302,13 @@ class IssuerCatalogService:
                 if not include_inactive:
                     statement = statement.where(Issuer.is_active.is_(True))
                 rows = session.scalars(statement).all()
-                return [self._issuer_view(item) for item in rows if not is_unresolved_issuer(item.name)]
+                student_names = _student_name_keys(session)
+                return [
+                    self._issuer_view(item)
+                    for item in rows
+                    if not is_unresolved_issuer(item.name)
+                    and normalize_person_name(item.name) not in student_names
+                ]
         except IssuerCatalogError:
             raise
         except Exception as exc:
@@ -286,6 +331,10 @@ class IssuerCatalogService:
         try:
             with session.begin():
                 self._actor(session, actor_user_id, "ADMIN")
+                if is_student_name(session, normalized_name):
+                    raise IssuerCatalogInvalid(
+                        "El nombre del emisor coincide con un estudiante; usa la entidad emisora oficial"
+                    )
                 duplicate = session.scalar(select(Issuer).where(func.lower(Issuer.name) == normalized_name.casefold()))
                 if duplicate is not None:
                     raise IssuerCatalogConflict("La entidad emisora ya existe")
@@ -326,6 +375,10 @@ class IssuerCatalogService:
                     raise IssuerNotFound("La entidad emisora no existe")
                 before = {"name": issuer.name, "website_url": issuer.website_url, "logo_url": issuer.logo_url}
                 if normalized_name is not None:
+                    if is_student_name(session, normalized_name):
+                        raise IssuerCatalogInvalid(
+                            "El nombre del emisor coincide con un estudiante; usa la entidad emisora oficial"
+                        )
                     duplicate = session.scalar(select(Issuer).where(func.lower(Issuer.name) == normalized_name.casefold(), Issuer.id != issuer.id))
                     if duplicate is not None:
                         raise IssuerCatalogConflict("La entidad emisora ya existe")
@@ -371,7 +424,7 @@ class IssuerCatalogService:
                     after={"is_active": issuer.is_active, "archived_at": issuer.archived_at.isoformat()},
                 )
                 return self._issuer_view(issuer)
-        except (IssuerActorNotAllowed, IssuerNotFound, IssuerCatalogConflict):
+        except (IssuerActorNotAllowed, IssuerNotFound, IssuerCatalogInvalid, IssuerCatalogConflict):
             raise
         except Exception as exc:
             raise IssuerCatalogUnavailable("No se pudo retirar la entidad emisora") from exc
@@ -386,6 +439,10 @@ class IssuerCatalogService:
                 issuer = session.get(Issuer, issuer_id)
                 if issuer is None or is_unresolved_issuer(issuer.name):
                     raise IssuerNotFound("La entidad emisora no existe")
+                if is_student_name(session, issuer.name):
+                    raise IssuerCatalogInvalid(
+                        "La entidad coincide con un estudiante y no puede restaurarse como emisor"
+                    )
                 if issuer.is_active:
                     raise IssuerCatalogConflict("La entidad emisora ya está activa")
                 before = {"is_active": issuer.is_active, "archived_at": issuer.archived_at}
@@ -402,7 +459,7 @@ class IssuerCatalogService:
                     after={"is_active": issuer.is_active, "archived_at": None},
                 )
                 return self._issuer_view(issuer)
-        except (IssuerActorNotAllowed, IssuerNotFound, IssuerCatalogConflict):
+        except (IssuerActorNotAllowed, IssuerNotFound, IssuerCatalogInvalid, IssuerCatalogConflict):
             raise
         except Exception as exc:
             raise IssuerCatalogUnavailable("No se pudo restaurar la entidad emisora") from exc
@@ -420,6 +477,10 @@ class IssuerCatalogService:
                     raise IssuerNotFound("La certificación no existe")
                 if issuer is None or is_unresolved_issuer(issuer.name):
                     raise IssuerNotFound("La entidad emisora no existe en el catálogo")
+                if is_student_name(session, issuer.name):
+                    raise IssuerCatalogInvalid(
+                        "La entidad seleccionada coincide con un estudiante y no puede asignarse como emisor"
+                    )
                 if not issuer.is_active:
                     raise IssuerCatalogInvalid("La entidad emisora está retirada; restáurala antes de asignarla")
                 if certification.status in {"APPROVED", "REJECTED", "EXPIRED"}:
@@ -464,6 +525,10 @@ class IssuerCatalogService:
                 resolved_name = name or (current.name if current and not is_unresolved_issuer(current.name) else None)
                 if resolved_name is None or is_unresolved_issuer(resolved_name):
                     raise IssuerCatalogInvalid("Indica el nombre de la entidad emisora")
+                if is_student_name(session, resolved_name):
+                    raise IssuerCatalogInvalid(
+                        "El nombre del emisor coincide con un estudiante; solicita la entidad oficial"
+                    )
                 duplicate = session.scalar(select(IssuerRequest).where(IssuerRequest.certification_id == certification.id, IssuerRequest.status == "PENDING"))
                 if duplicate is not None:
                     raise IssuerCatalogConflict("Ya existe una solicitud pendiente para esta certificación")
@@ -524,6 +589,14 @@ class IssuerCatalogService:
                     raise IssuerNotFound("La entidad emisora seleccionada no existe")
                 if issuer is not None and is_unresolved_issuer(issuer.name):
                     raise IssuerCatalogInvalid("La entidad seleccionada no es válida")
+                if issuer is not None and is_student_name(session, issuer.name):
+                    raise IssuerCatalogInvalid(
+                        "La entidad seleccionada coincide con un estudiante y no puede aprobarse"
+                    )
+                if issuer is None and is_student_name(session, canonical_name):
+                    raise IssuerCatalogInvalid(
+                        "El nombre del emisor coincide con un estudiante; registra la entidad oficial"
+                    )
                 if issuer is not None and not issuer.is_active:
                     raise IssuerCatalogInvalid("La entidad emisora está retirada; restáurala antes de aprobar la solicitud")
                 if issuer is None:
@@ -650,5 +723,8 @@ __all__ = [
     "IssuerResolutionView",
     "IssuerView",
     "UnavailableIssuerCatalogService",
+    "is_same_person_name",
+    "is_student_name",
     "is_unresolved_issuer",
+    "normalize_person_name",
 ]

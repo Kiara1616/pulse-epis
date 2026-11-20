@@ -541,10 +541,6 @@ def normalize_publication_candidates(
         if len(content) > len(title):
             title = title.rstrip(" .") + "…"
         issuer = _issuer_from_text(content, "Por confirmar")
-        author = _first(post, "author")
-        if issuer == "Por confirmar" and isinstance(author, Mapping):
-            author_name = _clean(_first(author, "name", "headline"), 150)
-            issuer = author_name or issuer
         result.append(
             LinkedInCandidate(
                 credential_name=f"Publicación de LinkedIn: {title}",
