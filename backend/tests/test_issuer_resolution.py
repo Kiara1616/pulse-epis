@@ -126,3 +126,21 @@ def test_retired_issuer_cannot_be_selected_for_new_request_approval(tmp_path):
     with pytest.raises(IssuerCatalogConflict):
         catalog.archive_issuer(admin_user_id, created.id)
     engine.dispose()
+
+
+def test_student_names_are_never_accepted_or_listed_as_issuers(tmp_path):
+    engine, session_factory, settings, _, validator_user_id, admin_user_id, certification_id = make_context(tmp_path)
+    catalog = IssuerCatalogService(session_factory, settings)
+
+    with pytest.raises(IssuerCatalogInvalid, match="coincide con un estudiante"):
+        catalog.create_issuer(admin_user_id, name="Estudiante de prueba")
+
+    student_issuer_id = uuid4()
+    with Session(engine) as session:
+        session.add(Issuer(id=student_issuer_id, name="ESTUDIANTE DE PRUEBA", created_at=datetime.now(timezone.utc)))
+        session.commit()
+
+    assert all(item.name.casefold() != "estudiante de prueba" for item in catalog.list_issuers())
+    with pytest.raises(IssuerCatalogInvalid, match="coincide con un estudiante"):
+        catalog.assign_issuer(validator_user_id, certification_id, student_issuer_id)
+    engine.dispose()

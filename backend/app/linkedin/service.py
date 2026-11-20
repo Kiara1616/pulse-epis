@@ -36,6 +36,7 @@ from ..integrations.apify import (
     normalize_profile_certifications,
     normalize_publication_candidates,
 )
+from ..issuer_catalog.service import is_same_person_name
 
 
 logger = logging.getLogger(__name__)
@@ -357,6 +358,7 @@ class LinkedInSyncService:
         candidate: LinkedInCandidate,
         *,
         profile_url: str,
+        student_name: str | None = None,
     ) -> str:
         existing = self._find_imported(candidate, student_id)
         if existing is not None:
@@ -379,9 +381,18 @@ class LinkedInSyncService:
                     )
                 return "updated"
             return "duplicate"
+        # Some LinkedIn actors expose the post author in the issuer field when
+        # a publication does not name the issuing organization. Never persist
+        # that student name as a catalog issuer; leave it unresolved for the
+        # validator/admin workflow instead.
+        issuer_name = (
+            "Por confirmar"
+            if is_same_person_name(candidate.issuer_name, student_name)
+            else candidate.issuer_name
+        )
         draft = CertificationDraft(
-            issuer_name=candidate.issuer_name,
-            issuer_url=candidate.issuer_url,
+            issuer_name=issuer_name,
+            issuer_url=None if issuer_name == "Por confirmar" else candidate.issuer_url,
             credential_name=candidate.credential_name,
             external_id=candidate.external_id,
             issued_on=candidate.issued_on,
@@ -435,6 +446,7 @@ class LinkedInSyncService:
                     "El perfil ya fue sincronizado recientemente. Usa actualizar datos cuando necesites forzar otra consulta."
                 )
             student_id = student.id
+            student_name = student.full_name
         finally:
             session.close()
 
@@ -489,6 +501,7 @@ class LinkedInSyncService:
                     student_id,
                     candidate,
                     profile_url=profile_url,
+                    student_name=student_name,
                 )
                 if outcome == "created":
                     created += 1

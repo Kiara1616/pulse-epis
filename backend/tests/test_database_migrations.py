@@ -220,3 +220,70 @@ def test_evidence_migration_refuses_to_drop_stored_bytes(monkeypatch):
         migration_operations.drop_column.assert_not_called()
 
     engine.dispose()
+
+
+def test_student_name_issuer_migration_archives_and_requeues_certifications(tmp_path, monkeypatch):
+    database_url = f"sqlite+pysqlite:///{(tmp_path / 'issuer-cleanup.db').as_posix()}"
+    # The CI backend job exports PULSE_DATABASE_URL for the integration suite.
+    # This focused migration test intentionally uses its isolated SQLite file;
+    # clear the process-level override so Alembic honors the URL above.
+    monkeypatch.delenv("PULSE_DATABASE_URL", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    config = _alembic_config(database_url)
+    command.upgrade(config, "0021_issuer_lifecycle")
+    engine = create_engine(database_url)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    students = Table("students", metadata, autoload_with=engine)
+    issuers = Table("issuers", metadata, autoload_with=engine)
+    certifications = Table("certifications", metadata, autoload_with=engine)
+
+    student_id = str(uuid4())
+    issuer_id = str(uuid4())
+    certification_id = str(uuid4())
+    with engine.begin() as connection:
+        connection.execute(
+            students.insert().values(
+                id=student_id,
+                student_key="cleanup-student-001",
+                full_name="Nestor Serrano Ibáñez",
+            )
+        )
+        connection.execute(
+            issuers.insert().values(
+                id=issuer_id,
+                name="Nestor Serrano Ibanez",
+            )
+        )
+        connection.execute(
+            certifications.insert().values(
+                id=certification_id,
+                student_id=student_id,
+                issuer_id=issuer_id,
+                credential_name="Synthetic credential",
+                issued_on=date(2026, 11, 1),
+                status="APPROVED",
+            )
+        )
+
+    engine.dispose()
+    command.upgrade(config, "head")
+    engine = create_engine(database_url)
+    with engine.begin() as connection:
+        cleaned_issuer = connection.execute(
+            select(issuers.c.name, issuers.c.is_active).where(issuers.c.id == issuer_id)
+        ).one()
+        cleaned_certification = connection.execute(
+            select(certifications.c.issuer_id, certifications.c.status).where(
+                certifications.c.id == certification_id
+            )
+        ).one()
+        unresolved_name = connection.execute(
+            select(issuers.c.name).where(issuers.c.id == cleaned_certification.issuer_id)
+        ).scalar_one()
+
+    assert cleaned_issuer.name == "Nestor Serrano Ibanez"
+    assert cleaned_issuer.is_active is False
+    assert cleaned_certification.status == "PENDING"
+    assert unresolved_name == "Por confirmar"
+    engine.dispose()
