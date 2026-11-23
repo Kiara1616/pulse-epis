@@ -26,10 +26,6 @@
       "group": "academico"
     },
     {
-      "source": "docs/academico/FD06-Propuesta-Proyecto.md",
-      "group": "academico"
-    },
-    {
       "source": "docs/academico/README.md",
       "group": "academico"
     },
@@ -146,6 +142,10 @@
       "group": "proyecto"
     },
     {
+      "source": "docs/proyecto/30-Fuentes-y-captura-de-datos.md",
+      "group": "proyecto"
+    },
+    {
       "source": "docs/proyecto/25-Plan-segunda-unidad-BI.md",
       "group": "proyecto"
     },
@@ -159,10 +159,6 @@
     },
     {
       "source": "docs/proyecto/29-Cierre-segunda-unidad.md",
-      "group": "proyecto"
-    },
-    {
-      "source": "docs/proyecto/30-Fuentes-y-captura-de-datos.md",
       "group": "proyecto"
     }
   ]
