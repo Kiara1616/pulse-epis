@@ -1,9 +1,2 @@
-# Revisión cruzada de los dos integrantes del proyecto.
-# La protección de main debe activar "Require review from Code Owners".
-* @Kiara1616 @Vinny-13
-
-# Las áreas sensibles requieren la revisión de ambos integrantes.
-/.github/ @Kiara1616 @Vinny-13
-/backend/ @Kiara1616 @Vinny-13
-/dashboard-app/ @Kiara1616 @Vinny-13
-/docs/ @Kiara1616 @Vinny-13
+# La propietaria del repositorio revisa los cambios del proyecto.
+* @Kiara1616

@@ -1,7 +1,0 @@
-{
-  "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm": {
-    "package": "braces",
-    "expires": "2026-11-04",
-    "reason": "Upstream lists no patched version. Used only by ESLint's fast-glob with repository-controlled patterns; never shipped as a production dependency. Runtime dependencies and every other high/critical advisory remain blocking. Remove when a compatible upstream fix is available."
-  }
-}

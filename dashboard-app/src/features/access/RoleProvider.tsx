@@ -12,14 +12,14 @@ export const roleLabels: Record<AppRole, string> = {
   STUDENT: "Estudiante",
 };
 
-type RoleContextValue = { role: AppRole; email: string };
+type RoleContextValue = { role: AppRole; email: string; displayName: string | null };
 const RoleContext = createContext<RoleContextValue | null>(null);
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   if (!user) return null;
 
-  return <RoleContext.Provider value={{ role: user.role, email: user.email }}>{children}</RoleContext.Provider>;
+  return <RoleContext.Provider value={{ role: user.role, email: user.email, displayName: user.display_name ?? null }}>{children}</RoleContext.Provider>;
 }
 
 export function useRole() {
