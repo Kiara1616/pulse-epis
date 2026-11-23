@@ -209,7 +209,7 @@ function ValidationsContent() {
   const [requestIssuerOpen, setRequestIssuerOpen] = useState(false);
 
   const loadRecords = useCallback(async () => {
-    setLoading(true);
+    // Keep the queue and expanded evidence mounted during background refreshes.
     try {
       setError(null);
       // The validation queue is the primary workflow. A temporary catalog
