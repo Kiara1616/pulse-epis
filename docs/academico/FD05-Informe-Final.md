@@ -37,7 +37,7 @@
 
 # Informe Final del Proyecto
 
-<p align="center">Código FD05<br>Versión <em>3.4</em></p>
+<p align="center">Código FD05<br>Versión <em>4.0</em></p>
 
 **CONTROL DE VERSIONES**
 
@@ -46,6 +46,7 @@
 | 1.0 | KHZM / VRLN | — | — | 02/10/2026 | Elaboración del informe final |
 | 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de presentación y contenido |
 | 3.4 | — | — | — | 10/10/2026 | Revisión de estructura, resultados y presupuesto |
+| 4.0 | KHZM / VRLN | — | — | 07/11/2026 | Cierre documental de segunda unidad e integración de FD06 |
 
 **ÍNDICE GENERAL**
 
@@ -80,6 +81,7 @@
   - [Anexo 03. Documento SRS](#anexo-03-documento-srs)
   - [Anexo 04. Documento SAD](#anexo-04-documento-sad)
   - [Anexo 05. Manuales y otros documentos](#anexo-05-manuales-y-otros-documentos)
+  - [Anexo 06. Propuesta de proyecto](#anexo-06-propuesta-de-proyecto)
 
 ## 1. Antecedentes
 
@@ -389,6 +391,8 @@ El [FD04 — Arquitectura de Software](FD04-Arquitectura-Software.md) presenta o
 
 ### Anexo 05. Manuales y otros documentos
 
+Los manuales de usuario, operación, seguridad, despliegue, pruebas y generación documental se encuentran en la [documentación del proyecto](../proyecto/README.md). Incluyen los recorridos por rol, el plan de segunda unidad BI, la arquitectura de Data Warehouse, el plan de lanzamiento y el cierre verificable de la segunda unidad.
+
 | Documento | Contenido |
 |---|---|
 | [Manual de usuario](../proyecto/10-Manual-de-usuario.md) | Tareas y navegación de usuarios autorizados. |
@@ -400,3 +404,7 @@ El [FD04 — Arquitectura de Software](FD04-Arquitectura-Software.md) presenta o
 | [Registro de validación](../proyecto/19-Registro-de-validacion.md) | Evidencia técnica registrada por versión. |
 | [Flujo académico local](../proyecto/20-Cierre-funcional-local.md) | Avances y resultados consignados en la verificación local. |
 | [Reporte del piloto sintético](../../pilot/synthetic-report.json) | Datos ficticios y contraste previo de indicadores. |
+
+### Anexo 06. Propuesta de proyecto
+
+La [propuesta FD06](FD06-Propuesta-Proyecto.md) consolida el problema, la solución, el alcance, los interesados, la arquitectura BI, el plan de trabajo, los recursos, los riesgos y los criterios de aceptación para decidir un piloto institucional controlado.

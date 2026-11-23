@@ -30,7 +30,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
     { href: "/validaciones", label: "Validar", icon: BadgeCheck, roles: ["VALIDATOR"] },
     { href: "/mi-perfil", label: "Credenciales", icon: Award, roles: ["STUDENT"] },
     { href: "/mi-ruta", label: "Mi ruta", icon: Compass, roles: ["STUDENT"] },
-    { href: "/talleres", label: "Talleres", icon: CalendarDays, roles: ["ADMIN", "STUDENT"] },
+    { href: "/talleres", label: "Talleres", icon: CalendarDays, roles: ["STUDENT"] },
   ];
   const visibleLinks = links.filter((link) => link.roles.includes(role));
   const adminLinks = [

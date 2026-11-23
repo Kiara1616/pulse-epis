@@ -37,7 +37,7 @@
 
 # Documento de Arquitectura de Software
 
-<p align="center">Código FD04<br>Versión <em>3.4</em></p>
+<p align="center">Código FD04<br>Versión <em>4.0</em></p>
 
 **CONTROL DE VERSIONES**
 
@@ -48,6 +48,7 @@
 | 3.1 | KHZM / VRLN | — | — | 02/10/2026 | Organización y revisión de las vistas |
 | 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de presentación y contenido |
 | 3.4 | — | — | — | 09/10/2026 | Adecuación de estructura SAD, diagramas y atributos de calidad |
+| 4.0 | KHZM / VRLN | — | — | 07/11/2026 | Actualización integral de arquitectura BI, Data Warehouse, Data Lake y operación cloud propuesta |
 
 **ÍNDICE GENERAL**
 

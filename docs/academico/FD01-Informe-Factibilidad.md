@@ -37,7 +37,7 @@
 
 # Informe de Factibilidad
 
-<p align="center">Código FD01<br>Versión <em>3.5</em></p>
+<p align="center">Código FD01<br>Versión <em>4.0</em></p>
 
 **CONTROL DE VERSIONES**
 
@@ -50,6 +50,7 @@
 | 3.3 | KHZM / VRLN | — | — | 06/10/2026 | Actualización de la presentación y contenido |
 | 3.4 | KHZM / VRLN | — | — | 08/10/2026 | Revisión de la estructura y tablas de costos |
 | 3.5 | — | — | — | 08/10/2026 | Actualización del presupuesto y análisis financiero |
+| 4.0 | KHZM / VRLN | — | — | 07/11/2026 | Actualización integral al alcance BI, reportes temporales y despliegue propuesto |
 
 **Índice general**
 
